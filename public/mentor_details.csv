@@ -1,0 +1,7 @@
+mentor_id,name,email,department,designation,employee_id,max_mentees_capacity,current_mentees_count
+usr_mentor_01,Dr. Rajesh Kumar,rajesh.kumar@msrit.edu,Computer Science and Engineering,Associate Professor,FAC_CS_104,15,4
+usr_mentor_02,Prof. Priya Sharma,priya.sharma@msrit.edu,Computer Science and Engineering,Assistant Professor,FAC_CS_108,15,4
+usr_mentor_03,Dr. Anita Desai,anita.desai@msrit.edu,Computer Science and Engineering,Professor,FAC_CS_112,15,3
+usr_mentor_04,Prof. Suresh Nair,suresh.nair@msrit.edu,Computer Science and Engineering,Assistant Professor,FAC_CS_115,15,3
+usr_mentor_05,Dr. Meenakshi Sundaram,meenakshi.s@msrit.edu,Computer Science and Engineering,Associate Professor,FAC_CS_120,15,0
+usr_mentor_06,Prof. Vikramaditya Joshi,vikram.joshi@msrit.edu,Computer Science and Engineering,Assistant Professor,FAC_CS_124,15,0

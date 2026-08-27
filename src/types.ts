@@ -1,0 +1,194 @@
+export type UserRole = 'hod' | 'mentor' | 'student';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department_id: string;
+  department_name?: string;
+  department_code?: string;
+  mentor_id?: string | null;
+  mentor_name?: string | null;
+  cgpa?: number | null;
+  semester?: number | null;
+  roll_no?: string | null;
+  avatar?: string;
+  phone?: string | null;
+  bio?: string | null;
+  designation?: string | null;
+  office_location?: string | null;
+  total_points?: number;
+  approved_count?: number;
+  pending_count?: number;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface SchemaCategory {
+  id: string;
+  name: string;
+  description: string;
+  max_cap_points: number;
+  icon: string;
+  color: string;
+  earned_points?: number;
+  rules_count?: number;
+}
+
+export interface SchemaRule {
+  id: string;
+  category_id: string;
+  category_name?: string;
+  category_icon?: string;
+  category_color?: string;
+  activity_name: string;
+  base_points: number;
+  criteria: string;
+  version: number;
+  is_active: number | boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type RequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface SchemaRequest {
+  id: string;
+  mentor_id: string;
+  mentor_name?: string;
+  mentor_email?: string;
+  activity_name: string;
+  category_id: string;
+  category_name?: string;
+  requested_points: number;
+  approved_points?: number | null;
+  reason: string;
+  status: RequestStatus;
+  hod_remarks?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+}
+
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Submission {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  student_roll_no?: string;
+  student_semester?: number;
+  student_cgpa?: number;
+  mentor_id?: string;
+  mentor_name?: string;
+  schema_id: string;
+  schema_activity_name?: string;
+  schema_version_snapshot: number;
+  activity_title: string;
+  category_id: string;
+  category_name?: string;
+  category_icon?: string;
+  category_color?: string;
+  description: string;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  status: SubmissionStatus;
+  points_awarded: number;
+  base_points?: number;
+  mentor_feedback?: string | null;
+  completion_date: string;
+  submitted_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  reviewer_name?: string | null;
+}
+
+export interface DepartmentEvent {
+  id: string;
+  title: string;
+  category_id: string;
+  category_name?: string;
+  description: string;
+  potential_points: number;
+  event_date: string;
+  venue: string;
+  registration_link?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface StudentDashboardStats {
+  student: User;
+  total_points: number;
+  target_points: number;
+  progress_percentage: number;
+  milestone_tier: 'Not Started' | 'Bronze' | 'Silver' | 'Gold' | 'Diamond';
+  cgpa: number;
+  semester: number;
+  approved_submissions_count: number;
+  pending_submissions_count: number;
+  rejected_submissions_count: number;
+  categories_breakdown: Array<{
+    id: string;
+    name: string;
+    max_cap_points: number;
+    earned_points: number;
+    capped_points: number;
+    icon: string;
+    color: string;
+    submissions_count: number;
+  }>;
+  recent_submissions: Submission[];
+  upcoming_events: DepartmentEvent[];
+}
+
+export interface MentorDashboardStats {
+  mentor: User;
+  mentees_count: number;
+  pending_reviews_count: number;
+  approved_reviews_count: number;
+  total_submissions_reviewed: number;
+  avg_mentee_points: number;
+  mentees: Array<User & { approved_points: number; pending_points: number; completed_percentage: number }>;
+  pending_submissions: Submission[];
+  recent_requests: SchemaRequest[];
+}
+
+export interface HODDashboardStats {
+  hod: User;
+  total_students: number;
+  total_mentors: number;
+  avg_department_points: number;
+  target_completion_rate: number;
+  pending_schema_requests_count: number;
+  total_pending_verifications: number;
+  category_distribution: Array<{
+    category_id: string;
+    category_name: string;
+    total_points_awarded: number;
+    submissions_count: number;
+    color: string;
+  }>;
+  milestone_distribution: {
+    diamond: number; // 200 pts
+    gold: number;    // 150-199 pts
+    silver: number;  // 100-149 pts
+    bronze: number;  // 50-99 pts
+    started: number; // 1-49 pts
+    none: number;    // 0 pts
+  };
+  mentors_performance: Array<{
+    mentor_id: string;
+    mentor_name: string;
+    mentee_count: number;
+    avg_mentee_points: number;
+    pending_reviews: number;
+    approved_reviews: number;
+  }>;
+  pending_schema_requests: SchemaRequest[];
+}

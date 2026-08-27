@@ -1,0 +1,15 @@
+student_id,name,roll_no,email,department,semester,section,cgpa,mentor_id,mentor_name,mentor_email,approved_activity_points,pending_submissions,degree_clearance_status
+usr_student_01,Aarav Sharma,1MS21CS001,aarav.cs21@msrit.edu,Computer Science and Engineering,6,A,8.85,usr_mentor_01,Dr. Rajesh Kumar,rajesh.kumar@msrit.edu,210,0,CLEARED
+usr_student_02,Diya Patel,1MS21CS002,diya.cs21@msrit.edu,Computer Science and Engineering,6,A,9.12,usr_mentor_01,Dr. Rajesh Kumar,rajesh.kumar@msrit.edu,175,1,NEAR_COMPLETION
+usr_student_03,Rohan Verma,1MS21CS003,rohan.cs21@msrit.edu,Computer Science and Engineering,6,A,7.95,usr_mentor_01,Dr. Rajesh Kumar,rajesh.kumar@msrit.edu,135,2,ON_TRACK
+usr_student_04,Ananya Iyer,1MS21CS004,ananya.cs21@msrit.edu,Computer Science and Engineering,6,A,8.70,usr_mentor_01,Dr. Rajesh Kumar,rajesh.kumar@msrit.edu,85,1,ACTION_REQUIRED
+usr_student_05,Vikramaditya Rao,1MS21CS005,vikram.cs21@msrit.edu,Computer Science and Engineering,6,A,8.40,usr_mentor_02,Prof. Priya Sharma,priya.sharma@msrit.edu,225,0,CLEARED
+usr_student_06,Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,Computer Science and Engineering,6,A,9.30,usr_mentor_02,Prof. Priya Sharma,priya.sharma@msrit.edu,190,0,NEAR_COMPLETION
+usr_student_07,Karthik Nambiar,1MS21CS007,karthik.cs21@msrit.edu,Computer Science and Engineering,6,B,8.15,usr_mentor_02,Prof. Priya Sharma,priya.sharma@msrit.edu,120,1,ON_TRACK
+usr_student_08,Pooja Hegde,1MS21CS008,pooja.cs21@msrit.edu,Computer Science and Engineering,6,B,7.80,usr_mentor_02,Prof. Priya Sharma,priya.sharma@msrit.edu,90,3,ACTION_REQUIRED
+usr_student_09,Aditya Sengupta,1MS21CS009,aditya.cs21@msrit.edu,Computer Science and Engineering,6,B,8.65,usr_mentor_03,Dr. Anita Desai,anita.desai@msrit.edu,205,0,CLEARED
+usr_student_10,Tanvi Reddy,1MS21CS010,tanvi.cs21@msrit.edu,Computer Science and Engineering,6,B,8.90,usr_mentor_03,Dr. Anita Desai,anita.desai@msrit.edu,160,1,NEAR_COMPLETION
+usr_student_11,Manish Gupta,1MS21CS011,manish.cs21@msrit.edu,Computer Science and Engineering,6,B,7.60,usr_mentor_03,Dr. Anita Desai,anita.desai@msrit.edu,110,0,ON_TRACK
+usr_student_12,Neha Bhat,1MS21CS012,neha.cs21@msrit.edu,Computer Science and Engineering,6,C,9.05,usr_mentor_04,Prof. Suresh Nair,suresh.nair@msrit.edu,215,0,CLEARED
+usr_student_13,Siddharth Menon,1MS21CS013,siddharth.cs21@msrit.edu,Computer Science and Engineering,6,C,8.25,usr_mentor_04,Prof. Suresh Nair,suresh.nair@msrit.edu,145,2,ON_TRACK
+usr_student_14,Kavya Murthy,1MS21CS014,kavya.cs21@msrit.edu,Computer Science and Engineering,6,C,7.70,usr_mentor_04,Prof. Suresh Nair,suresh.nair@msrit.edu,75,1,ACTION_REQUIRED

@@ -1,0 +1,6 @@
+{
+  "name": "Student Activity Points & Mentorship Portal",
+  "description": "Enterprise-grade academic and activity points tracking system with HOD centralized schema engine, mentor verification, and student evidence portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
