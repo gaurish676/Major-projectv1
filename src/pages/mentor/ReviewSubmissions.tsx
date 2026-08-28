@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Submission } from '../../types';
+import { Submission, AIAuditResult } from '../../types';
 import { apiRequest } from '../../lib/api';
 import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Award,
   Sparkles,
+  Bot,
 } from 'lucide-react';
 
 export const ReviewSubmissions: React.FC = () => {
@@ -209,10 +210,18 @@ export const ReviewSubmissions: React.FC = () => {
                     </td>
 
                     <td className="py-2.5 px-3">
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         <StatusBadge status={sub.status} />
-                        <div className="text-[9px] text-slate-400 font-mono">
-                          v{sub.schema_version_snapshot}
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-slate-400 font-mono">
+                            v{sub.schema_version_snapshot}
+                          </span>
+                          {sub.ai_audit_results && (
+                            <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              <Bot className="w-2.5 h-2.5 text-indigo-600" />
+                              AI Audited
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>

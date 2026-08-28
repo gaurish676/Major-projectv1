@@ -1,13 +1,14 @@
-import initSqlJs, { Database } from 'sql.js';
+import { DatabaseSync } from 'node:sqlite';
 import fs from 'fs';
 import path from 'path';
 
-let dbInstance: Database | null = null;
+let dbInstance: DatabaseSync | null = null;
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'activity_portal.sqlite');
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
 
-// Ensure data & uploads directory exist
+// Ensure data & uploads directories exist
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
@@ -15,45 +16,37 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-export async function getDb(): Promise<Database> {
+export function getDb(): DatabaseSync {
   if (dbInstance) {
     return dbInstance;
   }
 
-  const SQL = await initSqlJs();
+  // Open persistent SQLite database on disk
+  const db = new DatabaseSync(DB_PATH);
 
-  if (fs.existsSync(DB_PATH)) {
-    try {
-      const fileBuffer = fs.readFileSync(DB_PATH);
-      dbInstance = new SQL.Database(fileBuffer);
-    } catch (err) {
-      console.warn('Failed to load existing database file, creating fresh DB:', err);
-      dbInstance = new SQL.Database();
-    }
-  } else {
-    dbInstance = new SQL.Database();
-  }
+  // Configure high-concurrency WAL (Write-Ahead Logging) mode and connection settings
+  db.exec('PRAGMA journal_mode = WAL;');
+  db.exec('PRAGMA busy_timeout = 5000;');
+  db.exec('PRAGMA synchronous = NORMAL;');
+  db.exec('PRAGMA foreign_keys = ON;');
+  db.exec('PRAGMA cache_size = -20000;'); // 20MB cache
 
-  // Initialize Schema Tables
-  initSchema(dbInstance);
-  saveDb();
+  // Initialize schema tables
+  initSchema(db);
 
-  return dbInstance;
+  dbInstance = db;
+  return db;
 }
 
-export function saveDb() {
-  if (!dbInstance) return;
-  try {
-    const data = dbInstance.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(DB_PATH, buffer);
-  } catch (err) {
-    console.error('Failed to save database to disk:', err);
-  }
+/**
+ * Backward compatibility stub - WAL mode writes directly to disk on every transaction
+ */
+export function saveDb(): void {
+  // No-op in persistent WAL mode - all writes flush directly to WAL on disk
 }
 
-function initSchema(db: Database) {
-  db.run(`
+function initSchema(db: DatabaseSync): void {
+  db.exec(`
     CREATE TABLE IF NOT EXISTS departments (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -82,13 +75,13 @@ function initSchema(db: Database) {
   `);
 
   // Safely ensure new columns exist if table was previously created
-  try { db.run("ALTER TABLE users ADD COLUMN phone TEXT;"); } catch {}
-  try { db.run("ALTER TABLE users ADD COLUMN bio TEXT;"); } catch {}
-  try { db.run("ALTER TABLE users ADD COLUMN designation TEXT;"); } catch {}
-  try { db.run("ALTER TABLE users ADD COLUMN office_location TEXT;"); } catch {}
+  try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT;'); } catch {}
+  try { db.exec('ALTER TABLE users ADD COLUMN bio TEXT;'); } catch {}
+  try { db.exec('ALTER TABLE users ADD COLUMN designation TEXT;'); } catch {}
+  try { db.exec('ALTER TABLE users ADD COLUMN office_location TEXT;'); } catch {}
+  try { db.exec('ALTER TABLE submissions ADD COLUMN ai_audit_results TEXT;'); } catch {}
 
-  db.run(`
-
+  db.exec(`
     CREATE TABLE IF NOT EXISTS schema_categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -141,6 +134,7 @@ function initSchema(db: Database) {
       status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'rejected')),
       points_awarded INTEGER NOT NULL DEFAULT 0,
       mentor_feedback TEXT,
+      ai_audit_results TEXT,
       completion_date TEXT NOT NULL,
       submitted_at TEXT NOT NULL,
       reviewed_at TEXT,
@@ -172,31 +166,84 @@ function initSchema(db: Database) {
       details TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS student_marks (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      semester INTEGER NOT NULL,
+      subject_code TEXT,
+      subject_name TEXT NOT NULL,
+      credits INTEGER NOT NULL DEFAULT 4,
+      theory_marks REAL NOT NULL DEFAULT 0,
+      theory_max REAL NOT NULL DEFAULT 100,
+      task_marks REAL NOT NULL DEFAULT 0,
+      task_max REAL NOT NULL DEFAULT 25,
+      has_lab INTEGER NOT NULL DEFAULT 0,
+      lab_marks REAL NOT NULL DEFAULT 0,
+      lab_max REAL NOT NULL DEFAULT 50,
+      grade TEXT,
+      grade_points REAL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT,
+      FOREIGN KEY (student_id) REFERENCES users(id)
+    );
+
+    -- Create performance indexes for high-frequency queries
+    CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+    CREATE INDEX IF NOT EXISTS idx_users_mentor ON users(mentor_id);
+    CREATE INDEX IF NOT EXISTS idx_users_dept ON users(department_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_student ON submissions(student_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+    CREATE INDEX IF NOT EXISTS idx_submissions_category ON submissions(category_id);
+    CREATE INDEX IF NOT EXISTS idx_student_marks_student ON student_marks(student_id);
+    CREATE INDEX IF NOT EXISTS idx_logs_created ON activity_logs(created_at);
   `);
+}
+
+function sanitizeParams(params: any[] = []): any[] {
+  return (params || []).map((p) => (p === undefined ? null : p));
 }
 
 // Typed Query Helpers
 export async function queryAll<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-  const db = await getDb();
+  const db = getDb();
   const stmt = db.prepare(sql);
-  if (params && params.length > 0) {
-    stmt.bind(params);
-  }
-  const results: T[] = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject() as unknown as T);
-  }
-  stmt.free();
-  return results;
+  const rows = stmt.all(...sanitizeParams(params));
+  return rows as unknown as T[];
 }
 
 export async function queryOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
-  const rows = await queryAll<T>(sql, params);
-  return rows.length > 0 ? rows[0] : null;
+  const db = getDb();
+  const stmt = db.prepare(sql);
+  const row = stmt.get(...sanitizeParams(params));
+  return (row as unknown as T) || null;
 }
 
 export async function executeRun(sql: string, params: any[] = []): Promise<void> {
-  const db = await getDb();
-  db.run(sql, params);
-  saveDb();
+  const db = getDb();
+  const stmt = db.prepare(sql);
+  stmt.run(...sanitizeParams(params));
+}
+
+export async function executeExec(sql: string): Promise<void> {
+  const db = getDb();
+  db.exec(sql);
+}
+
+/**
+ * Executes a callback inside an atomic transaction (BEGIN IMMEDIATE / COMMIT / ROLLBACK)
+ */
+export async function runTransaction<T>(callback: (db: DatabaseSync) => Promise<T> | T): Promise<T> {
+  const db = getDb();
+  db.exec('BEGIN IMMEDIATE;');
+  try {
+    const result = await callback(db);
+    db.exec('COMMIT;');
+    return result;
+  } catch (error) {
+    try {
+      db.exec('ROLLBACK;');
+    } catch {}
+    throw error;
+  }
 }

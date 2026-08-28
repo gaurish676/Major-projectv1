@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   role: 'hod' | 'mentor' | 'student';
   department_id: string;
+  roll_no?: string;
 }
 
 export interface AuthenticatedRequest extends Request {

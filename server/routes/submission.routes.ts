@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { queryAll, queryOne, executeRun } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
+import { auditCertificateFile } from '../services/geminiAudit';
 
 const router = Router();
 
@@ -69,6 +70,7 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
       file_name,
       file_size,
       completion_date,
+      ai_audit_results,
     } = req.body;
 
     if (!activity_title || !file_url || !completion_date) {
@@ -91,12 +93,27 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
     const id = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
 
+    let finalAiAudit = ai_audit_results ? (typeof ai_audit_results === 'string' ? ai_audit_results : JSON.stringify(ai_audit_results)) : null;
+    
+    // If not provided in body, try generating audit immediately
+    if (!finalAiAudit) {
+      try {
+        const audit = await auditCertificateFile(file_url, {
+          name: req.user?.name,
+          roll_no: req.user?.roll_no,
+        });
+        finalAiAudit = JSON.stringify(audit);
+      } catch (e) {
+        console.warn('Initial AI audit skipped/failed:', e);
+      }
+    }
+
     await executeRun(`
       INSERT INTO submissions (
         id, student_id, schema_id, schema_version_snapshot, activity_title, category_id,
         description, file_url, file_name, file_size, status, points_awarded,
-        completion_date, submitted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?, ?)
+        mentor_feedback, ai_audit_results, completion_date, submitted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, NULL, ?, ?, ?)
     `, [
       id,
       req.user!.id,
@@ -108,6 +125,7 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
       file_url,
       file_name || path.basename(file_url),
       file_size || 1024,
+      finalAiAudit,
       completion_date,
       now,
     ]);
@@ -277,6 +295,75 @@ router.post('/:id/review', authenticate, requireRole(['mentor', 'hod']), async (
     `, [id]);
 
     res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. Real Gemini Vision Multimodal Certificate Pre-Audit (Student/Mentor/HOD)
+router.post('/ai-audit-file', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { file_url, student_name, roll_no } = req.body;
+    if (!file_url) {
+      res.status(400).json({ error: 'file_url is required' });
+      return;
+    }
+
+    const auditResult = await auditCertificateFile(file_url, {
+      name: student_name || req.user?.name,
+      roll_no: roll_no || req.user?.roll_no,
+    });
+
+    res.json(auditResult);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. Audit Existing Submission Certificate with Gemini Vision
+router.post('/:id/ai-audit', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const submission = await queryOne(`
+      SELECT s.*, u.name as student_name, u.roll_no as student_roll_no, u.mentor_id
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      WHERE s.id = ?
+    `, [id]);
+
+    if (!submission) {
+      res.status(404).json({ error: 'Submission not found' });
+      return;
+    }
+
+    // Role check: Student can only audit own submission, mentor can audit assigned mentee, HOD can audit all
+    if (req.user!.role === 'student' && submission.student_id !== req.user!.id) {
+      res.status(403).json({ error: 'Unauthorized to audit this submission' });
+      return;
+    }
+    if (req.user!.role === 'mentor' && submission.mentor_id !== req.user!.id) {
+      res.status(403).json({ error: 'Unauthorized: Student is not assigned to you' });
+      return;
+    }
+
+    const auditResult = await auditCertificateFile(submission.file_url, {
+      name: submission.student_name,
+      roll_no: submission.student_roll_no,
+    });
+
+    // Save audit result to database
+    await executeRun(`
+      UPDATE submissions
+      SET ai_audit_results = ?
+      WHERE id = ?
+    `, [JSON.stringify(auditResult), id]);
+
+    res.json({
+      success: true,
+      submission_id: id,
+      audit: auditResult,
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

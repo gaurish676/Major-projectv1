@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -14,9 +14,16 @@ import {
   Download,
   AlertCircle,
   Sparkles,
+  Bot,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCw,
+  Award,
+  Building,
 } from 'lucide-react';
-import { Submission } from '../../types';
+import { Submission, AIAuditResult } from '../../types';
 import { StatusBadge } from './Badge';
+import { apiRequest } from '../../lib/api';
 
 interface PDFViewerModalProps {
   isOpen: boolean;
@@ -38,6 +45,31 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  // AI Audit State
+  const [auditResult, setAuditResult] = useState<AIAuditResult | null>(null);
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (submission) {
+      if (submission.ai_audit_results) {
+        try {
+          const parsed = typeof submission.ai_audit_results === 'string'
+            ? JSON.parse(submission.ai_audit_results)
+            : submission.ai_audit_results;
+          setAuditResult(parsed);
+        } catch {
+          setAuditResult(null);
+        }
+      } else {
+        setAuditResult(null);
+      }
+      setFeedbackText('');
+      setActionError(null);
+      setAuditError(null);
+    }
+  }, [submission]);
+
   if (!isOpen || !submission) return null;
 
   const isSvgOrImage =
@@ -46,6 +78,32 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
     submission.file_url.endsWith('.jpg') ||
     submission.file_url.endsWith('.jpeg') ||
     submission.file_url.endsWith('.webp');
+
+  const handleRunAiAudit = async () => {
+    setIsAuditing(true);
+    setAuditError(null);
+    try {
+      const res = await apiRequest<{ success: boolean; audit: AIAuditResult }>(
+        `/api/submissions/${submission.id}/ai-audit`,
+        { method: 'POST' }
+      );
+      if (res.audit) {
+        setAuditResult(res.audit);
+      }
+    } catch (err: any) {
+      setAuditError(err.message || 'Failed to complete AI Vision Audit');
+    } finally {
+      setIsAuditing(false);
+    }
+  };
+
+  const handleApplyAiPoints = () => {
+    if (auditResult?.recommended_points) {
+      setFeedbackText(
+        `Verified with Gemini AI Certificate Vision Audit (${auditResult.authenticity_status || 'VERIFIED'}). Credential: ${auditResult.certificate_title || submission.activity_title} issued by ${auditResult.issuing_organization || 'Issuer'}.`
+      );
+    }
+  };
 
   const handleApprove = async () => {
     if (!onReview) return;
@@ -153,8 +211,8 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
               </div>
             </div>
 
-            {/* Right: Submission Dossier & Action Panel (5 Cols) */}
-            <div className="lg:col-span-5 p-3.5 sm:p-4 flex flex-col justify-between space-y-3 bg-white">
+            {/* Right: Submission Dossier & AI Audit Panel (5 Cols) */}
+            <div className="lg:col-span-5 p-3.5 sm:p-4 flex flex-col justify-between space-y-3 bg-white overflow-y-auto">
               <div className="space-y-3">
                 {/* Meta details */}
                 <div className="space-y-2">
@@ -211,14 +269,149 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
                         {submission.description}
                       </div>
                     )}
-
-                    {submission.mentor_feedback && (
-                      <div className="text-[11px] p-2 rounded bg-amber-50/70 border border-amber-200 text-amber-900">
-                        <span className="font-semibold block mb-0.5">Evaluator Feedback:</span>
-                        {submission.mentor_feedback}
-                      </div>
-                    )}
                   </div>
+                </div>
+
+                {/* Gemini Multimodal Certificate Vision Audit Card */}
+                <div className="p-2.5 rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50/60 via-purple-50/30 to-white space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center shadow-2xs">
+                        <Bot className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          <span>Gemini AI Vision Audit</span>
+                          {auditResult?.model_used && (
+                            <span className="text-[9px] font-mono bg-indigo-100 text-indigo-700 px-1 rounded">
+                              {auditResult.model_used}
+                            </span>
+                          )}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleRunAiAudit}
+                      disabled={isAuditing}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition disabled:opacity-50 cursor-pointer"
+                    >
+                      <RotateCw className={`w-3 h-3 ${isAuditing ? 'animate-spin' : ''}`} />
+                      <span>{isAuditing ? 'Auditing...' : auditResult ? 'Re-Audit' : 'Run AI Audit'}</span>
+                    </button>
+                  </div>
+
+                  {auditError && (
+                    <div className="p-1.5 rounded bg-rose-50 border border-rose-200 text-rose-700 text-[10px] flex items-start gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                      <span>{auditError}</span>
+                    </div>
+                  )}
+
+                  {auditResult ? (
+                    <div className="space-y-2 text-[11px] pt-1">
+                      {/* Authenticity & Confidence status */}
+                      <div className="flex items-center justify-between p-1.5 rounded bg-white border border-indigo-100 shadow-2xs">
+                        <div className="flex items-center gap-1.5">
+                          {auditResult.authenticity_status === 'VERIFIED' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              AUTHENTIC CERTIFICATE
+                            </span>
+                          ) : auditResult.authenticity_status === 'SUSPICIOUS' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                              <AlertTriangle className="w-3 h-3 text-rose-600" />
+                              POTENTIAL SUSPICION
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              <AlertCircle className="w-3 h-3 text-amber-600" />
+                              INCONCLUSIVE
+                            </span>
+                          )}
+                        </div>
+                        {auditResult.confidence_score !== undefined && (
+                          <div className="text-[10px] text-slate-500 font-medium">
+                            Visual Confidence: <strong className="text-slate-800">{auditResult.confidence_score}%</strong>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vision Inspection Breakdown */}
+                      <div className="p-2 rounded bg-white/90 border border-slate-200 space-y-1 text-slate-700">
+                        {auditResult.student_name && (
+                          <div className="flex items-start justify-between">
+                            <span className="text-slate-500 text-[10px]">Name on Certificate:</span>
+                            <span className="font-semibold text-slate-900 text-right">{auditResult.student_name}</span>
+                          </div>
+                        )}
+                        {auditResult.issuing_organization && (
+                          <div className="flex items-start justify-between">
+                            <span className="text-slate-500 text-[10px]">Issuing Body:</span>
+                            <span className="font-semibold text-slate-800 text-right">{auditResult.issuing_organization}</span>
+                          </div>
+                        )}
+                        {auditResult.certificate_title && (
+                          <div className="flex items-start justify-between">
+                            <span className="text-slate-500 text-[10px]">Extracted Title:</span>
+                            <span className="font-medium text-slate-800 text-right max-w-[200px] truncate">{auditResult.certificate_title}</span>
+                          </div>
+                        )}
+                        {auditResult.certificate_id && (
+                          <div className="flex items-start justify-between">
+                            <span className="text-slate-500 text-[10px]">Credential ID:</span>
+                            <span className="font-mono text-[10px] text-indigo-700 font-semibold">{auditResult.certificate_id}</span>
+                          </div>
+                        )}
+                        {auditResult.recommended_points !== undefined && (
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                            <span className="text-slate-500 text-[10px]">AI Recommended Points:</span>
+                            <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                              +{auditResult.recommended_points} pts
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Visual Audit Summary */}
+                      {auditResult.audit_summary && (
+                        <p className="text-[10px] text-slate-600 italic bg-slate-50 p-1.5 rounded border border-slate-100">
+                          "{auditResult.audit_summary}"
+                        </p>
+                      )}
+
+                      {/* Anomalies if any */}
+                      {auditResult.anomalies_detected && auditResult.anomalies_detected.length > 0 && (
+                        <div className="p-1.5 rounded bg-rose-50 border border-rose-200 text-rose-800 text-[10px] space-y-0.5">
+                          <span className="font-bold block flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-rose-600" /> Detected Flags:
+                          </span>
+                          <ul className="list-disc list-inside space-y-0.5 pl-1">
+                            {auditResult.anomalies_detected.map((a, i) => (
+                              <li key={i}>{a}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Quick Apply Button for Mentor */}
+                      {canReview && submission.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={handleApplyAiPoints}
+                          className="w-full py-1 px-2 rounded text-[10px] font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Sparkles className="w-3 h-3 text-indigo-600" />
+                          <span>Insert AI Audit Remarks into Feedback</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-500">
+                      Click <strong>Run AI Audit</strong> to visually inspect this document with Gemini Multimodal Vision for authenticity, recipient verification, and recommended points.
+                    </p>
+                  )}
                 </div>
 
                 {/* Error Banner */}
@@ -319,3 +512,4 @@ export const PDFViewerModal: React.FC<PDFViewerModalProps> = ({
     </AnimatePresence>
   );
 };
+

@@ -12,6 +12,7 @@ import {
   Eye,
   User as UserIcon,
   ChevronRight,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface MentorDashboardProps {
@@ -149,6 +150,28 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
           </div>
           <p className="text-[11px] text-slate-500">Certificates successfully approved</p>
         </div>
+      </div>
+
+      {/* Quick Action: Student Marks Review */}
+      <div
+        onClick={() => onNavigateTab('mentor-marks')}
+        className="bg-gradient-to-r from-emerald-50 to-teal-50/50 hover:from-emerald-100 hover:to-teal-100/60 border border-emerald-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition group shadow-2xs"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <FileSpreadsheet className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-emerald-950 group-hover:text-emerald-800 flex items-center gap-1.5">
+              <span>Review Student Marks (Semester-Wise)</span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-200/70 text-emerald-900 font-extrabold">New</span>
+            </div>
+            <p className="text-[11px] text-emerald-700">
+              Inspect theory exam, task/CIE, and lab marks submitted by your mentees across Sem 1 to Sem 8 with SGPA & CGPA tracking.
+            </p>
+          </div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition shrink-0" />
       </div>
 
       {/* Pending Evaluations Queue */}

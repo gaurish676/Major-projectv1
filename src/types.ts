@@ -74,6 +74,24 @@ export interface SchemaRequest {
   created_at: string;
 }
 
+export interface AIAuditResult {
+  student_name?: string;
+  certificate_title?: string;
+  issuing_organization?: string;
+  issue_date?: string;
+  certificate_id?: string | null;
+  category_id?: string;
+  category_name?: string;
+  recommended_points?: number;
+  confidence_score?: number;
+  authenticity_status?: 'VERIFIED' | 'SUSPICIOUS' | 'INCONCLUSIVE';
+  authenticity_notes?: string;
+  audit_summary?: string;
+  anomalies_detected?: string[];
+  audited_at?: string;
+  model_used?: string;
+}
+
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Submission {
@@ -101,6 +119,7 @@ export interface Submission {
   points_awarded: number;
   base_points?: number;
   mentor_feedback?: string | null;
+  ai_audit_results?: string | AIAuditResult | null;
   completion_date: string;
   submitted_at: string;
   reviewed_at?: string | null;
@@ -120,6 +139,43 @@ export interface DepartmentEvent {
   registration_link?: string;
   created_by: string;
   created_at: string;
+}
+
+export interface SubjectMark {
+  id: string;
+  student_id: string;
+  semester: number;
+  subject_code?: string;
+  subject_name: string;
+  credits: number;
+  theory_marks: number;
+  theory_max: number;
+  task_marks: number;
+  task_max: number;
+  has_lab: boolean | number;
+  lab_marks: number;
+  lab_max: number;
+  total_scored: number;
+  total_max: number;
+  percentage: number;
+  grade: string;
+  grade_points: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MarksSummary {
+  total_subjects: number;
+  total_credits: number;
+  total_scored: number;
+  total_max: number;
+  overall_percentage: number;
+  sgpa: number;
+}
+
+export interface MarksResponse {
+  marks: SubjectMark[];
+  summary: MarksSummary;
 }
 
 export interface StudentDashboardStats {
@@ -192,3 +248,52 @@ export interface HODDashboardStats {
   }>;
   pending_schema_requests: SchemaRequest[];
 }
+
+export interface StudentMark {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  student_roll_no?: string;
+  semester: number;
+  subject_code: string;
+  subject_name: string;
+  credits: number;
+  theory_marks: number;
+  theory_max: number;
+  task_marks: number;
+  task_max: number;
+  has_lab: boolean | number;
+  lab_marks: number;
+  lab_max: number;
+  total_scored: number;
+  total_max: number;
+  percentage: number;
+  grade: string;
+  grade_points: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SemesterMarksSummary {
+  semester: number;
+  total_subjects: number;
+  total_credits: number;
+  total_scored: number;
+  total_max: number;
+  percentage: number;
+  sgpa: number;
+  subjects: StudentMark[];
+}
+
+export interface MentorStudentMarksData {
+  mentees: Array<User & {
+    semesters_recorded: number[];
+    total_subjects_count: number;
+    has_marks_data: boolean;
+  }>;
+  selected_student: User | null;
+  semester_summaries: SemesterMarksSummary[];
+  overall_cgpa: number;
+  all_marks: StudentMark[];
+}
+

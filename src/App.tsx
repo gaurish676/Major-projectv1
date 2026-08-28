@@ -11,12 +11,14 @@ import { StudentDashboard } from './pages/student/StudentDashboard';
 import { SubmissionHistory } from './pages/student/SubmissionHistory';
 import { ExploreSchema } from './pages/student/ExploreSchema';
 import { StudentEvents } from './pages/student/StudentEvents';
+import { UpdateMarks } from './pages/student/UpdateMarks';
 
 // Mentor Pages
 import { MentorDashboard } from './pages/mentor/MentorDashboard';
 import { MenteeList } from './pages/mentor/MenteeList';
 import { ReviewSubmissions } from './pages/mentor/ReviewSubmissions';
 import { MentorRequests } from './pages/mentor/MentorRequests';
+import { MentorStudentMarks } from './pages/mentor/MentorStudentMarks';
 
 // HOD Pages
 import { HODDashboard } from './pages/hod/HODDashboard';
@@ -139,6 +141,7 @@ const MainLayout: React.FC = () => {
                   onNavigateTab={setActiveTab}
                 />
               )}
+              {activeTab === 'student-marks' && <UpdateMarks />}
               {activeTab === 'student-submissions' && (
                 <SubmissionHistory
                   onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
@@ -159,7 +162,8 @@ const MainLayout: React.FC = () => {
                 />
               )}
               {activeTab === 'mentor-mentees' && <MenteeList />}
-              {activeTab === 'mentor-evaluations' && <ReviewSubmissions />}
+              {(activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations') && <ReviewSubmissions />}
+              {activeTab === 'mentor-marks' && <MentorStudentMarks />}
               {activeTab === 'mentor-requests' && (
                 <MentorRequests
                   onOpenModal={() => setIsSchemaRequestModalOpen(true)}
@@ -167,7 +171,8 @@ const MainLayout: React.FC = () => {
                   onCloseModal={() => setIsSchemaRequestModalOpen(false)}
                 />
               )}
-              {activeTab === 'mentor-schema' && <ExploreSchema />}
+              {(activeTab === 'mentor-schema' || activeTab === 'student-schema') && <ExploreSchema />}
+              {activeTab === 'student-events' && <StudentEvents />}
             </>
           )}
 

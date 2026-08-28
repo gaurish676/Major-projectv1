@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
   const [notificationOpen, setNotificationOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-sm">
+    <header className="sticky top-0 z-40 bg-[#0B1329] text-white border-b border-slate-800/80 shadow-md">
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-14 flex items-center justify-between">
         {/* Left: Clearly Visible 3-Lines (Hamburger) Button + Brand */}
@@ -31,20 +31,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
           {/* Top-Left: Clearly visible 3-lines Menu Button */}
           <button
             onClick={onToggleSidebar}
-            className="flex items-center justify-center p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700/80 shadow-xs transition cursor-pointer group shrink-0 min-h-[40px] min-w-[40px]"
+            className="flex items-center justify-center p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white border border-slate-700/80 shadow-xs transition cursor-pointer group shrink-0 min-h-[40px] min-w-[40px]"
             title="Open Menu & Profile Sidebar"
             aria-label="Open Navigation & Profile Menu"
           >
             {/* 3 crisp, clearly visible horizontal lines */}
             <div className="flex flex-col justify-center items-center gap-1 w-5 h-4.5">
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-400 group-hover:w-5.5" />
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-400 group-hover:w-5.5" />
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-400 group-hover:w-5.5" />
+              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-sky-400 group-hover:w-5.5" />
+              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-sky-400 group-hover:w-5.5" />
+              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-sky-400 group-hover:w-5.5" />
             </div>
           </button>
 
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-600/30">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-blue-600/30">
               <GraduationCap className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
                 <span className="font-bold text-white tracking-tight text-sm sm:text-base truncate">
                   Creditz
                 </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
+                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-sky-300 border border-blue-500/30 shrink-0">
                   200-PT
                 </span>
               </div>

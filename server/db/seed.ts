@@ -1,4 +1,4 @@
-import { getDb, saveDb, queryOne, executeRun } from './database';
+import { getDb, saveDb, queryOne } from './database';
 import fs from 'fs';
 import path from 'path';
 
@@ -126,7 +126,7 @@ export async function seedDatabase() {
   const db = await getDb();
 
   // 1. Departments
-  db.run(`
+  await db.exec(`
     INSERT INTO departments (id, name, code) VALUES
     ('dept_cse', 'Department of Computer Science & Engineering', 'CSE'),
     ('dept_ise', 'Department of Information Science & Engineering', 'ISE'),
@@ -134,7 +134,7 @@ export async function seedDatabase() {
   `);
 
   // 2. Schema Categories (6 official domains with strict caps)
-  db.run(`
+  await db.exec(`
     INSERT INTO schema_categories (id, name, description, max_cap_points, icon, color) VALUES
     ('cat_cert', 'Technical Certifications', 'NPTEL, Coursera, AWS, Cisco, GCP, Microsoft verified courses', 60, 'Award', '#2563eb'),
     ('cat_comp', 'Hackathons & Competitions', 'National / State level coding contests, ideathons, algorithmic competitions', 60, 'Trophy', '#d97706'),
@@ -145,7 +145,7 @@ export async function seedDatabase() {
   `);
 
   // 3. Centralized HOD Schema Rules (Version 1 baseline)
-  db.run(`
+  await db.exec(`
     INSERT INTO activity_schema (id, category_id, activity_name, base_points, criteria, version, is_active, created_at) VALUES
     ('sch_cert_1', 'cat_cert', 'NPTEL / SWAYAM 12-Week Course (Elite/Gold)', 30, 'Verified e-certificate with proctored exam score >= 75%', 1, 1, '2024-01-15T09:00:00Z'),
     ('sch_cert_2', 'cat_cert', 'NPTEL / Coursera 8-Week Course (Standard Pass)', 20, 'Course completion certificate with graded assignments score >= 70%', 1, 1, '2024-01-15T09:00:00Z'),
@@ -178,7 +178,7 @@ export async function seedDatabase() {
   // Demo password for all: 'demo123' (hash placeholder)
   const defaultHash = '$2a$10$wEepR0.77XwG5cKzB0jL9uvr7fJ1pWl0gQxV4iVf6Fz6xGv.UaYcy';
 
-  db.run(`
+  await db.exec(`
     INSERT INTO users (id, name, email, password_hash, role, department_id, mentor_id, cgpa, semester, roll_no, avatar) VALUES
     ('usr_hod_1', 'Dr. Rajesh Sharma', 'hod@university.edu', '${defaultHash}', 'hod', 'dept_cse', NULL, NULL, NULL, 'EMP-CSE-001', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'),
     
@@ -199,15 +199,7 @@ export async function seedDatabase() {
   `);
 
   // 5. Submissions (Rahul has 125 approved points + 1 pending!)
-  // Rahul's Approved:
-  // 1. NPTEL Cloud (30 pts)
-  // 2. SIH Finalist (20 pts)
-  // 3. Microsoft Internship (30 pts)
-  // 4. NSS Camp (25 pts)
-  // 5. Inter-College Fest Winner (20 pts)
-  // Total Approved = 30 + 20 + 30 + 25 + 20 = 125 pts!
-  // Pending: AWS Solutions Architect (sch_cert_3, 25 pts)
-  db.run(`
+  await db.exec(`
     INSERT INTO submissions (id, student_id, schema_id, schema_version_snapshot, activity_title, category_id, description, file_url, file_name, file_size, status, points_awarded, mentor_feedback, completion_date, submitted_at, reviewed_at, reviewed_by) VALUES
     ('sub_rahul_1', 'usr_std_1', 'sch_cert_1', 1, 'NPTEL Cloud Computing 12-Week Elite Certification', 'cat_cert', 'Completed 12-week NPTEL course with proctored exam score of 88% (Elite + Silver).', '/uploads/nptel_cloud_computing_elite.svg', 'nptel_cloud_computing_elite.svg', 1048576, 'approved', 30, 'Verified credentials with NPTEL registry. Excellent performance.', '2024-10-18', '2024-10-20T10:30:00Z', '2024-10-22T14:15:00Z', 'usr_mentor_1'),
     ('sub_rahul_2', 'usr_std_1', 'sch_comp_2', 1, 'Smart India Hackathon (SIH 2024) National Finalist', 'cat_comp', 'Built an AI-driven triage system for rural primary healthcare centers.', '/uploads/smart_india_hackathon_finalist.svg', 'smart_india_hackathon_finalist.svg', 2097152, 'approved', 20, 'Verified team submission and prototype demonstration. Commendable effort.', '2024-12-14', '2024-12-16T11:00:00Z', '2024-12-17T09:40:00Z', 'usr_mentor_1'),
@@ -234,14 +226,14 @@ export async function seedDatabase() {
   `);
 
   // 6. Schema Change Requests (Pipeline between Mentor & HOD)
-  db.run(`
+  await db.exec(`
     INSERT INTO schema_requests (id, mentor_id, activity_name, category_id, requested_points, approved_points, reason, status, hod_remarks, reviewed_at, created_at) VALUES
     ('req_1', 'usr_mentor_1', 'Certified Kubernetes Administrator (CKA) by Linux Foundation', 'cat_cert', 30, NULL, 'CKA is an intensive proctored hands-on exam that students are pursuing for cloud DevOps roles. Currently we only have generic cloud certifications at 25 points.', 'pending', NULL, NULL, '2025-01-20T14:30:00Z'),
     ('req_2', 'usr_mentor_2', 'Kaggle Grandmaster / Master Competition Tier', 'cat_comp', 35, 30, 'Recognizing high-tier competitive data science rankings alongside standard hackathons.', 'approved', 'Approved with adjusted weightage of 30 points aligned with Category Cap.', '2025-01-10T11:00:00Z', '2025-01-08T09:15:00Z');
   `);
 
   // 7. Upcoming Department Events & Opportunities
-  db.run(`
+  await db.exec(`
     INSERT INTO events (id, title, category_id, description, potential_points, event_date, venue, registration_link, created_by, created_at) VALUES
     ('evt_1', 'Annual CSE HackSprint 2025: GenAI for Good', 'cat_comp', '36-hour inter-college hackathon focusing on Gemini and multi-modal edge AI solutions.', 30, '2025-03-15', 'CSE Innovation Center, Lab 4', 'https://cse.university.edu/hacksprint2025', 'usr_hod_1', '2025-01-10T10:00:00Z'),
     ('evt_2', '5-Day Hands-on Kubernetes & Microservices Bootcamp', 'cat_work', 'Intensive lab sessions on container orchestration, Istio service mesh, and observability.', 15, '2025-02-20', 'Seminar Hall 2 & Cloud Computing Lab', 'https://cse.university.edu/k8s-bootcamp', 'usr_mentor_1', '2025-01-12T11:30:00Z'),
@@ -250,7 +242,7 @@ export async function seedDatabase() {
   `);
 
   // 8. Activity Audit Logs
-  db.run(`
+  await db.exec(`
     INSERT INTO activity_logs (id, user_id, action, details, created_at) VALUES
     ('log_1', 'usr_hod_1', 'SYSTEM_INIT', 'CSE Department 200 Activity Points Schema Version 1.0 initialized.', '2024-01-15T09:00:00Z'),
     ('log_2', 'usr_mentor_1', 'SUBMISSION_REVIEWED', 'Approved submission sub_rahul_1 (+30 pts awarded to Rahul Verma).', '2024-10-22T14:15:00Z'),

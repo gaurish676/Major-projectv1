@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('profile')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'profile'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-blue-700 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -113,60 +113,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Submission */}
-      <button
-        onClick={() => onSelectTab('student-submissions')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-submissions'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <FileCheck2 className="w-4 h-4" />
-          <span>Submission</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 3. Marking Schema */}
-      <button
-        onClick={() => onSelectTab('student-schema')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-schema'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <BookOpen className="w-4 h-4" />
-          <span>Marking Schema</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 4. Events & Activities */}
-      <button
-        onClick={() => onSelectTab('student-events')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-events'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Calendar className="w-4 h-4" />
-          <span>Events & Activities</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 5. Dashboard Overview */}
+      {/* 2. Dashboard Overview */}
       <button
         onClick={() => onSelectTab('student-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-dashboard'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-blue-700 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -177,15 +129,84 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
+      {/* 3. Update Marks */}
+      <button
+        onClick={() => onSelectTab('student-marks')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-marks'
+            ? 'bg-blue-700 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <span>Update Marks</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+          SGPA
+        </span>
+      </button>
+
+      {/* 4. Upcoming Events */}
+      <button
+        onClick={() => onSelectTab('student-events')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-events'
+            ? 'bg-blue-700 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Calendar className="w-4 h-4 text-sky-600" />
+          <span>Upcoming Events</span>
+        </div>
+        <span className="flex h-2 w-2 relative">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+        </span>
+      </button>
+
+      {/* 5. Submissions */}
+      <button
+        onClick={() => onSelectTab('student-submissions')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-submissions'
+            ? 'bg-blue-700 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <FileCheck2 className="w-4 h-4" />
+          <span>Submission</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 6. Marking Schema */}
+      <button
+        onClick={() => onSelectTab('student-schema')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-schema'
+            ? 'bg-blue-700 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <BookOpen className="w-4 h-4" />
+          <span>Marking Schema</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
       {/* Quick Action Button */}
       {onOpenSubmitModal && (
         <div className="pt-3 px-1">
           <button
             onClick={onOpenSubmitModal}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Submit Activity</span>
+            <span>Add Certificate</span>
           </button>
         </div>
       )}
@@ -218,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <button
         onClick={() => onSelectTab('mentor-reviews')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'mentor-reviews'
+          activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations'
             ? 'bg-purple-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
@@ -230,7 +251,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 3. Marking Schema */}
+      {/* 3. Student Marks (Sem-wise) */}
+      <button
+        onClick={() => onSelectTab('mentor-marks')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'mentor-marks'
+            ? 'bg-purple-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <span>Student Marks</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Sem-wise
+        </span>
+      </button>
+
+      {/* 4. Marking Schema */}
       <button
         onClick={() => onSelectTab('student-schema')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -246,7 +285,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 4. Events & Activities */}
+      {/* 5. Events & Activities */}
       <button
         onClick={() => onSelectTab('student-events')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
