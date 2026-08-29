@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
 import { DegreeClearanceMeter } from '../../components/common/DegreeClearanceMeter';
 import { DeliveryStatusTracker } from '../../components/common/DeliveryStatusTracker';
+import { AiAdvisorModal } from '../../components/student/AiAdvisorModal';
 import { getCategoryPlainName, CATEGORIES } from '../../lib/categories';
 import {
   Eye,
@@ -45,6 +46,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState(false);
 
   const loadDashboard = async () => {
     try {
@@ -125,28 +127,53 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
 
-        {/* Connect College Clubs / Registered Clubs Action */}
-        <button
-          onClick={() => onNavigateTab('student-clubs')}
-          className="px-4 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-between sm:justify-center gap-3 transition transform active:scale-95 cursor-pointer shrink-0 border border-blue-400/30 group"
-          title="Connect college club pages and view registered chapters"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sky-200">
-              <Users2 className="w-4 h-4 text-white" />
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-white">College Clubs</span>
-                <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-500 text-white shadow-2xs">
-                  Connected
-                </span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* AI Advisor Button */}
+          <button
+            onClick={() => setIsAiAdvisorOpen(true)}
+            className="px-4 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-between sm:justify-center gap-3 transition transform active:scale-95 cursor-pointer shrink-0 border border-indigo-400/40 group"
+            title="Open GraphRAG AI Academic Advisor"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sky-200">
+                <Sparkles className="w-4 h-4 text-white animate-pulse" />
               </div>
-              <div className="text-[10px] text-sky-200 font-normal">View Registered Chapters</div>
+              <div className="text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-white">AI Advisor</span>
+                  <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-sky-400 text-slate-950 shadow-2xs">
+                    GraphRAG
+                  </span>
+                </div>
+                <div className="text-[10px] text-sky-200 font-normal">Deterministic Guidance</div>
+              </div>
             </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-sky-200 group-hover:translate-x-0.5 transition" />
-        </button>
+            <ChevronRight className="w-4 h-4 text-sky-200 group-hover:translate-x-0.5 transition" />
+          </button>
+
+          {/* Connect College Clubs / Registered Clubs Action */}
+          <button
+            onClick={() => onNavigateTab('student-clubs')}
+            className="px-4 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-between sm:justify-center gap-3 transition transform active:scale-95 cursor-pointer shrink-0 border border-blue-400/30 group"
+            title="Connect college club pages and view registered chapters"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sky-200">
+                <Users2 className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-white">College Clubs</span>
+                  <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-500 text-white shadow-2xs">
+                    Connected
+                  </span>
+                </div>
+                <div className="text-[10px] text-sky-200 font-normal">View Registered Chapters</div>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-sky-200 group-hover:translate-x-0.5 transition" />
+          </button>
+        </div>
       </div>
 
       {/* #2 FEATURE: Plain-English "Degree Clearance Meter" */}
@@ -461,6 +488,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           setSelectedSubmission(null);
         }}
         submission={selectedSubmission}
+      />
+
+      {/* GraphRAG AI Advisor Modal */}
+      <AiAdvisorModal
+        isOpen={isAiAdvisorOpen}
+        onClose={() => setIsAiAdvisorOpen(false)}
+        onOpenSubmitModal={onOpenSubmitModal}
       />
     </div>
   );

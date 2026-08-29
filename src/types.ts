@@ -325,3 +325,114 @@ export interface MentorStudentMarksData {
   all_marks: StudentMark[];
 }
 
+// Knowledge Graph Entities & Edges
+export type GraphEntityType = 
+  | 'Student'
+  | 'Faculty'
+  | 'Department'
+  | 'Activity'
+  | 'Certificate'
+  | 'Organization'
+  | 'Category'
+  | 'Skill'
+  | 'Semester'
+  | 'Rule';
+
+export type GraphRelationType =
+  | 'BELONGS_TO'
+  | 'MENTORED_BY'
+  | 'COMPLETED'
+  | 'SUBMITTED'
+  | 'HAS_CATEGORY'
+  | 'ISSUED_BY'
+  | 'DEVELOPS'
+  | 'OCCURRED_IN'
+  | 'AWARDS'
+  | 'PROVES'
+  | 'REQUIRES'
+  | 'RELATED_TO';
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: GraphEntityType;
+  properties: Record<string, any>;
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  relation: GraphRelationType;
+  properties?: Record<string, any>;
+}
+
+export interface CategoryHeadroomInfo {
+  category_id: string;
+  category_name: string;
+  earned: number;
+  cap: number;
+  headroom: number;
+  status: 'CAPPED' | 'IN_PROGRESS' | 'NOT_STARTED';
+}
+
+export interface GraphEvidence {
+  student_id: string;
+  student_name: string;
+  department_name?: string;
+  mentor_name?: string;
+  current_points: number;
+  target_points: number;
+  remaining_points: number;
+  progress_percentage: number;
+  current_semester: number;
+  semester_headroom: number;
+  milestone_tier: string;
+  category_headroom: CategoryHeadroomInfo[];
+  completed_activities_count: number;
+  pending_activities_count: number;
+  eligible_activities_count: number;
+  skills_developed: string[];
+  skills_recommended: string[];
+  completed_activities_list: Array<{
+    id: string;
+    title: string;
+    category_name: string;
+    points: number;
+    semester: number;
+    proof?: string;
+  }>;
+  eligible_activities_list: Array<{
+    id: string;
+    title: string;
+    category_name: string;
+    base_points: number;
+    source: 'catalog' | 'event';
+    venue_or_criteria?: string;
+  }>;
+}
+
+export interface GraphRAGAdvisorResponse {
+  student_id: string;
+  query: string;
+  graph_evidence: GraphEvidence;
+  advice: {
+    summary: string;
+    target_plan: string;
+    category_strategy: string[];
+    recommended_activities: Array<{
+      id: string;
+      title: string;
+      category_name: string;
+      base_points: number;
+      source: 'catalog' | 'event';
+      venue_or_criteria?: string;
+    }>;
+    semester_guidance: string;
+  };
+  is_graph_rag: boolean;
+  generated_at: string;
+  model_used: string;
+}
+
+

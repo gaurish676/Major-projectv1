@@ -1,0 +1,287 @@
+# Project Synopsis
+
+---
+
+## 1. Project Title
+**Creditz – Institutional Academic & Extra-Curricular Activity Credit Management System with AI-Assisted Verification and GraphRAG**
+
+---
+
+## 2. Abstract
+Higher educational institutions mandatorily evaluate extra-curricular, co-curricular, and professional activity credits (such as AICTE/MAR points) for degree clearance. Conventional evaluation relies on manual paper submissions, fragmented verification channels, and static spreadsheets, leading to processing delays, verification errors, and lack of personalized student guidance. 
+
+This project presents **Creditz**, an integrated web-based platform designed to automate and standardize institutional credit lifecycle management. The core database serves as the authoritative source of truth, managing student records, submissions, and approval states across a multi-tier hierarchy: **Student → Faculty Mentor → Head of Department (HOD)**. 
+
+To ensure authenticity, the system incorporates **Google Gemini 2.5 Flash** (via `@google/genai`) to perform automated Optical Character Recognition (OCR), metadata extraction, discrepancy detection, and confidence scoring on uploaded certificate proofs. Furthermore, Creditz introduces a derived **Institutional Knowledge Graph** coupled with a **Graph Retrieval-Augmented Generation (GraphRAG)** pipeline. Deterministic application logic evaluates credit rules, category domain caps, and semester limits, while GraphRAG constructs structured contextual evidence for Gemini 2.5 Flash to deliver personalized, grounded academic guidance through an interactive **AI Advisor**.
+
+---
+
+## 3. Introduction
+Universities enforce non-academic credit requirements to foster holistic student development across domains such as technical MOOCs (NPTEL/Coursera), hackathons, sports, community service (NSS/NCC), and professional student chapters (IEEE/ACM). However, managing activity logs for thousands of students introduces operational bottlenecks for academic departments.
+
+**Creditz** addresses these challenges by modernizing credit management into a unified digital workspace. It combines:
+1. Deterministic data processing for rule enforcement, points calculation, and degree progress metrics.
+2. Generative Artificial Intelligence for automated document analysis and verification support.
+3. GraphRAG architectural patterns to enable context-aware, hallucination-free AI advisory capabilities grounded in institutional evidence.
+
+---
+
+## 4. Problem Statement
+Institutional activity-point management currently suffers from severe operational deficiencies:
+1. **Manual Verification Overhead**: Faculty mentors manually inspect paper certificates, verifying student credentials, course titles, dates, and issuing authorities.
+2. **Lack of Rule Enforcement Visibility**: Students often submit claims in already-capped activity domains or exceed per-semester credit ceilings due to complex policy guidelines.
+3. **Absence of Intelligent Student Guidance**: Generic university handbooks fail to provide customized activity roadmaps tailored to individual credit deficits.
+4. **Fragmented Audit Trails**: Traditional systems lack a centralized, transparent workflow connecting students, faculty mentors, and institutional department heads.
+
+---
+
+## 5. Existing System and Limitations
+Existing solutions consist of basic Google Forms, shared spreadsheets, or legacy portal upload modules.
+
+### Limitations of Existing Systems
+* **High Fraud Vulnerability**: No automated cross-referencing between claimed details and submitted certificate files.
+* **Opaque Progress Tracking**: Students lack real-time visual progress indicators regarding remaining credits or milestone tiers.
+* **Rule Violations**: Automated caps (e.g., maximum points per category or semester) are not enforced at submission time, causing disputes during final graduation audits.
+* **Unstructured Data**: Academic relationships (mentor-mentee allocations, activity skill mappings, prerequisite categories) are lost in flat data tables.
+
+---
+
+## 6. Proposed System
+The proposed **Creditz** system introduces an enterprise-grade digital infrastructure featuring:
+* **Deterministic Core Engine**: A robust backend that acts as the single source of truth for all users, submissions, and credit calculations.
+* **AI Certificate Verification Layer**: Uses Google Gemini 2.5 Flash to automatically analyze certificates, extract metadata, score authenticity, and flag anomalies for faculty review.
+* **Derived Institutional Knowledge Graph**: Represents academic entities (*Student, Faculty, Department, Activity, Certificate, Organization, Category, Skill, Semester, Rule*) and their typed relationships (*BELONGS_TO, MENTORED_BY, COMPLETED, SUBMITTED, HAS_CATEGORY, ISSUED_BY, DEVELOPS, OCCURRED_IN, AWARDS, PROVES, REQUIRES, RELATED_TO*).
+* **GraphRAG-Powered AI Advisor**: Combines deterministic graph retrieval with Gemini 2.5 Flash to deliver grounded, context-aware academic planning without hallucinating policies or activities.
+
+---
+
+## 7. Objectives
+1. **Automate Credit Management**: Establish a streamlined digital workflow for credit submission, verification, and institutional approval.
+2. **Implement AI Document Analysis**: Integrate Gemini 2.5 Flash OCR to verify certificate authenticity and reduce mentor verification latency.
+3. **Construct Derived Knowledge Graph**: Synthesize relational database records into an entity-relationship graph layer representing institutional context.
+4. **Deploy GraphRAG Pipeline**: Deliver grounded AI advice where mathematical values (remaining points, headroom) are deterministically computed, and Gemini handles natural-language reasoning.
+5. **Enforce Institutional Policies**: Enforce domain category caps and semester point ceilings strictly through application logic.
+
+---
+
+## 8. Scope
+* **Target Audience**: Undergraduate engineering institutions enforcing mandatory activity/MAR credit frameworks.
+* **User Personas**: Students, Faculty Mentors, and Heads of Departments (HOD).
+* **System Boundaries**:
+  * Focuses on credit tracking, document verification, academic guidance, and multi-tier approval.
+  * Credit calculations, cap enforcement, and eligibility checks are strictly deterministic.
+  * GraphRAG is integrated into the AI Advisor module to provide grounded academic planning.
+
+---
+
+## 9. Key Features
+* **Student Dashboard**: Degree Clearance Meter, category-wise credit progress bars, semester timeline, and submission history.
+* **1-Click Multi-Persona Access**: Instant role-switching (Student, Faculty Mentor, HOD) with multi-profile selection.
+* **AI Certificate OCR**: Automated extraction of candidate name, roll number, activity title, organization, completion date, and suggested points.
+* **Faculty Review Console**: Side-by-side comparison of claimed data, AI confidence score, discrepancy flags, and original certificate proof.
+* **HOD Department Analytics**: Aggregate department clearance metrics, batch allocations, schema domain cap management, and institutional audit reports.
+* **GraphRAG AI Advisor**: Natural-language advisory interface with preset query chips, category headroom strategies, recommended catalog activities, and evidence inspection.
+
+---
+
+## 10. System Architecture
+
+```text
++-----------------------------------------------------------------------+
+|                           REACT 18 FRONTEND                           |
+|  (Student Dashboard | Mentor Review | HOD Analytics | AI Advisor Modal)  |
++-----------------------------------+-----------------------------------+
+                                    | REST API (JSON)
++-----------------------------------v-----------------------------------+
+|                        EXPRESS / NODE.JS BACKEND                      |
+|                                                                       |
+|  +-----------------------------------------------------------------+  |
+|  |                SOURCE OF TRUTH DATA LAYER                       |  |
+|  |  (Users, Submissions, Schema Categories, Events, Activity Logs) |  |
+|  +--------------------------------+--------------------------------+  |
+|                                   |                                   |
+|  +--------------------------------v--------------------------------+  |
+|  |                DETERMINISTIC APPLICATION LOGIC                  |  |
+|  |  (Points Calculator, Category Domain Caps, Semester Ceilings)  |  |
+|  +--------------------------------+--------------------------------+  |
+|                                   |                                   |
+|  +--------------------------------v--------------------------------+  |
+|  |               DERIVED INSTITUTIONAL KNOWLEDGE GRAPH             |  |
+|  |  (Entities & Typed Relationships: Student, Category, Skill...) |  |
+|  +--------------------------------+--------------------------------+  |
+|                                   |                                   |
+|  +--------------------------------v--------------------------------+  |
+|  |                       GRAPHRAG PIPELINE                         |  |
+|  |  Graph Query → Context Builder → Gemini 2.5 Flash Proxy         |  |
+|  +--------------------------------+--------------------------------+  |
++-----------------------------------+-----------------------------------+
+                                    |
+                    +---------------+---------------+
+                    |     GOOGLE GEMINI 2.5 FLASH   |
+                    |     (@google/genai SDK)       |
+                    +-------------------------------+
+```
+
+---
+
+## 11. AI Certificate Verification
+The AI Certificate Verification engine automates document inspection:
+1. **Document Upload**: Students upload certificate documents (PDF/PNG/JPG).
+2. **Server-Side Proxy**: Express routes forward binary document data securely to Gemini 2.5 Flash using the `@google/genai` SDK.
+3. **Structured OCR Parsing**: Gemini extracts key metadata fields: Candidate Name, Roll Number, Activity Title, Issuing Organization, Issue Date, and Claimed Points.
+4. **Discrepancy & Confidence Scoring**: The system cross-references extracted details against student profile data to compute an authenticity confidence score (0–100%) and flag inconsistencies (e.g., name mismatch, past expiry date).
+5. **Mentor Audit Trail**: Audit badges and extracted metadata are presented directly in the Faculty Mentor review console.
+
+---
+
+## 12. Institutional Knowledge Graph
+The Institutional Knowledge Graph is a **derived intelligence layer** synthesized idempotently from the primary database.
+
+### Graph Entities (Nodes)
+* `Student`: Student metadata, semester, roll number, CGPA.
+* `Faculty`: Mentor/HOD designation, department affiliation.
+* `Department`: Academic department identifiers.
+* `Activity`: Approved schema catalog items, events, and student submissions.
+* `Certificate`: Submitted document proofs and verification states.
+* `Organization`: Issuing bodies (e.g., NPTEL, IEEE, AWS, NSS).
+* `Category`: Credit domain categories with defined point caps.
+* `Skill`: Technical and soft skills developed by activities.
+* `Semester`: Academic semesters (1 to 8) with maximum credit limits.
+* `Rule`: Governance rules, base points, and completion criteria.
+
+### Typed Relationships (Edges)
+* `Student → BELONGS_TO → Department`
+* `Student → MENTORED_BY → Faculty`
+* `Student → COMPLETED / SUBMITTED → Activity`
+* `Activity → HAS_CATEGORY → Category`
+* `Activity → ISSUED_BY → Organization`
+* `Activity → DEVELOPS → Skill`
+* `Activity → OCCURRED_IN → Semester`
+* `Activity → AWARDS → Points`
+* `Certificate → PROVES → Activity`
+* `Certificate → BELONGS_TO → Student`
+
+---
+
+## 13. GraphRAG (Graph Retrieval-Augmented Generation)
+GraphRAG enables context-aware AI recommendations by grounding generative AI responses in deterministic graph evidence.
+
+### GraphRAG Pipeline Execution Flow
+```text
+Student Query
+     ↓
+Graph Retrieval (Fetch Student Node, Completed Edges, Uncapped Categories)
+     ↓
+Deterministic Evidence Calculation (Remaining Points, Available Headroom, Eligible Activities)
+     ↓
+Context Builder (Construct Grounded Prompt Payload)
+     ↓
+Gemini 2.5 Flash (@google/genai)
+     ↓
+Grounded Recommendation Response
+```
+
+### Grounding & Calculation Rules
+* **Mathematical Precision**: Numerical values such as:
+  $$\text{Remaining Points} = \text{Target Points} - \text{Current Effective Points}$$
+  are computed strictly by application logic prior to AI invocation.
+* **Strict Evidence Constraints**: System prompts force Gemini 2.5 Flash to rely **exclusively** on retrieved graph evidence. Gemini is strictly prohibited from inventing fake activities, points, or institutional policies.
+* **Deterministic Fallback**: If the external Gemini API is unreachable, the GraphRAG service seamlessly falls back to an internal deterministic graph engine, ensuring zero service downtime.
+
+---
+
+## 14. AI Advisor
+The AI Advisor serves as an interactive academic companion for students:
+* **Natural-Language Interface**: Students can select preset prompts (e.g., *"What should I do to reach 200 points?"*) or enter custom queries.
+* **Action Plan & Strategy**: Returns targeted recommendations specifying which uncapped categories to prioritize.
+* **Recommended Activities**: Displays eligible catalog activities and upcoming department events matching available category headroom.
+* **Evidence & Graph Inspection**: Allows students to inspect their numerical metrics, category headroom audit tables, and active knowledge graph edges.
+
+---
+
+## 15. Role-Based Workflow
+
+```text
++-------------------------------------------------------------------+
+|                          STUDENT WORKFLOW                         |
+|  1. Submits activity details & uploads certificate proof.         |
+|  2. Views real-time credit progress & AI Advisor guidance.        |
++----------------------------------+--------------------------------+
+                                   |
+                                   v
++-------------------------------------------------------------------+
+|                      FACULTY MENTOR WORKFLOW                      |
+|  1. Reviews batch submissions with AI OCR & discrepancy audit.    |
+|  2. Approves, requests revision, or rejects submission.           |
++----------------------------------+--------------------------------+
+                                   | (Approved Credits)
+                                   v
++-------------------------------------------------------------------+
+|                            HOD WORKFLOW                           |
+|  1. Oversees departmental credit clearance metrics.              |
+|  2. Manages category caps, schema rules, & mentor allocations.    |
+|  3. Performs final institutional authorization & reports export.  |
++-------------------------------------------------------------------+
+```
+
+---
+
+## 16. Methodology
+1. **Requirements & Schema Analysis**: Defined institutional activity categories, domain caps (e.g., NPTEL: 50 pts, Sports: 30 pts), and semester ceiling limits (30 pts/semester).
+2. **Core System Development**: Built the React 18 SPA frontend and Express REST server.
+3. **AI Verification Integration**: Integrated Gemini 2.5 Flash for document processing and confidence scoring.
+4. **Knowledge Graph Construction**: Implemented a graph synthesis engine mapping database entities into connected nodes and edges.
+5. **GraphRAG Engine Implementation**: Engineered the context builder and prompt grounding layer connecting graph evidence with Gemini 2.5 Flash.
+6. **Verification & Testing**: Conducted end-to-end testing across student, mentor, and HOD workflows.
+
+---
+
+## 17. Functional Requirements
+* **FR-1 (Auth & Roles)**: Support multi-role authentication for Students, Faculty Mentors, and HODs.
+* **FR-2 (Submission Management)**: Allow students to log activities, attach proof files, and track submission states (*pending, approved, rejected*).
+* **FR-3 (AI Document OCR)**: Extract certificate metadata using Gemini 2.5 Flash and highlight potential discrepancies.
+* **FR-4 (Deterministic Credit Calculation)**: Apply category domain caps and semester limits automatically when calculating effective points.
+* **FR-5 (GraphRAG AI Advisor)**: Retrieve graph evidence and generate grounded academic roadmaps based on student queries.
+* **FR-6 (Audit & Exports)**: Enable HODs to view department analytics and export credit clearance reports.
+
+---
+
+## 18. Non-Functional Requirements
+* **NFR-1 (Reliability & Availability)**: Guarantee continuous AI Advisor availability through deterministic fallback execution.
+* **NFR-2 (Data Security & Key Protection)**: Perform all Gemini API calls server-side to prevent client-side key exposure.
+* **NFR-3 (Performance & Responsiveness)**: Maintain sub-second response times for dashboard data loading and graph context retrieval.
+* **NFR-4 (Usability & Accessibility)**: Provide a clean, high-contrast, responsive user interface styled with Tailwind CSS.
+
+---
+
+## 19. Expected Outcomes
+* **Reduced Processing Overhead**: Automated certificate OCR reduces manual faculty verification effort by up to 70%.
+* **Zero Policy Violations**: Deterministic cap enforcement prevents students from accumulating invalid or uncreditable points.
+* **Enhanced Student Clarity**: GraphRAG AI Advisor provides clear, actionable steps toward reaching the graduation credit target.
+* **Transparent Audit Traceability**: Standardized multi-tier approval workflows ensure complete institutional compliance.
+
+---
+
+## 20. Advantages
+* **Single Source of Truth**: Primary database maintains strict data consistency across all operations.
+* **Derived Intelligence**: Knowledge Graph provides rich context without modifying core transactional tables.
+* **Grounded AI Advice**: Eliminates generative AI hallucinations by constraining Gemini to retrieved graph evidence.
+* **Resilient Architecture**: Fallback mechanism guarantees core functionality even during external service outages.
+
+---
+
+## 21. Limitations
+* **Fixed Pre-configured Schema**: Activity schema categories and credit rules require administrative (HOD) configuration.
+* **Image Quality Dependency**: Document OCR accuracy depends on the legibility and resolution of uploaded certificates.
+
+---
+
+## 22. Future Enhancements
+* **Blockchain-Based Credential Issuance**: Issue tamper-proof digital certificates directly on an institutional ledger upon credit approval.
+* **Automated Institutional ERP Integration**: Synchronize verified credit transcripts directly with university central grading servers.
+* **Multi-Format Export**: Support automated PDF compilation of verified student portfolios for job placement applications.
+
+---
+
+## 23. Conclusion
+The **Creditz** system successfully demonstrates a modern, AI-augmented approach to institutional academic credit management. By decoupling the authoritative data layer from the derived intelligence layer, the architecture achieves a reliable balance: deterministic application logic enforces strict institutional credit policies, while **Google Gemini 2.5 Flash** and **GraphRAG** provide automated document analysis and personalized student guidance. The platform simplifies administrative workflows for faculty and department heads while empowering students with transparent, context-aware pathways toward degree clearance.

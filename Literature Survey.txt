@@ -1,0 +1,161 @@
+# Academic Literature Survey
+
+## Project Title
+**Creditz – Institutional Academic & Extra-Curricular Activity Credit Management System with AI-Assisted Verification and GraphRAG**
+
+---
+
+## 1. Introduction & Background
+Higher education institutions worldwide are increasingly integrating non-academic credit frameworks—such as Extra-Curricular Activity (ECA) points, Mandatory Additional Requirements (MAR), and AICTE activity credits—into undergraduate degree clearance criteria. These frameworks encourage students to participate in technical hackathons, professional body activities (e.g., IEEE, ACM, CSI), MOOC certifications (e.g., NPTEL, Coursera, Swayam), community service (e.g., NSS, NCC, Red Cross), and athletic events. 
+
+However, evaluating non-academic activity logs across thousands of enrolled students poses severe administrative challenges. Traditional university workflows rely heavily on manual paper-based submissions, fragmented email exchanges, and manual spreadsheet auditing. These legacy methods suffer from verification latency, vulnerability to document fraud, lack of automated policy enforcement (e.g., category domain caps and per-semester credit ceilings), and an absence of personalized student guidance.
+
+This Literature Survey reviews foundational and recent academic advancements across twelve key domains that inform the design of **Creditz**:
+1. Digital Academic and Activity Credit Management Systems
+2. AI-Assisted Document and Certificate Verification
+3. Optical Character Recognition (OCR) and Information Extraction
+4. Large Language Models (LLMs) in Educational Environments
+5. Generative AI for Automated Student Assistance
+6. Knowledge Graphs (KGs)
+7. Knowledge Graphs in Higher Education
+8. Retrieval-Augmented Generation (RAG)
+9. Graph Retrieval-Augmented Generation (GraphRAG)
+10. Grounded and Explainable AI
+11. Personalized Academic and Activity Recommendation Systems
+12. Rule-Based Academic Credit and Eligibility Systems
+
+---
+
+## 2. Review of Key Research Areas
+
+### 2.1 Digital Academic & Activity Credit Management Systems
+* **Existing Approaches & Research**: Traditional Student Information Systems (SIS) focus primarily on formal course registration, internal grading, and attendance tracking. Recent educational literature (IEEE Transactions on Learning Technologies) highlights efforts to digitize co-curricular tracking through web portals.
+* **Key Techniques**: Relational database modeling, role-based access control (RBAC), web-based submission forms, and administrative dashboard analytics.
+* **Advantages**: Centralizes student submission records and replaces physical paper logbooks.
+* **Limitations**: Highly rigid; lacks automated document authentication, intelligent policy cap enforcement, or student-facing decision support.
+* **Relevance to Creditz**: Establishes the foundational CRUD and RBAC architecture (*Student → Faculty Mentor → HOD*) for managing transactional credit state.
+
+### 2.2 AI-Assisted Document & Certificate Verification
+* **Existing Approaches & Research**: Document verification literature emphasizes automated authenticity verification using visual layout analysis, digital signature validation, and multi-modal neural inspection (ACM Computing Surveys).
+* **Key Techniques**: Image preprocessing, feature matching, template alignment, and multi-modal Vision-Language Models (VLMs).
+* **Advantages**: Drastically reduces manual inspection workloads for evaluators by detecting tampered images, invalid dates, or mismatched candidate names.
+* **Limitations**: High sensitivity to image noise, varied certificate layout formats across issuing authorities, and potential false positives in forgery detection.
+* **Relevance to Creditz**: Direct basis for the AI Certificate Verification module, where uploaded certificates are parsed to generate an authenticity confidence score and discrepancy audit flags for faculty mentors.
+
+### 2.3 Optical Character Recognition (OCR) & Document Information Extraction
+* **Existing Approaches & Research**: Advanced OCR research focuses on transitioning from traditional line-by-line text recognition (e.g., Tesseract) to multi-modal document understanding models capable of joint visual layout and textual parsing (Springer Document Analysis and Recognition).
+* **Key Techniques**: Bounding box region extraction, key-value pair parsing, named entity recognition (NER), and zero-shot VLM parsing.
+* **Advantages**: Enables automated structured data extraction (e.g., student name, roll number, course title, issuing body, date) directly from unstructured image/PDF certificate proofs.
+* **Limitations**: Struggles with low-resolution scans, handwritten signatures, non-standard fonts, or complex watermark backgrounds.
+* **Relevance to Creditz**: Enables automated parsing of NPTEL, Coursera, IEEE, and university certificates into structured fields prior to mentor review.
+
+### 2.4 Large Language Models (LLMs) in Education
+* **Existing Approaches & Research**: Research in AI-assisted education (ACM Conference on International Computing Education Research) investigates the deployment of LLMs for automated tutoring, code generation, and academic query resolution.
+* **Key Techniques**: Zero-shot prompting, instruction tuning, structured JSON generation, and multi-turn context management.
+* **Advantages**: Highly adaptable conversational understanding, broad general knowledge representation, and natural language explanation capabilities.
+* **Limitations**: High risk of hallucination (generating plausible but incorrect statements), lack of access to real-time non-public database state, and non-deterministic mathematical calculations.
+* **Relevance to Creditz**: Guides the selection of Google Gemini 2.5 Flash as the natural language reasoning and explanation engine in Creditz.
+
+### 2.5 Generative AI for Automated Student Assistance
+* **Existing Approaches & Research**: Studies on AI student advisors (IEEE Transactions on Education) explore generative conversational interfaces for guiding students through curriculum pathways and academic requirements.
+* **Key Techniques**: Conversational prompt templates, intent classification, and automated task decomposition.
+* **Advantages**: Provides 24/7 personalized interaction, reducing routine inquiry workloads on academic faculty.
+* **Limitations**: Pure generative chatbots frequently invent non-existent courses, hallucinate graduation policies, or miscalculate earned credits.
+* **Relevance to Creditz**: Demonstrates the necessity of strictly constraining generative AI models using grounded institutional data rather than relying on ungrounded chatbot interactions.
+
+### 2.6 Knowledge Graphs (KGs)
+* **Existing Approaches & Research**: Knowledge Graph literature (Springer Lecture Notes in Computer Science, ACM SIGMOD) establishes KGs as formal representations of domain knowledge comprising entities (nodes) and typed relationships (edges).
+* **Key Techniques**: Entity extraction, relation extraction, graph schema definition, and semantic graph traversal.
+* **Advantages**: Expresses complex, multi-hop semantic relationships that are difficult or computationally expensive to query in flat relational tables.
+* **Limitations**: Requires careful schema design and synchronization mechanisms to avoid stale graph states when underlying data updates.
+* **Relevance to Creditz**: Provides the foundational graph schema representing academic entities (*Student, Faculty, Department, Activity, Certificate, Organization, Category, Skill, Semester, Rule*).
+
+### 2.7 Knowledge Graphs in Higher Education
+* **Existing Approaches & Research**: Educational Knowledge Graph research (IEEE Access) focuses on mapping university curricula, learning outcomes, prerequisite skill chains, and faculty specializations.
+* **Key Techniques**: Educational ontology modeling, skill tree mapping, and academic entity linking.
+* **Advantages**: Unifies disparate academic datasets (courses, student profiles, faculty roles) into a coherent, navigable domain model.
+* **Limitations**: Most educational KGs remain static research prototypes without real-time integration into operational administrative web platforms.
+* **Relevance to Creditz**: Informs the design of the **Institutional Knowledge Graph**, explicitly linking students to completed activities, category caps, issuing organizations, and skill outcomes.
+
+### 2.8 Retrieval-Augmented Generation (RAG)
+* **Existing Approaches & Research**: RAG architectures (arXiv research, Conference on Empirical Methods in Natural Language Processing - EMNLP) combine information retrieval mechanisms with generative LLMs to ground model responses in retrieved external documents.
+* **Key Techniques**: Document chunking, retrieval mechanisms, context injection, and prompt grounding.
+* **Advantages**: Significantly reduces LLM hallucinations and allows language models to answer queries using dynamic, private domain knowledge without model retraining.
+* **Limitations**: Traditional unstructured text RAG struggles with complex structural queries, mathematical rule validation, and multi-hop entity relationships.
+* **Relevance to Creditz**: Establishes the core retrieval-augmented framework that bridges database retrieval with Gemini prompt generation.
+
+### 2.9 Graph Retrieval-Augmented Generation (GraphRAG)
+* **Existing Approaches & Research**: GraphRAG research (arXiv, ACM Conference on Information and Knowledge Management - CIKM) extends traditional RAG by retrieving structured graph subgraphs, entity topologies, and typed relationships rather than isolated text snippets.
+* **Key Techniques**: Graph context extraction, subgraph traversal, structured prompt synthesis, and entity relationship formatting.
+* **Advantages**: Retains relational structure, enables precise multi-hop traversal, and preserves hierarchical policy contexts (e.g., category domain caps and semester credit limits).
+* **Limitations**: Increased complexity in context builder formatting and requirement for strict alignment between graph schema and transactional data.
+* **Relevance to Creditz**: Directly informs the GraphRAG pipeline in Creditz (*Student Query → Graph Retrieval → Evidence Extraction → Context Building → Gemini 2.5 Flash → Grounded Response*).
+
+### 2.10 Grounded and Explainable AI
+* **Existing Approaches & Research**: Research in trustworthy AI for institutional governance (IEEE Security & Privacy) emphasizes explainability, evidence inspection, and deterministic verification.
+* **Key Techniques**: Explicit citation of retrieved evidence, audit logs, confidence scoring, and source-grounded response generation.
+* **Advantages**: Builds trust among educational administrators and students by rendering AI decision-making transparent and verifiable.
+* **Limitations**: Constrains generative creativity to strictly verified evidence, requiring fallback strategies when data is incomplete.
+* **Relevance to Creditz**: Enforces strict grounding rules on Gemini 2.5 Flash and powers the AI Advisor's Evidence Inspection panel.
+
+### 2.11 Personalized Academic & Activity Recommendation Systems
+* **Existing Approaches & Research**: Academic recommender systems literature (Springer User Modeling and User-Adapted Interaction) explores algorithmic pathways for recommending co-curricular courses, skill certifications, and student projects.
+* **Key Techniques**: Content-based filtering, deficit analysis, skill gap mapping, and rule-constrained recommendation.
+* **Advantages**: Guides students toward activities that directly address their specific credit deficits and skill growth targets.
+* **Limitations**: Classical recommender algorithms often fail to respect complex policy constraints such as domain category ceilings or per-semester credit caps.
+* **Relevance to Creditz**: Drives the activity recommendation logic within the AI Advisor, ensuring recommended catalog items match available category headroom.
+
+### 2.12 Rule-Based Academic Credit & Eligibility Systems
+* **Existing Approaches & Research**: Institutional policy enforcement literature emphasizes deterministic production rules for validating graduation eligibility, prerequisite constraints, and credit caps.
+* **Key Techniques**: Production rules, mathematical constraint evaluation, cap logic, and deterministic decision trees.
+* **Advantages**: 100% mathematical precision, consistent enforcement, and complete immunity to hallucination or non-deterministic variance.
+* **Limitations**: Lacks natural language flexibility, cannot converse with users, and cannot generate personalized narrative explanations.
+* **Relevance to Creditz**: Dictates that all credit calculations, remaining point math, category domain cap enforcement, and semester ceilings in Creditz remain **100% deterministic** within application logic.
+
+---
+
+## 3. Identification of the Research Gap
+
+A critical gap exists in current educational technology literature at the intersection of institutional administrative portals, rule enforcement engines, and generative artificial intelligence:
+
+$$\text{Research Gap} = \text{Institutional Data} + \text{Deterministic Rules} + \text{Knowledge Graph} + \text{GraphRAG} + \text{Generative LLM}$$
+
+### The Failure of Unconstrained Conversational Chatbots
+Standard ungrounded LLM chatbots are fundamentally unsuitable for institutional academic credit management because:
+1. **Mathematical Hallucination**: Generative language models frequently miscalculate earned credits, arithmetic differences ($200 - 145 \neq 65$ in ungrounded generation), or category totals.
+2. **Policy Invention**: Ungrounded LLMs invent non-existent university guidelines, assume infinite credit ceilings in capped categories, or fabricate non-existent activities.
+3. **Lack of Relational Awareness**: Standard chatbots treat student queries in isolation, lacking awareness of multi-hop institutional relationships (*Student → Faculty Mentor → Department → Activity → Category Cap*).
+
+### How the Creditz Knowledge Graph Bridge Resolves the Gap
+The **Creditz** architecture bridges this research gap by decoupling the authoritative data layer from the generative intelligence layer:
+* **Source of Truth**: The relational database and deterministic application logic calculate all mathematical metrics ($Remaining Points = Target Points - Current Points$), category headroom, and semester ceilings with 100% accuracy.
+* **Derived Knowledge Graph Layer**: Synthesizes flat database records into an interconnected relational topology:
+  $$\text{Student} \rightarrow \text{Activity} \rightarrow \text{Category} \rightarrow \text{Certificate} \rightarrow \text{Organization} \rightarrow \text{Points} \rightarrow \text{Semester} \rightarrow \text{Rule}$$
+* **GraphRAG Grounding**: The GraphRAG pipeline retrieves explicit graph evidence (current points, remaining deficit, category headroom, eligible activities) and injects it into a structured prompt context for **Google Gemini 2.5 Flash**.
+* **Role of Gemini 2.5 Flash**: Gemini is restricted strictly to natural language reasoning, explanation, narrative synthesis, and activity recommendations based **only** on retrieved evidence.
+
+---
+
+## 4. Comparative Analysis Table
+
+| Domain / Dimension | Existing / Traditional Approach | Key Limitation | Creditz Proposed Approach |
+| :--- | :--- | :--- | :--- |
+| **Credit Lifecycle Management** | Manual spreadsheets, paper logs, or basic web upload forms. | High verification latency, paper loss, fragmented audit trails. | Automated multi-tier web workspace (**Student → Mentor → HOD**). |
+| **Certificate Verification** | Manual visual inspection by faculty mentors. | Extremely slow, error-prone, vulnerable to image forgery/tampering. | **Gemini 2.5 Flash OCR** with authenticity scoring & discrepancy flags. |
+| **Rule & Cap Enforcement** | Manual verification during final graduation audits. | Delayed discovery of invalid/capped submissions, leading to student disputes. | **Deterministic application logic** enforcing category caps & semester ceilings. |
+| **Data Representation** | Disjointed relational tables or flat spreadsheet rows. | Inability to query or represent multi-hop academic relationships. | **Derived Institutional Knowledge Graph** with 10 entities & 12 typed relationships. |
+| **Student AI Interaction** | Ungrounded conversational chatbots or static FAQ pages. | Hallucinates policies, miscalculates credit math, invents fake courses. | **GraphRAG Pipeline** grounding **Gemini 2.5 Flash** in deterministic evidence. |
+| **System Reliability** | Total failure when external cloud AI services are down. | System becomes completely unusable during API disruptions. | **Deterministic Fallback Engine** guaranteeing core advisor functionality. |
+
+---
+
+## 5. Conclusion & Architectural Justification
+
+The reviewed academic literature firmly supports the architectural design of **Creditz**:
+
+1. **Decoupled Architecture**: Academic literature on trustworthy systems mandates separating transactional persistence from AI reasoning. In Creditz, the relational database remains the sole source of truth, ensuring absolute data integrity.
+2. **Deterministic Governance**: Literature on educational compliance proves that policy enforcement (credit caps, semester limits) must be handled mathematically by deterministic application logic, not generative language models.
+3. **Structured Knowledge Retrieval**: GraphRAG research confirms that supplying generative models with structured entity-relationship context eliminates hallucinations and ensures domain-specific accuracy.
+4. **Multi-Modal AI Efficiency**: Research in document analysis validates using vision-language models (Gemini 2.5 Flash via `@google/genai`) for automated OCR and verification assistance in administrative workflows.
+
+By synthesizing **Deterministic Rules + Institutional Knowledge Graph + GraphRAG + Gemini 2.5 Flash**, Creditz provides a scientifically sound, robust, and scalable platform for institutional credit management.

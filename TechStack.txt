@@ -1,0 +1,233 @@
+# Technical Stack & System Architecture Specification
+
+## Project Title
+**Creditz – Institutional Academic & Extra-Curricular Activity Credit Management System with AI-Assisted Verification and GraphRAG**
+
+---
+
+## 1. Executive Summary & Core Philosophy
+**Creditz** is an enterprise-grade academic platform designed to automate non-academic activity credit lifecycle management (e.g., AICTE activity points / MAR credits) for higher education institutions. 
+
+The architecture is explicitly designed around a fundamental separation of concerns:
+1. **Source of Truth Data Layer**: The transactional application database acts as the single authoritative source of truth for all student records, activity submissions, faculty approvals, and institutional category rules.
+2. **Deterministic Rules Engine**: All mathematical computations—including total points earned, category domain cap enforcement, semester ceiling limits, and remaining degree clearance targets—are executed strictly by deterministic backend application logic.
+3. **Derived Knowledge Graph Layer**: Synthesizes flat database entity records into a semantic graph structure representing academic relationships.
+4. **GraphRAG & Generative AI Layer**: Uses **Google Gemini 2.5 Flash** via the official `@google/genai` SDK to perform document OCR/verification assistance and generate natural-language academic advisor recommendations strictly grounded in retrieved graph evidence.
+
+---
+
+## 2. Frontend Technology Stack
+
+### 2.1 React 18
+* **Role in Creditz**: Serves as the core declarative Single-Page Application (SPA) UI framework.
+* **Technical Implementation**: Implements modular functional components, custom hooks, and context providers (`AuthContext`) for global user state and persona switching. React 18's concurrent features ensure responsive UI updates across dense dashboards and interactive modals.
+
+### 2.2 TypeScript
+* **Role in Creditz**: Enforces strict static type safety across the application codebase.
+* **Technical Implementation**: Centralized interface definitions in `src/types.ts` declare comprehensive models for database entities (`Student`, `Submission`, `Event`), Knowledge Graph structures (`GraphNode`, `GraphEdge`, `GraphEvidence`), and API contracts (`GraphRAGAdvisorResponse`). Eliminates runtime type errors and ensures seamless frontend-backend API synchronization.
+
+### 2.3 Vite
+* **Role in Creditz**: Modern frontend build tool and dev server.
+* **Technical Implementation**: Configured with `@vitejs/plugin-react` to deliver fast Hot Module Replacement (HMR) during development and highly optimized CJS/ESM bundled assets in production (`dist/`). Serves as Vite Express middleware in non-production environments.
+
+### 2.4 Tailwind CSS
+* **Role in Creditz**: Utility-first styling framework for responsive component presentation.
+* **Technical Implementation**: Utilizes modern CSS variables and Tailwind utility classes (`@import "tailwindcss";`) to construct high-contrast, professional, and dark-mode compatible UI layouts. Enforces visual hierarchy, custom color palettes, and responsive grid structures without separate CSS files.
+
+### 2.5 Lucide Icons (`lucide-react`)
+* **Role in Creditz**: Standardized icon library for visual user feedback and interface cues.
+* **Technical Implementation**: Provides crisp vector icons (e.g., `Sparkles`, `ShieldCheck`, `Network`, `Award`, `CheckCircle2`, `AlertTriangle`) embedded across dashboards, review consoles, and modal dialogs.
+
+### 2.6 Framer Motion (`motion/react`)
+* **Role in Creditz**: Animation library for smooth visual transitions and micro-interactions.
+* **Technical Implementation**: Powers fade-in route transitions, modal overlay animations, progress bar fills, and interactive drawer movements, enhancing user experience and visual polish.
+
+---
+
+## 3. Backend Technology Stack
+
+### 3.1 Node.js
+* **Role in Creditz**: Asynchronous event-driven server runtime environment.
+* **Technical Implementation**: Executes the Express application server, handles server-side API routing, coordinates file uploads, interacts with SQLite data persistence, and proxies AI requests securely.
+
+### 3.2 Express
+* **Role in Creditz**: Full-featured web application framework.
+* **Technical Implementation**: Implements modular REST API route controllers (`server/routes/student.routes.ts`, `hod.routes.ts`, `mentor.routes.ts`, `submission.routes.ts`, `schema.routes.ts`). Express middleware handles JSON body parsing, file upload storage (`multer`), and role-based JWT authentication (`server/middleware/auth.ts`).
+
+### 3.3 Vite Middleware Integration
+* **Role in Creditz**: Seamless integration between Node/Express backend and Vite frontend during development.
+* **Technical Implementation**: In non-production environments, Express mounts Vite as a development middleware (`createServer({ server: { middlewareMode: true }, appType: 'spa' })`), serving React assets dynamically on port `3000`. In production, Express statically serves pre-compiled `dist/` production bundles.
+
+---
+
+## 4. Artificial Intelligence & Document Verification Layer
+
+### 4.1 Google Gemini 2.5 Flash
+* **Role in Creditz**: High-performance multi-modal generative AI model used for document understanding and natural-language advisory generation.
+* **Technical Implementation**: Selected for its fast inference latency, large context window, structured JSON output support, and strong multi-modal OCR capabilities.
+
+### 4.2 Official `@google/genai` SDK
+* **Role in Creditz**: Official Google Gen AI SDK used for server-side communication with Gemini.
+* **Technical Implementation**: Initialized server-side (`const ai = new GoogleGenAI()`) using `process.env.GEMINI_API_KEY`. Invokes `ai.models.generateContent()` with `gemini-2.5-flash` and strict JSON schema generation parameters (`responseMimeType: 'application/json'`).
+
+### 4.3 Server-Side Gemini API Integration & Security
+* **Role in Creditz**: Keeps sensitive API keys completely hidden from browser clients.
+* **Technical Implementation**: All Gemini API requests originate exclusively within Express API handlers (`server/routes/submission.routes.ts` and `server/services/graphRagService.ts`). The `GEMINI_API_KEY` is loaded from server environment variables and never exposed to client-side code, preventing credential leaks.
+
+### 4.4 Gemini-Based Certificate OCR & Information Extraction
+* **Role in Creditz**: Automated extraction of metadata from student-uploaded certificate files (PNG, JPG, PDF).
+* **Technical Implementation**: When a student submits a certificate proof, Express passes the binary file buffer directly to Gemini 2.5 Flash. Gemini performs multi-modal layout and text analysis, extracting:
+  - Candidate Student Name
+  - Roll Number / USN
+  - Activity Title
+  - Issuing Organization
+  - Completion / Issue Date
+  - Claimed Point Value
+
+### 4.5 AI-Assisted Verification & Discrepancy Detection
+* **Role in Creditz**: Automated verification and anomaly detection prior to mentor review.
+* **Technical Implementation**: `server/services/geminiAudit.ts` compares Gemini's extracted certificate metadata against the student's profile record in the database. The system computes an Authenticity Confidence Score (0–100%) and generates warning flags for:
+  - Student Name / Roll Number mismatches
+  - Mismatched activity category domain
+  - Mismatched or inflated point claims
+  - Outdated or future completion dates
+  
+  These discrepancy flags and audit badges are rendered directly in the Faculty Mentor review console.
+
+---
+
+## 5. Data & Derived Knowledge Layer
+
+### 5.1 Managed Data Persistence
+* **Role in Creditz**: Transactional database storing core system entities.
+* **Technical Implementation**: SQLite managed database (`server/db/database.ts` and `seed.ts`) storing authoritative tables for `users`, `departments`, `submissions`, `schema_categories`, `activity_schema`, `events`, and `activity_logs`.
+
+### 5.2 Institutional Knowledge Graph
+* **Role in Creditz**: A derived, structured semantic network representing academic entities and their relationships.
+* **Technical Implementation**: Engineered in `server/services/knowledgeGraph.ts`. It reads transactional database records and builds an in-memory graph structure consisting of nodes and typed directed edges.
+
+#### Graph Entity Nodes
+1. `Student`: Represents enrolled students (Properties: `id`, `name`, `roll_no`, `semester`, `cgpa`).
+2. `Faculty`: Represents mentors and HODs (Properties: `id`, `name`, `role`, `department_id`).
+3. `Department`: Represents academic departments (Properties: `id`, `name`, `code`).
+4. `Activity`: Represents approved catalog activities, events, and student submissions.
+5. `Certificate`: Represents uploaded document proofs (Properties: `file_name`, `status`).
+6. `Organization`: Represents issuing bodies (Properties: `NPTEL`, `IEEE`, `AWS`, `NSS`).
+7. `Category`: Represents domain credit categories with maximum cap limits.
+8. `Skill`: Represents technical and soft skills developed by activities.
+9. `Semester`: Represents academic semesters (1 to 8) with maximum credit limits.
+10. `Rule`: Represents governing credit rules, base points, and completion criteria.
+
+#### Typed Relationships (Edges)
+* `Student → BELONGS_TO → Department`
+* `Student → MENTORED_BY → Faculty`
+* `Student → COMPLETED / SUBMITTED → Activity`
+* `Activity → HAS_CATEGORY → Category`
+* `Activity → ISSUED_BY → Organization`
+* `Activity → DEVELOPS → Skill`
+* `Activity → OCCURRED_IN → Semester`
+* `Activity → AWARDS → Points`
+* `Certificate → PROVES → Activity`
+* `Certificate → BELONGS_TO → Student`
+
+### 5.3 Deterministic Graph Construction & Synchronization
+* **Role in Creditz**: Guarantees that the Knowledge Graph strictly mirrors current database state.
+* **Technical Implementation**: Graph construction (`buildKnowledgeGraph()`) is completely **idempotent**. Calling the builder re-queries transactional tables and updates nodes/edges dynamically. Because the graph is derived, any new submission or mentor approval automatically reflects in subsequent graph queries without data corruption risk.
+
+### 5.4 Graph Retrieval & Evidence Extraction
+* **Role in Creditz**: Extracts relevant subgraphs and numerical metrics for a given student.
+* **Technical Implementation**: `getStudentKnowledgeContext(studentId)` queries the graph to extract:
+  - Total effective earned points
+  - Target degree clearance points (200 pts)
+  - Remaining required points
+  - Current semester headroom (max 30 pts/semester)
+  - Category headroom audit (earned vs max domain cap for each category)
+  - Completed activities list with proof certificates
+  - Uncompleted eligible catalog activities and upcoming events
+
+### 5.5 Context Building & Grounded AI Generation (GraphRAG)
+* **Role in Creditz**: Constructs structured text payloads from graph evidence and prompts Gemini 2.5 Flash.
+* **Technical Implementation**: `server/services/graphRagService.ts` formats retrieved graph metrics, category headroom tables, and uncompleted catalog items into a structured prompt context. Gemini 2.5 Flash is instructed to act as an Institutional Advisor, operating under strict grounding rules:
+  - Must rely **exclusively** on provided graph evidence.
+  - Must use exact pre-calculated numerical values ($Remaining Points = Target Points - Current Points$).
+  - Must select activity recommendations **only** from the retrieved list of eligible uncompleted activities.
+  - Must output structured JSON containing `summary`, `target_plan`, `category_strategy`, `recommended_activities`, and `semester_guidance`.
+
+### 5.6 Deterministic Fallback Engine
+* **Role in Creditz**: Guarantees system resilience and continuous availability.
+* **Technical Implementation**: If the external Gemini API is unreachable or `GEMINI_API_KEY` is not configured, `getGraphRAGRecommendation()` automatically falls back to an internal deterministic graph advice engine (`buildDeterministicGraphAdvice()`). The fallback engine generates accurate, rule-compliant recommendations directly from graph evidence, ensuring 100% platform availability.
+
+---
+
+## 6. End-to-End Architectural Workflows
+
+### 6.1 Complete GraphRAG Architecture Flow
+```text
+Existing Creditz Database (Source of Truth)
+        ↓
+Knowledge Graph Engine (Idempotent Entity-Relation Building)
+        ↓
+Graph Retrieval (Fetch Student Node, Completed Edges, Category Caps)
+        ↓
+Context Builder (Format Evidence & Pre-calculated Numerical Metrics)
+        ↓
+Express API Proxy → Google Gemini 2.5 Flash (@google/genai)
+        ↓
+Grounded Response (Structured Advice JSON) → Student AI Advisor Modal
+```
+
+### 6.2 Certificate Verification Flow
+1. **Student Submission**: Student uploads a certificate image/PDF and submits claim details via `SubmitActivityModal.tsx`.
+2. **Server Processing**: Express route `/api/submissions` receives the payload and passes the file buffer to `server/services/geminiAudit.ts`.
+3. **Gemini OCR Extraction**: Gemini 2.5 Flash extracts candidate name, activity title, organization, date, and points.
+4. **Discrepancy Audit**: Backend logic compares extracted metadata against the student's database profile and generates an authenticity confidence score and warning flags.
+5. **Mentor Decision**: The Faculty Mentor opens the submission in `ReviewSubmissions.tsx`, inspects side-by-side certificate proof and AI discrepancy audit badges, and approves or rejects the submission.
+
+### 6.3 Student → Faculty Mentor → HOD Approval Workflow
+1. **Student Phase**: Student submits activity credit request. Status is set to `pending`.
+2. **Faculty Mentor Phase**: Allocated Faculty Mentor reviews pending submissions in their department. Mentor validates proof and clicks **Approve** or **Reject**.
+3. **Database Update**: Approval updates the submission status to `approved`, awards effective points, and records an activity audit log.
+4. **HOD Governance Phase**: Head of Department monitors aggregate department clearance metrics (`HODDashboard.tsx`), adjusts category domain caps (`SchemaManager.tsx`), reallocates faculty mentors (`StudentMentorAllocation.tsx`), and exports institutional compliance reports (`DepartmentReports.tsx`).
+
+### 6.4 Backend API Architecture
+Express registers modular REST API router modules mounted on `/api`:
+* `/api/auth`: Persona selection, user authentication, profile updates.
+* `/api/student`: Student dashboard metrics, submissions, events, GraphRAG AI Advisor (`/api/student/ai-advisor`), Knowledge Graph inspection (`/api/student/knowledge-graph`).
+* `/api/mentor`: Assigned mentee list, submission review queue, mentor approval endpoints.
+* `/api/hod`: Department clearance analytics, schema category cap management, student-mentor allocations, audit logs.
+* `/api/submissions`: File upload handling and Gemini OCR verification triggering.
+* `/api/events`: Event creation and student event registration.
+
+---
+
+## 7. Architectural Justifications & Design Principles
+
+### 7.1 Why the Core Database is Source of Truth while Knowledge Graph is Derived
+* **Data Integrity**: Relational transactional databases are specifically engineered for ACID compliance, concurrent writes, and strict record management. Storing user credentials, submission statuses, and audit logs in SQLite ensures zero transactional data corruption.
+* **Derived Intelligence**: The Knowledge Graph is an ephemeral, dynamically synthesized view of relational data. Treating the graph as a derived layer allows GraphRAG to query rich multi-hop relationships without risking transactional synchronization discrepancies or database state corruption.
+
+### 7.2 Why GraphRAG Outperforms Ungrounded Direct LLM Queries
+* **Elimination of Hallucinations**: Directly asking an ungrounded LLM *"How do I get 200 points?"* results in invented course titles, wrong point values, and invalid university policies. GraphRAG supplies the LLM with exact, real-time institutional evidence (current points, remaining deficit, category caps, eligible catalog items).
+* **Deterministic Mathematical Precision**: LLMs struggle with precise arithmetic. GraphRAG calculates remaining points ($200 - Current = Remaining$) and available headroom deterministically before invoking Gemini, using the LLM solely for natural language explanation and strategy synthesis.
+* **Contextual Policy Alignment**: GraphRAG enforces institutional category domain caps (e.g., max 50 pts in NPTEL) and semester ceilings (30 pts/semester), ensuring that recommended activities are 100% eligible for credit clearance.
+
+---
+
+## 8. Technology Summary Table
+
+| Technology | Role in Creditz | Purpose | Benefit |
+| :--- | :--- | :--- | :--- |
+| **React 18** | Frontend SPA Framework | Component-based interactive UI rendering | Fast, responsive single-page user experience |
+| **TypeScript** | Type System | Static typing for entities, API payloads, & graph types | Catch bugs early; seamless frontend-backend alignment |
+| **Vite** | Build Tool & Dev Server | Asset bundling & HMR server middleware | Fast development reloads & optimized production build |
+| **Tailwind CSS** | Styling Framework | Utility-first responsive CSS styling | Clean, professional, high-contrast dark-mode interface |
+| **Lucide Icons** | Visual Iconography | UI visual cues and status indicators | Intuitive navigation and visual feedback |
+| **Framer Motion** | Animation Library | UI motion transitions and modal animations | Smooth, polished user interface micro-interactions |
+| **Node.js** | Backend Runtime | Server-side code execution & file processing | Asynchronous, scalable server environment |
+| **Express** | Web Framework | Modular REST API routing & middleware | Clean REST API controllers & role-based route security |
+| **Google Gemini 2.5 Flash** | Multi-Modal AI Engine | Certificate OCR & GraphRAG narrative generation | High-speed, accurate multi-modal extraction & reasoning |
+| **`@google/genai` SDK** | Official AI SDK | Server-side Gemini API client integration | Secure, standardized API communication |
+| **SQLite / Database** | Transactional Storage | Authoritative source of truth for users & submissions | ACID-compliant, reliable transactional data persistence |
+| **Knowledge Graph Service** | Derived Intelligence | In-memory graph nodes & typed relationships | Enables semantic multi-hop queries across academic entities |
+| **GraphRAG Engine** | Retrieval & Grounding | Context building & grounded prompt generation | Completely eliminates AI hallucinations & policy invention |
+| **Deterministic Engine** | Rules & Fallback | Mathematical point calculations & offline fallback | 100% mathematical accuracy & continuous availability |

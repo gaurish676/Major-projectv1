@@ -566,4 +566,42 @@ router.post('/marks/seed-defaults', authenticate, requireRole(['student']), asyn
   }
 });
 
+// POST /api/student/ai-advisor - GraphRAG AI Academic Advisor
+router.post('/ai-advisor', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.user!.id;
+    const { query } = req.body;
+
+    const { getGraphRAGRecommendation } = await import('../services/graphRagService');
+    const result = await getGraphRAGRecommendation(studentId, query);
+
+    res.json(result);
+  } catch (err: any) {
+    console.error('GraphRAG AI Advisor error:', err);
+    res.status(500).json({ error: err.message || 'Failed to retrieve GraphRAG recommendations' });
+  }
+});
+
+// GET /api/student/knowledge-graph - Extract full or student knowledge graph visualization structure
+router.get('/knowledge-graph', authenticate, requireRole(['student', 'mentor', 'hod']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { buildKnowledgeGraph, getStudentKnowledgeContext } = await import('../services/knowledgeGraph');
+    const kg = await buildKnowledgeGraph();
+
+    const nodesArray = Array.from(kg.nodes.values());
+    const studentId = req.query.student_id ? (req.query.student_id as string) : req.user!.id;
+    const evidence = await getStudentKnowledgeContext(studentId);
+
+    res.json({
+      nodes: nodesArray,
+      edges: kg.edges,
+      evidence,
+      built_at: kg.built_at,
+    });
+  } catch (err: any) {
+    console.error('Knowledge Graph endpoint error:', err);
+    res.status(500).json({ error: err.message || 'Failed to retrieve Knowledge Graph' });
+  }
+});
+
 export default router;
