@@ -6,7 +6,7 @@ import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
 import { DegreeClearanceMeter } from '../../components/common/DegreeClearanceMeter';
 import { DeliveryStatusTracker } from '../../components/common/DeliveryStatusTracker';
-import { getCategoryPlainName, getCategoryEmoji, CATEGORIES } from '../../lib/categories';
+import { getCategoryPlainName, CATEGORIES } from '../../lib/categories';
 import {
   Eye,
   PlusCircle,
@@ -22,6 +22,13 @@ import {
   Zap,
   FileSpreadsheet,
   Calendar,
+  Users2,
+  Building2,
+  ArrowRight,
+  Layers,
+  ShieldCheck,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 
 interface StudentDashboardProps {
@@ -118,13 +125,27 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
 
-        {/* Big High-Affordance Button */}
+        {/* Connect College Clubs / Registered Clubs Action */}
         <button
-          onClick={onOpenSubmitModal}
-          className="px-5 py-3 rounded-xl text-xs font-extrabold bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition transform active:scale-95 cursor-pointer shrink-0"
+          onClick={() => onNavigateTab('student-clubs')}
+          className="px-4 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-between sm:justify-center gap-3 transition transform active:scale-95 cursor-pointer shrink-0 border border-blue-400/30 group"
+          title="Connect college club pages and view registered chapters"
         >
-          <Camera className="w-4 h-4 text-amber-300" />
-          <span>Add Certificate</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sky-200">
+              <Users2 className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-white">College Clubs</span>
+                <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-500 text-white shadow-2xs">
+                  Connected
+                </span>
+              </div>
+              <div className="text-[10px] text-sky-200 font-normal">View Registered Chapters</div>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-sky-200 group-hover:translate-x-0.5 transition" />
         </button>
       </div>
 
@@ -245,6 +266,108 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </div>
 
+      {/* Semester Credit Cap Section (AICTE 30 Credits/Semester Limit) */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                <span>Semester Credit Limit Status</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                  Cap: 30 Pts / Sem
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                AICTE regulations restrict earning to max 30 activity credits per semester. Extra certificates in a single semester are logged but capped.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Semester 1 to 8 Progress Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((semNum) => {
+            const semData = stats?.semester_breakdown?.find((s) => s.semester === semNum);
+            const rawApproved = semData?.raw_approved_points || 0;
+            const cappedApproved = semData?.approved_points || 0;
+            const pending = semData?.pending_points || 0;
+            const excess = semData?.excess_points || 0;
+            const isCapReached = rawApproved >= 30;
+            const pct = Math.min(100, Math.round((cappedApproved / 30) * 100));
+
+            return (
+              <div
+                key={semNum}
+                className={`p-2.5 rounded-xl border transition flex flex-col justify-between space-y-2 ${
+                  isCapReached
+                    ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300/50'
+                    : cappedApproved > 0
+                    ? 'bg-blue-50/50 border-blue-200'
+                    : 'bg-slate-50 border-slate-200/80'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700">Sem {semNum}</span>
+                  {isCapReached ? (
+                    <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold" title="Max Semester Cap Reached (30/30)">
+                      ✓
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-mono text-slate-400 font-semibold">/30</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-base font-extrabold font-mono text-slate-900">
+                      {cappedApproved}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {pct}%
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isCapReached ? 'bg-emerald-600' : cappedApproved > 0 ? 'bg-blue-600' : 'bg-slate-300'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-1 text-[9px] text-slate-500 font-medium">
+                  {excess > 0 ? (
+                    <span className="text-amber-700 font-bold bg-amber-100/80 px-1 py-0.2 rounded" title={`${excess} pts exceed the 30 pts/sem cap`}>
+                      +{excess} excess
+                    </span>
+                  ) : pending > 0 ? (
+                    <span className="text-blue-700 font-semibold">+{pending} pend</span>
+                  ) : isCapReached ? (
+                    <span className="text-emerald-700 font-bold">Maxed</span>
+                  ) : (
+                    <span className="text-slate-400">{30 - cappedApproved} rem</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Policy Notice Footer */}
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
+          <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+          <span>
+            <strong>Degree Requirement:</strong> 200 total activity points distributed across semesters (maximum 30 pts recognized in any single semester).
+          </span>
+        </div>
+      </div>
+
       {/* #1 FEATURE: My Submitted Certificates with Delivery-Style Status Tracker */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -296,7 +419,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-base">{getCategoryEmoji(sub.category_id)}</span>
                       <h4 className="font-bold text-slate-900 text-sm">
                         {sub.activity_title}
                       </h4>

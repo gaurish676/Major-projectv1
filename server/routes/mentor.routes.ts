@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { queryAll, queryOne } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
+import { calculateStudentPoints } from '../services/pointsCalculator';
+import { generateRandomStudentMarks } from '../services/curriculumSubjects';
 
 const router = Router();
 
@@ -16,7 +18,7 @@ router.get('/dashboard', authenticate, requireRole(['mentor']), async (req: Auth
       WHERE u.id = ?
     `, [mentorId]);
 
-    // Assigned mentees with their total approved points & pending points
+    // Assigned mentees
     const mentees = await queryAll(`
       SELECT 
         u.id, 
@@ -26,24 +28,30 @@ router.get('/dashboard', authenticate, requireRole(['mentor']), async (req: Auth
         u.semester, 
         u.cgpa, 
         u.avatar,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as approved_points,
         COALESCE(SUM(CASE WHEN s.status = 'pending' THEN 1 ELSE 0 END), 0) as pending_submissions_count
       FROM users u
       LEFT JOIN submissions s ON s.student_id = u.id
       WHERE u.mentor_id = ?
       GROUP BY u.id
-      ORDER BY approved_points DESC, u.name ASC
+      ORDER BY u.name ASC
     `, [mentorId]);
 
-    const formattedMentees = mentees.map((m) => {
-      const pts = Number(m.approved_points);
+    const formattedMentees = await Promise.all(mentees.map(async (m) => {
+      const pointsData = await calculateStudentPoints(m.id, m.semester || 1);
       return {
         ...m,
-        approved_points: pts,
+        approved_points: pointsData.total_effective_points,
+        raw_total_points: pointsData.raw_total_points,
+        total_excess_points: pointsData.total_excess_points,
+        semester_capped_points: pointsData.semester_capped_points,
         pending_submissions_count: Number(m.pending_submissions_count),
-        completed_percentage: Math.min(100, Math.round((pts / 200) * 1000) / 10),
+        completed_percentage: pointsData.progress_percentage,
+        milestone_tier: pointsData.milestone_tier,
       };
-    });
+    }));
+
+    // Sort by approved points descending
+    formattedMentees.sort((a, b) => b.approved_points - a.approved_points);
 
     // Counts
     const menteesCount = mentees.length;
@@ -149,35 +157,18 @@ router.get('/mentee/:id', authenticate, requireRole(['mentor', 'hod']), async (r
       ORDER BY s.submitted_at DESC
     `, [id]);
 
-    const categories = await queryAll(`
-      SELECT 
-        c.id,
-        c.name,
-        c.max_cap_points,
-        c.icon,
-        c.color,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as earned_points
-      FROM schema_categories c
-      LEFT JOIN submissions s ON s.category_id = c.id AND s.student_id = ?
-      GROUP BY c.id
-    `, [id]);
-
-    let totalCapped = 0;
-    const categoryBreakdown = categories.map((c) => {
-      const earned = Number(c.earned_points);
-      const capped = Math.min(earned, c.max_cap_points);
-      totalCapped += capped;
-      return {
-        ...c,
-        earned_points: earned,
-        capped_points: capped,
-      };
-    });
+    const pointsData = await calculateStudentPoints(id, student.semester || 1);
 
     res.json({
       student,
-      total_points: totalCapped,
-      category_breakdown: categoryBreakdown,
+      total_points: pointsData.total_effective_points,
+      raw_total_points: pointsData.raw_total_points,
+      total_excess_points: pointsData.total_excess_points,
+      semester_capped_points: pointsData.semester_capped_points,
+      semester_limit_per_semester: pointsData.semester_limit_per_semester,
+      category_breakdown: pointsData.categories_breakdown,
+      semester_breakdown: pointsData.semester_breakdown,
+      year_breakdown: pointsData.year_breakdown,
       submissions,
     });
   } catch (err: any) {
@@ -199,69 +190,37 @@ function calculateGradeAndPoints(percentage: number): { grade: string; grade_poi
 // Ensure default demo marks exist for assigned mentees so mentor can immediately review real data
 async function ensureDemoMarksForMentees(mentorId: string) {
   try {
-    const existingCount = await queryOne<{ count: number }>(`
-      SELECT COUNT(m.id) as count 
-      FROM student_marks m
-      JOIN users u ON m.student_id = u.id
-      WHERE u.mentor_id = ?
+    const mentees = await queryAll<{ id: string; semester: number }>(`
+      SELECT id, semester FROM users WHERE role = 'student' AND (mentor_id = ? OR mentor_id IS NULL)
     `, [mentorId]);
 
-    if (existingCount && existingCount.count > 0) {
-      return;
-    }
-
-    const defaultSeedMarks = [
-      // Rahul Verma (usr_std_1) - Sem 6
-      { id: 'sm_seed_r1', student_id: 'usr_std_1', semester: 6, subject_code: '21CS61', subject_name: 'Software Architecture & Design Patterns', credits: 4, theory_marks: 84, theory_max: 100, task_marks: 23, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-      { id: 'sm_seed_r2', student_id: 'usr_std_1', semester: 6, subject_code: '21CS62', subject_name: 'Full Stack Web Development & Cloud', credits: 4, theory_marks: 90, theory_max: 100, task_marks: 24, task_max: 25, has_lab: 1, lab_marks: 48, lab_max: 50 },
-      { id: 'sm_seed_r3', student_id: 'usr_std_1', semester: 6, subject_code: '21CS63', subject_name: 'Artificial Intelligence & Machine Learning', credits: 4, theory_marks: 86, theory_max: 100, task_marks: 22, task_max: 25, has_lab: 1, lab_marks: 46, lab_max: 50 },
-      { id: 'sm_seed_r4', student_id: 'usr_std_1', semester: 6, subject_code: '21CS64', subject_name: 'Compiler Design & Automata Theory', credits: 3, theory_marks: 78, theory_max: 100, task_marks: 21, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-      { id: 'sm_seed_r5', student_id: 'usr_std_1', semester: 6, subject_code: '21CS65', subject_name: 'Cloud Computing & Virtualization', credits: 3, theory_marks: 88, theory_max: 100, task_marks: 24, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-      { id: 'sm_seed_r6', student_id: 'usr_std_1', semester: 6, subject_code: '21CSL66', subject_name: 'Full Stack & AI Development Laboratory', credits: 2, theory_marks: 0, theory_max: 0, task_marks: 25, task_max: 25, has_lab: 1, lab_marks: 49, lab_max: 50 },
-
-      // Rahul Verma (usr_std_1) - Sem 5
-      { id: 'sm_seed_r7', student_id: 'usr_std_1', semester: 5, subject_code: '21CS51', subject_name: 'Management, Entrepreneurship & Cyber Law', credits: 3, theory_marks: 82, theory_max: 100, task_marks: 22, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-      { id: 'sm_seed_r8', student_id: 'usr_std_1', semester: 5, subject_code: '21CS52', subject_name: 'Computer Networks & Protocols', credits: 4, theory_marks: 88, theory_max: 100, task_marks: 23, task_max: 25, has_lab: 1, lab_marks: 47, lab_max: 50 },
-      { id: 'sm_seed_r9', student_id: 'usr_std_1', semester: 5, subject_code: '21CS53', subject_name: 'Database Management Systems & SQL', credits: 4, theory_marks: 92, theory_max: 100, task_marks: 25, task_max: 25, has_lab: 1, lab_marks: 48, lab_max: 50 },
-      { id: 'sm_seed_r10', student_id: 'usr_std_1', semester: 5, subject_code: '21CS54', subject_name: 'Automata Theory & Computability', credits: 3, theory_marks: 76, theory_max: 100, task_marks: 20, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-
-      // Priya Patel (usr_std_2) - Sem 4
-      { id: 'sm_seed_p1', student_id: 'usr_std_2', semester: 4, subject_code: '21CS41', subject_name: 'Design & Analysis of Algorithms', credits: 4, theory_marks: 94, theory_max: 100, task_marks: 25, task_max: 25, has_lab: 1, lab_marks: 49, lab_max: 50 },
-      { id: 'sm_seed_p2', student_id: 'usr_std_2', semester: 4, subject_code: '21CS42', subject_name: 'Operating Systems & Concurrency', credits: 4, theory_marks: 89, theory_max: 100, task_marks: 24, task_max: 25, has_lab: 1, lab_marks: 48, lab_max: 50 },
-      { id: 'sm_seed_p3', student_id: 'usr_std_2', semester: 4, subject_code: '21CS43', subject_name: 'Microcontrollers & Embedded Systems', credits: 3, theory_marks: 85, theory_max: 100, task_marks: 22, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-      { id: 'sm_seed_p4', student_id: 'usr_std_2', semester: 4, subject_code: '21CS44', subject_name: 'Complex Analysis, Probability & Stats', credits: 3, theory_marks: 91, theory_max: 100, task_marks: 24, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-
-      // Rohan Gupta (usr_std_3) - Sem 6
-      { id: 'sm_seed_ro1', student_id: 'usr_std_3', semester: 6, subject_code: '21CS61', subject_name: 'Software Architecture & Design Patterns', credits: 4, theory_marks: 72, theory_max: 100, task_marks: 19, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 },
-      { id: 'sm_seed_ro2', student_id: 'usr_std_3', semester: 6, subject_code: '21CS62', subject_name: 'Full Stack Web Development & Cloud', credits: 4, theory_marks: 75, theory_max: 100, task_marks: 20, task_max: 25, has_lab: 1, lab_marks: 42, lab_max: 50 },
-      { id: 'sm_seed_ro3', student_id: 'usr_std_3', semester: 6, subject_code: '21CS63', subject_name: 'Artificial Intelligence & Machine Learning', credits: 4, theory_marks: 70, theory_max: 100, task_marks: 18, task_max: 25, has_lab: 1, lab_marks: 40, lab_max: 50 },
-      { id: 'sm_seed_ro4', student_id: 'usr_std_3', semester: 6, subject_code: '21CS64', subject_name: 'Compiler Design & Automata Theory', credits: 3, theory_marks: 68, theory_max: 100, task_marks: 18, task_max: 25, has_lab: 0, lab_marks: 0, lab_max: 50 }
-    ];
-
     const now = new Date().toISOString();
-    for (const sm of defaultSeedMarks) {
-      const theory = sm.theory_marks;
-      const theoryMax = sm.theory_max;
-      const task = sm.task_marks;
-      const taskMax = sm.task_max;
-      const hasLab = Boolean(sm.has_lab);
-      const lab = sm.lab_marks;
-      const labMax = sm.lab_max;
 
-      const totalScored = theory + task + lab;
-      const totalMax = theoryMax + taskMax + labMax;
-      const percentage = totalMax > 0 ? Math.round((totalScored / totalMax) * 1000) / 10 : 0;
-      const { grade, grade_points } = calculateGradeAndPoints(percentage);
+    for (const mentee of mentees) {
+      const existing = await queryOne<{ count: number }>(`
+        SELECT COUNT(id) as count FROM student_marks WHERE student_id = ?
+      `, [mentee.id]);
 
-      await queryOne(`
-        INSERT OR REPLACE INTO student_marks 
-        (id, student_id, semester, subject_code, subject_name, credits, theory_marks, theory_max, task_marks, task_max, has_lab, lab_marks, lab_max, grade, grade_points, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        sm.id, sm.student_id, sm.semester, sm.subject_code, sm.subject_name, sm.credits,
-        sm.theory_marks, sm.theory_max, sm.task_marks, sm.task_max, sm.has_lab, sm.lab_marks, sm.lab_max,
-        grade, grade_points, now, now
-      ]);
+      if (!existing || existing.count === 0) {
+        // Generate for their current semester and one previous semester (if sem > 1)
+        const currentSem = mentee.semester || 6;
+        const semestersToSeed = currentSem > 1 ? [currentSem - 1, currentSem] : [1];
+        
+        for (const sem of semestersToSeed) {
+          const generated = generateRandomStudentMarks(mentee.id, sem, Math.floor(Math.random() * 10) - 3);
+          for (const sm of generated) {
+            await queryOne(`
+              INSERT OR REPLACE INTO student_marks 
+              (id, student_id, semester, subject_code, subject_name, credits, theory_marks, theory_max, task_marks, task_max, has_lab, lab_marks, lab_max, grade, grade_points, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              sm.id, sm.student_id, sm.semester, sm.subject_code, sm.subject_name, sm.credits,
+              sm.theory_marks, sm.theory_max, sm.task_marks, sm.task_max, sm.has_lab, sm.lab_marks, sm.lab_max,
+              sm.grade, sm.grade_points, now, now
+            ]);
+          }
+        }
+      }
     }
   } catch (e) {
     console.error('Error ensuring demo marks for mentees:', e);

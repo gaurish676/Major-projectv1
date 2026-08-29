@@ -48,11 +48,11 @@ export const DegreeClearanceMeter: React.FC<DegreeClearanceMeterProps> = ({
             {isCleared ? (
               <p className="text-sm font-semibold text-emerald-300 mt-1 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Degree Cleared! You have achieved the full 200 Activity Points required for graduation. 🎉</span>
+                <span>Degree Cleared! You have achieved the full 200 Activity Points required for graduation.</span>
               </p>
             ) : (
               <p className="text-sm font-semibold text-slate-200 mt-1 flex items-center gap-1.5">
-                <span className="text-amber-400">🎯</span>
+                <Target className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>
                   You only need <strong className="text-amber-300 font-mono text-base">{remainingPoints} more points</strong> to complete your degree graduation clearance!
                 </span>
@@ -77,120 +77,98 @@ export const DegreeClearanceMeter: React.FC<DegreeClearanceMeterProps> = ({
           </div>
         </div>
 
-        {/* Right Column: "Fastest way to get points & Upcoming Events" */}
-        {!isCleared && (
-          <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-blue-500/20 space-y-2.5 lg:w-96 shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Fastest Ways to Earn Points:</span>
-              </div>
-              {onNavigateTab && (
-                <button
-                  onClick={() => onNavigateTab('student-events')}
-                  className="text-[10px] text-sky-300 hover:text-sky-200 font-semibold underline underline-offset-2 flex items-center gap-0.5 cursor-pointer"
-                >
-                  <Calendar className="w-3 h-3" />
-                  <span>View All Events</span>
-                </button>
-              )}
+        {/* Right Column: Upcoming Events */}
+        <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/80 space-y-3 lg:w-96 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <Calendar className="w-4 h-4 text-blue-400" />
+              <span>Upcoming Events</span>
             </div>
-
-            <div className="space-y-2">
-              {/* Show top live upcoming departmental events & fast-track opportunities */}
-              {upcomingEvents.length > 0 ? (
-                upcomingEvents.slice(0, 3).map((evt) => (
-                  <button
-                    key={evt.id}
-                    onClick={() => {
-                      if (onNavigateTab) onNavigateTab('student-events');
-                      else onOpenSubmitModal();
-                    }}
-                    className="w-full text-left p-2 rounded-lg bg-slate-950/70 hover:bg-blue-950/80 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-2 group cursor-pointer"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-sky-200 font-medium border border-blue-500/30 shrink-0">
-                          {evt.category_name ? evt.category_name.slice(0, 14) : '📅 Live Event'}
-                        </span>
-                        <span className="text-xs font-semibold text-white group-hover:text-sky-200 transition truncate">
-                          {evt.title}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 flex items-center gap-2">
-                        <span>{new Date(evt.event_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                        <span>•</span>
-                        <span className="truncate">{evt.venue}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
-                        +{evt.potential_points} pts
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition" />
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <>
-                  <button
-                    onClick={onOpenSubmitModal}
-                    className="w-full text-left p-2 rounded-lg bg-slate-950/70 hover:bg-blue-950/80 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-2 group cursor-pointer"
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-sky-200 font-medium border border-blue-500/30">
-                          🎓 Fast Track
-                        </span>
-                        <span className="text-xs font-semibold text-white group-hover:text-sky-200 transition">
-                          Complete an NPTEL / Online Course
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
-                        +30 pts
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition" />
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => onNavigateTab && onNavigateTab('student-events')}
-                    className="w-full text-left p-2 rounded-lg bg-slate-950/70 hover:bg-blue-950/80 border border-slate-800 hover:border-blue-500/40 transition flex items-center justify-between gap-2 group cursor-pointer"
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-sky-200 font-medium border border-blue-500/30">
-                          🏆 Hackathon
-                        </span>
-                        <span className="text-xs font-semibold text-white group-hover:text-sky-200 transition">
-                          Join HackSprint 2025 (GenAI)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
-                        +30 pts
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition" />
-                    </div>
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className="pt-1 flex items-center justify-between text-[11px] text-slate-300">
-              <span>Have a certificate ready?</span>
+            {onNavigateTab && (
               <button
-                onClick={onOpenSubmitModal}
-                className="text-xs font-bold text-amber-300 hover:text-amber-200 underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                onClick={() => onNavigateTab('student-events')}
+                className="text-xs text-sky-300 hover:text-sky-200 font-semibold flex items-center gap-1 cursor-pointer transition"
               >
-                <span>Add Certificate</span>
-                <ArrowRight className="w-3 h-3" />
+                <span>View All</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
-            </div>
+            )}
           </div>
-        )}
+
+          <div className="space-y-2">
+            {upcomingEvents.length > 0 ? (
+              upcomingEvents.slice(0, 3).map((evt) => (
+                <button
+                  key={evt.id}
+                  onClick={() => onNavigateTab && onNavigateTab('student-events')}
+                  className="w-full text-left p-2.5 rounded-lg bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition flex items-center justify-between gap-2.5 group cursor-pointer"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="text-xs font-semibold text-white group-hover:text-sky-300 transition truncate">
+                      {evt.title}
+                    </div>
+                    <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                      <span className="text-slate-300 font-medium">
+                        {new Date(evt.event_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                      <span>•</span>
+                      <span className="truncate">{evt.venue}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/30">
+                      +{evt.potential_points} pts
+                    </span>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <>
+                <button
+                  onClick={() => onNavigateTab && onNavigateTab('student-events')}
+                  className="w-full text-left p-2.5 rounded-lg bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition flex items-center justify-between gap-2.5 group cursor-pointer"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="text-xs font-semibold text-white group-hover:text-sky-300 transition truncate">
+                      HackSprint 2025: 24h GenAI Hackathon
+                    </div>
+                    <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                      <span className="text-slate-300 font-medium">Nov 15</span>
+                      <span>•</span>
+                      <span className="truncate">CS Innovation Lab</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/30">
+                      +30 pts
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => onNavigateTab && onNavigateTab('student-events')}
+                  className="w-full text-left p-2.5 rounded-lg bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition flex items-center justify-between gap-2.5 group cursor-pointer"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="text-xs font-semibold text-white group-hover:text-sky-300 transition truncate">
+                      National Tech Paper Presentation
+                    </div>
+                    <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                      <span className="text-slate-300 font-medium">Nov 22</span>
+                      <span>•</span>
+                      <span className="truncate">Main Auditorium</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs font-bold font-mono text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/30">
+                      +25 pts
+                    </span>
+                  </div>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { apiRequest } from '../../lib/api';
 import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
 import { DeliveryStatusTracker } from '../../components/common/DeliveryStatusTracker';
-import { getCategoryPlainName, getCategoryEmoji, CATEGORIES } from '../../lib/categories';
+import { getCategoryPlainName, CATEGORIES } from '../../lib/categories';
 import {
   FileCheck2,
   Search,
@@ -192,7 +192,6 @@ export const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({ onOpenSubm
                 <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base">{getCategoryEmoji(sub.category_id)}</span>
                       <h3 className="font-bold text-slate-900 text-sm">
                         {sub.activity_title}
                       </h3>

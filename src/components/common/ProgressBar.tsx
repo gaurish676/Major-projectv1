@@ -19,10 +19,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const remaining = Math.max(0, targetPoints - currentPoints);
 
   const milestones = [
-    { points: 50, label: 'Bronze', color: 'text-amber-700', icon: '🥉' },
-    { points: 100, label: 'Silver', color: 'text-slate-600', icon: '🥈' },
-    { points: 150, label: 'Gold', color: 'text-yellow-600', icon: '🥇' },
-    { points: 200, label: 'Diamond', color: 'text-indigo-600', icon: '💎' },
+    { points: 50, label: 'Bronze', color: 'text-amber-700' },
+    { points: 100, label: 'Silver', color: 'text-slate-600' },
+    { points: 150, label: 'Gold', color: 'text-yellow-600' },
+    { points: 200, label: 'Diamond', color: 'text-indigo-600' },
   ];
 
   return (
@@ -82,7 +82,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-1 truncate">
-                  <span>{m.icon}</span>
+                  <Award className={`w-3 h-3 shrink-0 ${isReached ? 'text-indigo-600' : 'text-slate-400'}`} />
                   <span className="truncate">{m.label}</span>
                 </div>
                 <span className="font-mono text-[10px] shrink-0 font-medium">{m.points}p</span>

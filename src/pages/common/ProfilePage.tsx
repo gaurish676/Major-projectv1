@@ -173,7 +173,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
   };
 
   const handleCopyVerificationHash = () => {
-    const hash = `RVU-SEC-${user.id.toUpperCase()}-VERIFIED-${user.role.toUpperCase()}`;
+    const hash = `NITTE-SEC-${user.id.toUpperCase()}-VERIFIED-${user.role.toUpperCase()}`;
     navigator.clipboard.writeText(hash);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -324,8 +324,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             onClick={() => setActivePOV('evaluator')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 min-h-[38px] ${
               activePOV === 'evaluator'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -367,8 +367,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       )}
 
       {errorMessage && (
-        <div className="p-3.5 sm:p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2.5">
-          <X className="w-4 h-4 text-rose-600 shrink-0" />
+        <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2.5">
+          <X className="w-4 h-4 text-red-600 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -377,14 +377,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
       {activePOV !== 'self' && (
         <div className={`p-3.5 sm:p-4 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
           activePOV === 'evaluator'
-            ? 'bg-purple-50/80 border-purple-200 text-purple-900'
+            ? 'bg-indigo-50/80 border-indigo-200 text-indigo-900'
             : activePOV === 'accreditation'
             ? 'bg-amber-50/80 border-amber-200 text-amber-900'
             : 'bg-indigo-50/80 border-indigo-200 text-indigo-900'
         }`}>
           <div className="flex items-start sm:items-center gap-2.5">
             {activePOV === 'evaluator' ? (
-              <ShieldCheck className="w-5 h-5 text-purple-600 shrink-0 mt-0.5 sm:mt-0" />
+              <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5 sm:mt-0" />
             ) : activePOV === 'accreditation' ? (
               <Award className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
             ) : (
@@ -425,7 +425,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-3.5 sm:p-4 text-white text-center relative">
             <div className="flex items-center justify-center gap-2 mb-1">
               <GraduationCap className="w-5 h-5 text-indigo-400 shrink-0" />
-              <span className="font-bold text-xs sm:text-sm tracking-wider uppercase truncate">RV University</span>
+              <span className="font-bold text-xs sm:text-sm tracking-wider uppercase truncate">Nitte University</span>
             </div>
             <p className="text-[11px] text-slate-300 font-medium truncate">Department of Computer Science & Engineering</p>
             <div className="mt-2 inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
@@ -487,7 +487,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center gap-2">
               {renderQRCodeSVG()}
               <div className="text-[10px] font-mono text-slate-500 truncate max-w-full">
-                SEC-HASH: RVU-{user.id.substring(0, 8).toUpperCase()}-2026
+                SEC-HASH: NITTE-{user.id.substring(0, 8).toUpperCase()}-2026
               </div>
             </div>
 
@@ -541,14 +541,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
           {/* Header Cover Banner */}
           <div className={`h-28 sm:h-40 relative p-4 sm:p-6 flex items-end justify-between transition-colors ${
             activePOV === 'evaluator'
-              ? 'bg-gradient-to-r from-purple-950 via-slate-900 to-purple-950'
+              ? 'bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950'
               : activePOV === 'accreditation'
               ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950'
               : 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900'
           }`}>
             <div className="flex items-center gap-2 min-w-0">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-white/95 backdrop-blur-md border border-white/20 truncate">
-                RV University • CSE Central Repository
+                Nitte University • CSE Central Repository
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-2">
@@ -636,7 +636,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 ) : user.role === 'mentor' ? (
                   <div className="text-center sm:text-right">
                     <div className="text-[10px] uppercase font-bold text-slate-400">Role Authority</div>
-                    <div className="text-xs font-bold text-purple-700 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4" />
                       <span>Faculty Mentor & Evaluator</span>
                     </div>
@@ -661,7 +661,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Full Name <span className="text-rose-500">*</span>
+                      Full Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -692,7 +692,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Phone / Mobile <span className="text-rose-500">*</span>
+                      Phone / Mobile <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -773,29 +773,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
               <div className="space-y-3.5 sm:space-y-4 pt-4 border-t border-slate-100">
                 {/* EVALUATOR / MENTOR POV SPECIAL PANEL */}
                 {activePOV === 'evaluator' && (
-                  <div className="p-3 sm:p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2.5">
+                  <div className="p-3 sm:p-4 rounded-xl bg-indigo-50/70 border border-indigo-200 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
                         <span>Evaluation & Verification Checklist</span>
                       </span>
-                      <span className="text-[10px] font-bold bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full">
                         Mentor Authority
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                      <div className="p-2.5 bg-white rounded-lg border border-purple-100">
+                      <div className="p-2.5 bg-white rounded-lg border border-indigo-100">
                         <span className="text-[10px] text-slate-400 block font-bold">Category Cap Status</span>
                         <span className="font-bold text-slate-800">Within Thresholds (≤60 pts)</span>
                       </div>
-                      <div className="p-2.5 bg-white rounded-lg border border-purple-100">
+                      <div className="p-2.5 bg-white rounded-lg border border-indigo-100">
                         <span className="text-[10px] text-slate-400 block font-bold">Evidence Hash Audit</span>
                         <span className="font-bold text-emerald-600 flex items-center gap-1">
                           <Check className="w-3.5 h-3.5" />
                           <span>SHA-256 Valid</span>
                         </span>
                       </div>
-                      <div className="p-2.5 bg-white rounded-lg border border-purple-100">
+                      <div className="p-2.5 bg-white rounded-lg border border-indigo-100">
                         <span className="text-[10px] text-slate-400 block font-bold">Verification Window</span>
                         <span className="font-bold text-slate-800">Open for Review</span>
                       </div>
@@ -870,7 +870,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
 
                   {/* Campus Location */}
                   <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200/90 flex items-start gap-3.5 bg-white min-w-0 shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                       <MapPin className="w-4.5 h-4.5" />
                     </div>
                     <div className="min-w-0 flex-1">

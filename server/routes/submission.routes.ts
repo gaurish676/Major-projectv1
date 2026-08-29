@@ -70,6 +70,7 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
       file_name,
       file_size,
       completion_date,
+      semester,
       ai_audit_results,
     } = req.body;
 
@@ -77,6 +78,8 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
       res.status(400).json({ error: 'activity_title, file_url, and completion_date are required' });
       return;
     }
+
+    const subSemester = semester ? Math.max(1, Math.min(8, Number(semester))) : (req.user?.semester || 1);
 
     // Fetch schema rule or default to active rule
     let schemaRule = null;
@@ -112,8 +115,8 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
       INSERT INTO submissions (
         id, student_id, schema_id, schema_version_snapshot, activity_title, category_id,
         description, file_url, file_name, file_size, status, points_awarded,
-        mentor_feedback, ai_audit_results, completion_date, submitted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, NULL, ?, ?, ?)
+        semester, mentor_feedback, ai_audit_results, completion_date, submitted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?, NULL, ?, ?, ?)
     `, [
       id,
       req.user!.id,
@@ -125,6 +128,7 @@ router.post('/', authenticate, requireRole(['student']), async (req: Authenticat
       file_url,
       file_name || path.basename(file_url),
       file_size || 1024,
+      subSemester,
       finalAiAudit,
       completion_date,
       now,

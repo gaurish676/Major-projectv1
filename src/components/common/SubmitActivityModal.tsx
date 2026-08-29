@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -16,10 +16,15 @@ import {
   Edit3,
   Award,
   ChevronDown,
+  Tag,
+  Folder,
+  Layers,
+  Info,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Submission, AIAuditResult } from '../../types';
 import { apiRequest } from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
 import { CATEGORIES, getCategoryPlainName, getCategoryEmoji } from '../../lib/categories';
 
 interface SubmitActivityModalProps {
@@ -33,12 +38,21 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { user } = useAuth();
+
   // Form State
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('cat_cert');
   const [expectedPoints, setExpectedPoints] = useState(25);
+  const [semester, setSemester] = useState<number>(user?.semester || 6);
   const [isDetailsEditable, setIsDetailsEditable] = useState(false);
+
+  useEffect(() => {
+    if (user?.semester) {
+      setSemester(user.semester);
+    }
+  }, [user]);
 
   // File & AI Vision State
   const [file, setFile] = useState<File | null>(null);
@@ -170,6 +184,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
           file_name: finalFileName,
           file_size: finalFileSize,
           completion_date: eventDate,
+          semester: Number(semester) || (user?.semester || 1),
           ai_audit_results: aiAuditPreview,
         }),
       });
@@ -279,7 +294,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                 </div>
 
                 <h4 className="text-sm font-bold text-slate-900 mb-1">
-                  📸 SNAP OR DROP YOUR CERTIFICATE HERE
+                  Upload or Drop Certificate File
                 </h4>
                 <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">
                   Works with PDF certificates, screenshots, or physical certificates taken with your phone camera.
@@ -294,7 +309,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                     className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 transition cursor-pointer"
                   >
                     <Camera className="w-4 h-4" />
-                    <span>📷 Take Photo with Phone</span>
+                    <span>Take Photo with Phone</span>
                   </button>
 
                   {/* Browse File Button */}
@@ -304,7 +319,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                     className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-2xs flex items-center justify-center gap-2 transition cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-indigo-600" />
-                    <span>📁 Choose PDF or Image</span>
+                    <span>Choose PDF or Image</span>
                   </button>
                 </div>
               </div>
@@ -331,7 +346,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
               </div>
             )}
 
-            {/* STEP 2: ✨ AI AUTO-FILLED DETAILS CARD (Looks correct?) */}
+            {/* STEP 2: AI AUTO-FILLED DETAILS CARD (Looks correct?) */}
             {file && !isAiScanning && (
               <div className="space-y-3">
                 {/* Visual AI Banner */}
@@ -342,7 +357,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <span className="font-bold text-xs text-emerald-950">
-                        ✨ AI AUTO-FILLED YOUR DETAILS (Looks correct?):
+                        AI Auto-Detected Details:
                       </span>
                     </div>
 
@@ -358,10 +373,11 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
 
                   {/* Auto-filled Summary Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs bg-white rounded-xl p-3 border border-emerald-200/80 shadow-2xs">
-                    {/* 🏷️ Event Name */}
+                    {/* Event Name */}
                     <div className="sm:col-span-2 space-y-1">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <span>🏷️ Event / Certification Name</span>
+                        <Tag className="w-3 h-3 text-slate-400" />
+                        <span>Event / Certification Name</span>
                       </label>
                       {isDetailsEditable ? (
                         <input
@@ -378,10 +394,11 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                       )}
                     </div>
 
-                    {/* 📂 Category Domain */}
+                    {/* Category Domain */}
                     <div className="space-y-1">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <span>📂 Auto-Detected Category</span>
+                        <Folder className="w-3 h-3 text-slate-400" />
+                        <span>Auto-Detected Category</span>
                       </label>
                       {isDetailsEditable ? (
                         <select
@@ -391,22 +408,23 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                         >
                           {Object.values(CATEGORIES).map((cat) => (
                             <option key={cat.id} value={cat.id}>
-                              {cat.emoji} {cat.name}
+                              {cat.name}
                             </option>
                           ))}
                         </select>
                       ) : (
                         <div className={`px-2.5 py-1.5 rounded-lg border font-semibold flex items-center gap-1.5 ${currentCategory.bgColor} ${currentCategory.borderColor} ${currentCategory.textColor}`}>
-                          <span>{currentCategory.emoji}</span>
+                          <Folder className="w-3.5 h-3.5" />
                           <span className="truncate">{currentCategory.name}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* 📅 Date */}
+                    {/* Date */}
                     <div className="space-y-1">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <span>📅 Completion Date</span>
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>Completion Date</span>
                       </label>
                       {isDetailsEditable ? (
                         <input
@@ -422,11 +440,45 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                       )}
                     </div>
 
-                    {/* ⭐ Expected Points Preview */}
-                    <div className="sm:col-span-2 flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950">
+                    {/* Semester Attribution */}
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Layers className="w-3 h-3 text-slate-400" />
+                          <span>Applicable Semester</span>
+                        </span>
+                        <span className="text-[10px] text-indigo-600 font-medium lowercase">
+                          (Max 30 credits / semester limit)
+                        </span>
+                      </label>
+                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                          <button
+                            key={sem}
+                            type="button"
+                            onClick={() => setSemester(sem)}
+                            className={`py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer text-center ${
+                              semester === sem
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                            }`}
+                          >
+                            Sem {sem}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Expected Points Preview */}
+                    <div className="sm:col-span-2 flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950">
                       <div className="flex items-center gap-1.5">
                         <Award className="w-4 h-4 text-emerald-600" />
-                        <span className="font-semibold text-xs">Expected Degree Credit:</span>
+                        <div>
+                          <span className="font-semibold text-xs block">Expected Activity Credit:</span>
+                          <span className="text-[10px] text-emerald-800">
+                            Counted towards Semester {semester} (Semester cap: 30 pts)
+                          </span>
+                        </div>
                       </div>
                       <span className="font-extrabold font-mono text-sm text-emerald-700 bg-white px-2.5 py-0.5 rounded-md border border-emerald-300 shadow-2xs">
                         +{expectedPoints} Points
@@ -470,7 +522,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                   ) : (
                     <>
                       <CheckCircle2 className="w-5 h-5" />
-                      <span>✅ SUBMIT FOR APPROVAL</span>
+                      <span>Submit for Verification</span>
                     </>
                   )}
                 </button>

@@ -12,6 +12,7 @@ import { SubmissionHistory } from './pages/student/SubmissionHistory';
 import { ExploreSchema } from './pages/student/ExploreSchema';
 import { StudentEvents } from './pages/student/StudentEvents';
 import { UpdateMarks } from './pages/student/UpdateMarks';
+import { CollegeClubs } from './pages/student/CollegeClubs';
 
 // Mentor Pages
 import { MentorDashboard } from './pages/mentor/MentorDashboard';
@@ -75,9 +76,14 @@ const MainLayout: React.FC = () => {
       <Navbar
         onToggleSidebar={handleToggleSidebar}
         onNavigateProfile={() => setActiveTab('profile')}
+        onNavigateHome={() => {
+          if (user.role === 'student') setActiveTab('student-dashboard');
+          else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
+          else setActiveTab('hod-dashboard');
+        }}
       />
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex max-w-[1536px] w-full mx-auto">
         {/* Desktop Sidebar */}
         {isDesktopSidebarOpen && (
           <div className="hidden lg:block transition-all">
@@ -135,13 +141,14 @@ const MainLayout: React.FC = () => {
           {/* Student Views */}
           {user.role === 'student' && activeTab !== 'profile' && (
             <>
-              {activeTab === 'student-dashboard' && (
+              {(activeTab === 'student-dashboard' || activeTab === 'home') && (
                 <StudentDashboard
                   onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
                   onNavigateTab={setActiveTab}
                 />
               )}
               {activeTab === 'student-marks' && <UpdateMarks />}
+              {activeTab === 'student-clubs' && <CollegeClubs onNavigateTab={setActiveTab} />}
               {activeTab === 'student-submissions' && (
                 <SubmissionHistory
                   onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
@@ -155,7 +162,7 @@ const MainLayout: React.FC = () => {
           {/* Mentor Views */}
           {user.role === 'mentor' && activeTab !== 'profile' && (
             <>
-              {activeTab === 'mentor-dashboard' && (
+              {(activeTab === 'mentor-dashboard' || activeTab === 'home') && (
                 <MentorDashboard
                   onOpenSchemaRequestModal={() => setIsSchemaRequestModalOpen(true)}
                   onNavigateTab={setActiveTab}
@@ -173,17 +180,20 @@ const MainLayout: React.FC = () => {
               )}
               {(activeTab === 'mentor-schema' || activeTab === 'student-schema') && <ExploreSchema />}
               {activeTab === 'student-events' && <StudentEvents />}
+              {activeTab === 'student-clubs' && <CollegeClubs onNavigateTab={setActiveTab} />}
             </>
           )}
 
           {/* HOD Views */}
           {user.role === 'hod' && activeTab !== 'profile' && (
             <>
-              {activeTab === 'hod-dashboard' && (
+              {(activeTab === 'hod-dashboard' || activeTab === 'home') && (
                 <HODDashboard onNavigateTab={setActiveTab} />
               )}
-              {activeTab === 'hod-schema' && <SchemaManager />}
+              {(activeTab === 'hod-schemas' || activeTab === 'hod-schema') && <SchemaManager />}
               {activeTab === 'hod-requests' && <MentorRequestsQueue />}
+              {activeTab === 'student-events' && <StudentEvents />}
+              {activeTab === 'student-clubs' && <CollegeClubs onNavigateTab={setActiveTab} />}
               {(activeTab === 'hod-allocation' || activeTab === 'hod-allocations' || activeTab === 'hod-reports') && (
                 <StudentMentorAllocation />
               )}

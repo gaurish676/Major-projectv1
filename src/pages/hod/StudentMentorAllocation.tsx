@@ -28,6 +28,7 @@ import {
   Info,
   Layers,
   ChevronRight,
+  ChevronDown,
   Plus,
   Pencil,
   Trash2,
@@ -168,6 +169,27 @@ export const StudentMentorAllocation: React.FC = () => {
   const [autoMethod, setAutoMethod] = useState<'balanced' | 'roll_range'>('balanced');
   const [autoScope, setAutoScope] = useState<'unallocated' | 'all' | 'selected'>('unallocated');
   const [isAutoAllocating, setIsAutoAllocating] = useState(false);
+
+  // Top Toolbar Dropdown States
+  const [showImportDropdown, setShowImportDropdown] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const importDropdownRef = useRef<HTMLDivElement>(null);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (importDropdownRef.current && !importDropdownRef.current.contains(event.target as Node)) {
+        setShowImportDropdown(false);
+      }
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setShowExportDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const loadAllData = async () => {
     try {
@@ -846,91 +868,184 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
           </div>
         </div>
 
-        {/* Global Actions Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-          {/* Add Mentee Student */}
-          <button
-            type="button"
-            onClick={handleOpenAddStudent}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition cursor-pointer shadow-xs"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Add Student</span>
-          </button>
+        {/* Global Actions Toolbar - Grouped by Importance */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Primary Group */}
+          <div className="flex items-center gap-2">
+            {/* + Add Student */}
+            <button
+              id="btn-add-student"
+              type="button"
+              onClick={handleOpenAddStudent}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition cursor-pointer shadow-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Add Student</span>
+            </button>
 
-          {/* Add Faculty Mentor */}
-          <button
-            type="button"
-            onClick={handleOpenAddMentor}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition cursor-pointer shadow-2xs"
-          >
-            <Plus className="w-3.5 h-3.5 text-purple-600" />
-            <span>Add Faculty Mentor</span>
-          </button>
+            {/* + Add Mentor */}
+            <button
+              id="btn-add-mentor"
+              type="button"
+              onClick={handleOpenAddMentor}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/90 rounded-xl transition cursor-pointer shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Add Mentor</span>
+            </button>
 
-          {/* Download Mentors CSV */}
-          <button
-            type="button"
-            onClick={handleExportMentorsCSV}
-            title="Download Mentor Details CSV"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 text-purple-600" />
-            <span>Mentors CSV</span>
-          </button>
+            {/* Auto-Allot Students */}
+            <button
+              id="btn-auto-allot-students"
+              type="button"
+              onClick={() => setShowAutoAllocateModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition cursor-pointer shadow-xs"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>Auto-Allot Students</span>
+            </button>
+          </div>
 
-          {/* Download Mentees CSV */}
-          <button
-            type="button"
-            onClick={handleExportMenteesCSV}
-            title="Download Mentees Details CSV"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Mentees CSV</span>
-          </button>
+          {/* Subtle Divider */}
+          <div className="hidden sm:block h-6 w-px bg-slate-200" aria-hidden="true" />
 
-          <button
-            type="button"
-            onClick={handlePrint}
-            title="Print Official Dossier"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5 text-slate-500" />
-            <span>Print</span>
-          </button>
+          {/* Secondary / Utility Group */}
+          <div className="flex items-center gap-2">
+            {/* Import CSV Dropdown */}
+            <div className="relative" ref={importDropdownRef}>
+              <button
+                id="btn-import-csv-menu"
+                type="button"
+                onClick={() => {
+                  setShowImportDropdown((prev) => !prev);
+                  setShowExportDropdown(false);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition cursor-pointer shadow-2xs ${
+                  showImportDropdown
+                    ? 'bg-slate-100 border-slate-300 text-slate-900'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                }`}
+              >
+                <Upload className="w-3.5 h-3.5 text-slate-600" />
+                <span>Import CSV</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showImportDropdown ? 'rotate-180' : ''}`} />
+              </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setParsedRows([]);
-              setCsvFile(null);
-              setCsvError(null);
-              setShowCSVModal(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/90 rounded-xl transition cursor-pointer shadow-2xs"
-          >
-            <Upload className="w-4 h-4 text-indigo-600" />
-            <span>Upload Student CSV</span>
-          </button>
+              {showImportDropdown && (
+                <div className="absolute right-0 sm:left-0 sm:right-auto mt-1.5 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowImportDropdown(false);
+                      setParsedRows([]);
+                      setCsvFile(null);
+                      setCsvError(null);
+                      setShowCSVModal(true);
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Upload Student CSV</div>
+                      <div className="text-[10px] text-slate-400">Bulk ingest student roster</div>
+                    </div>
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowImportDropdown(false);
+                      downloadSampleCSV();
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Download CSV Template</div>
+                      <div className="text-[10px] text-slate-400">Sample format with column headers</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setShowAutoAllocateModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl transition cursor-pointer shadow-xs"
-          >
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            <span>Auto-Allot Students</span>
-          </button>
+            {/* Export CSV Dropdown */}
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                id="btn-export-csv-menu"
+                type="button"
+                onClick={() => {
+                  setShowExportDropdown((prev) => !prev);
+                  setShowImportDropdown(false);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition cursor-pointer shadow-2xs ${
+                  showExportDropdown
+                    ? 'bg-slate-100 border-slate-300 text-slate-900'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5 text-slate-600" />
+                <span>Export CSV</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showExportDropdown ? 'rotate-180' : ''}`} />
+              </button>
 
-          <button
-            type="button"
-            onClick={loadAllData}
-            title="Refresh All Data"
-            className="p-2 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
+              {showExportDropdown && (
+                <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportDropdown(false);
+                      handleExportMentorsCSV();
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Mentors CSV</div>
+                      <div className="text-[10px] text-slate-400">Faculty workload & capacity ledger</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExportDropdown(false);
+                      handleExportMenteesCSV();
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-4 h-4 text-slate-600 shrink-0" />
+                    <div>
+                      <div className="font-semibold text-slate-800">Mentees CSV</div>
+                      <div className="text-[10px] text-slate-400">Student mentor allocation roster</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Print */}
+            <button
+              id="btn-print-dossier"
+              type="button"
+              onClick={handlePrint}
+              title="Print Official Dossier"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer shadow-2xs"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
+              <span>Print</span>
+            </button>
+
+            {/* Refresh */}
+            <button
+              id="btn-refresh-data"
+              type="button"
+              onClick={loadAllData}
+              title="Refresh All Data"
+              className="p-2 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer shadow-2xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -941,7 +1056,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
             notification.type === 'success'
               ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
               : notification.type === 'error'
-              ? 'bg-rose-50 border-rose-200 text-rose-900'
+              ? 'bg-red-50 border-red-200 text-red-900'
               : 'bg-indigo-50 border-indigo-200 text-indigo-900'
           }`}
         >
@@ -949,7 +1064,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
             {notification.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : notification.type === 'error' ? (
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             ) : (
               <Info className="w-4 h-4 text-indigo-600 shrink-0" />
             )}
@@ -987,13 +1102,13 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
           onClick={() => setActiveSubTab('mentors')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeSubTab === 'mentors'
-              ? 'bg-purple-900 text-white shadow-xs'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-purple-50 hover:text-purple-900'
+              ? 'bg-[#172554] text-white shadow-xs'
+              : 'bg-white text-slate-700 border border-slate-200 hover:bg-indigo-50 hover:text-indigo-900'
           }`}
         >
-          <GraduationCap className="w-4 h-4 text-purple-400" />
+          <GraduationCap className="w-4 h-4 text-indigo-400" />
           <span>Faculty Mentors Directory</span>
-          <span className="px-1.5 py-0.2 rounded-md bg-purple-100 text-purple-900 text-[10px]">
+          <span className="px-1.5 py-0.2 rounded-md bg-indigo-100 text-indigo-900 text-[10px]">
             {mentors.length}
           </span>
         </button>
@@ -1039,7 +1154,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-100">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-purple-600" />
+                  <GraduationCap className="w-4 h-4 text-indigo-600" />
                   <span>Department Faculty Mentors</span>
                 </h2>
                 <p className="text-[11px] text-slate-500">
@@ -1051,9 +1166,9 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 <button
                   type="button"
                   onClick={handleOpenAddMentor}
-                  className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-800 font-bold flex items-center gap-1 transition cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-bold flex items-center gap-1 transition cursor-pointer"
                 >
-                  <Plus className="w-3 h-3 text-purple-600" />
+                  <Plus className="w-3 h-3 text-indigo-600" />
                   <span>Add Mentor</span>
                 </button>
                 <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 font-bold">
@@ -1083,7 +1198,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                     key={m.id}
                     className={`p-3.5 rounded-xl border transition relative group ${
                       isSelected
-                        ? 'bg-purple-50/80 border-purple-300 ring-2 ring-purple-400/50 shadow-xs'
+                        ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-400/50 shadow-xs'
                         : 'bg-slate-50/60 hover:bg-slate-100/80 border-slate-200/90'
                     }`}
                   >
@@ -1099,7 +1214,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                           {m.email}
                         </div>
                         {m.designation && (
-                          <div className="text-[9px] text-purple-700 font-medium truncate mt-0.5">
+                          <div className="text-[9px] text-indigo-700 font-medium truncate mt-0.5">
                             {m.designation}
                           </div>
                         )}
@@ -1110,7 +1225,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
                             isHeavyLoad
                               ? 'bg-amber-100 text-amber-800 border-amber-200'
-                              : 'bg-purple-100 text-purple-800 border-purple-200'
+                              : 'bg-indigo-100 text-indigo-800 border-indigo-200'
                           }`}
                         >
                           {menteeCount} Mentees
@@ -1136,7 +1251,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                               handleDeleteMentorRequest(m);
                             }}
                             title="Delete Mentor"
-                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded transition cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-white rounded transition cursor-pointer"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -1155,7 +1270,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                       <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            isHeavyLoad ? 'bg-amber-500' : 'bg-purple-600'
+                            isHeavyLoad ? 'bg-amber-500' : 'bg-indigo-600'
                           }`}
                           style={{ width: `${Math.min(100, (menteeCount / 12) * 100)}%` }}
                         />
@@ -1398,8 +1513,8 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
                           <td className="py-2.5 px-3.5">
                             {isAllocated ? (
-                              <span className="font-semibold text-purple-900 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 text-[11px] inline-flex items-center gap-1">
-                                <UserCheck className="w-3 h-3 text-purple-600" />
+                              <span className="font-semibold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200 text-[11px] inline-flex items-center gap-1">
+                                <UserCheck className="w-3 h-3 text-indigo-600" />
                                 <span>{s.mentor_name || 'Assigned'}</span>
                               </span>
                             ) : (
@@ -1440,7 +1555,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                                 type="button"
                                 onClick={() => handleDeleteStudentRequest(s)}
                                 title="Delete Mentee Student"
-                                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1475,7 +1590,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-purple-600" />
+                  <GraduationCap className="w-5 h-5 text-indigo-600" />
                   <span>Department Faculty Mentors Directory</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -1487,15 +1602,15 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 <button
                   type="button"
                   onClick={handleExportMentorsCSV}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-purple-600" />
+                  <Download className="w-3.5 h-3.5 text-indigo-600" />
                   <span>Export CSV</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleOpenAddMentor}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition cursor-pointer shadow-xs"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition cursor-pointer shadow-xs"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Faculty Mentor</span>
@@ -1505,10 +1620,10 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
             {/* Quick Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-purple-50/60 border border-purple-100">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Total Mentors</div>
-                <div className="text-2xl font-bold font-mono text-purple-950 mt-0.5">{mentors.length}</div>
-                <div className="text-[10px] text-purple-700 mt-0.5">Active CSE Faculty</div>
+              <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Total Mentors</div>
+                <div className="text-2xl font-bold font-mono text-indigo-950 mt-0.5">{mentors.length}</div>
+                <div className="text-[10px] text-indigo-700 mt-0.5">Active CSE Faculty</div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100">
@@ -1540,7 +1655,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 placeholder="Search faculty by name, email, designation, office..."
                 value={mentorSearchQuery}
                 onChange={(e) => setMentorSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200/90 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white outline-hidden"
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200/90 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white outline-hidden"
               />
             </div>
           </div>
@@ -1566,20 +1681,20 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 return (
                   <div
                     key={m.id}
-                    className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 flex flex-col justify-between space-y-3.5 hover:border-purple-300 transition"
+                    className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 flex flex-col justify-between space-y-3.5 hover:border-indigo-300 transition"
                   >
                     <div>
                       {/* Top Mentor Header */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
                             {m.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <h3 className="font-bold text-slate-900 text-sm truncate" title={m.name}>
                               {m.name}
                             </h3>
-                            <span className="inline-block text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100 mt-0.5">
+                            <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 mt-0.5">
                               {m.designation || 'Faculty Mentor'}
                             </span>
                           </div>
@@ -1598,7 +1713,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                             type="button"
                             onClick={() => handleDeleteMentorRequest(m)}
                             title="Delete Faculty Mentor"
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1630,7 +1745,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                     <div className="space-y-2 pt-2 border-t border-slate-100">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-500 font-medium">Assigned Mentees</span>
-                        <span className="font-bold font-mono text-purple-900">
+                        <span className="font-bold font-mono text-indigo-900">
                           {menteeCount} / 12 Capacity
                         </span>
                       </div>
@@ -1638,7 +1753,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                       <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            isHeavyLoad ? 'bg-amber-500' : 'bg-purple-600'
+                            isHeavyLoad ? 'bg-amber-500' : 'bg-indigo-600'
                           }`}
                           style={{ width: `${Math.min(100, (menteeCount / 12) * 100)}%` }}
                         />
@@ -1650,9 +1765,9 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                           setSelectedMentorFilter(m.id);
                           setActiveSubTab('allocation');
                         }}
-                        className="w-full py-1.5 text-center text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full py-1.5 text-center text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        <Users className="w-3.5 h-3.5 text-purple-600" />
+                        <Users className="w-3.5 h-3.5 text-indigo-600" />
                         <span>View Assigned Students ({menteeCount})</span>
                       </button>
                     </div>
@@ -1787,7 +1902,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                         <td className="py-2.5 px-3.5 text-slate-600">
                           Sem {st.semester || 6} • CGPA {st.cgpa || 8.0}
                         </td>
-                        <td className="py-2.5 px-3.5 text-purple-900 font-medium">
+                        <td className="py-2.5 px-3.5 text-indigo-900 font-medium">
                           {st.mentor_name || <span className="text-amber-600 font-bold">Unassigned</span>}
                         </td>
                         <td className="py-2.5 px-3.5 font-mono font-bold text-indigo-600">
@@ -2239,10 +2354,10 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
       {showMentorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-purple-50/50">
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-indigo-50/50">
               <div className="flex items-center gap-2.5">
-                <span className="p-2 rounded-xl bg-purple-100 text-purple-700">
-                  <GraduationCap className="w-5 h-5 text-purple-700" />
+                <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
+                  <GraduationCap className="w-5 h-5 text-indigo-700" />
                 </span>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
@@ -2270,7 +2385,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-800 flex items-center gap-1">
                     <span>Full Name</span>
-                    <span className="text-rose-500">*</span>
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -2278,7 +2393,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                     placeholder="e.g. Dr. Rajesh Sharma"
                     value={mentorFormData.name}
                     onChange={(e) => setMentorFormData({ ...mentorFormData, name: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                   />
                 </div>
 
@@ -2286,7 +2401,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 <div className="space-y-1.5">
                   <label className="font-bold text-slate-800 flex items-center gap-1">
                     <span>Official Email Address</span>
-                    <span className="text-rose-500">*</span>
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -2294,7 +2409,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                     placeholder="e.g. rajesh.sharma@university.edu"
                     value={mentorFormData.email}
                     onChange={(e) => setMentorFormData({ ...mentorFormData, email: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                   />
                 </div>
 
@@ -2304,7 +2419,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                   <select
                     value={mentorFormData.designation}
                     onChange={(e) => setMentorFormData({ ...mentorFormData, designation: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white cursor-pointer"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white cursor-pointer"
                   >
                     <option value="Assistant Professor">Assistant Professor</option>
                     <option value="Associate Professor">Associate Professor</option>
@@ -2324,7 +2439,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                       placeholder="e.g. +91 98765 43210"
                       value={mentorFormData.phone}
                       onChange={(e) => setMentorFormData({ ...mentorFormData, phone: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                     />
                   </div>
 
@@ -2335,7 +2450,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                       placeholder="e.g. Academic Block-2, Room 405"
                       value={mentorFormData.office_location}
                       onChange={(e) => setMentorFormData({ ...mentorFormData, office_location: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                     />
                   </div>
                 </div>
@@ -2353,7 +2468,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 <button
                   type="submit"
                   disabled={isSavingMentor}
-                  className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
                   {isSavingMentor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                   <span>{mentorModalMode === 'create' ? 'Add Faculty Mentor' : 'Save Changes'}</span>

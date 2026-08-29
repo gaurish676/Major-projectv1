@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
+  Home,
   LayoutDashboard,
   FileCheck2,
   BookOpen,
   Calendar,
   Users,
+  Users2,
   ShieldAlert,
   GitPullRequest,
   Sliders,
@@ -97,12 +99,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         Navigation Options
       </div>
 
-      {/* 1. Profile */}
+      {/* 1. Home Dashboard */}
+      <button
+        onClick={() => onSelectTab('student-dashboard')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-dashboard' || activeTab === 'home'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Home className="w-4 h-4" />
+          <span>Home</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 2. Profile */}
       <button
         onClick={() => onSelectTab('profile')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'profile'
-            ? 'bg-blue-700 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -113,28 +131,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Dashboard Overview */}
-      <button
-        onClick={() => onSelectTab('student-dashboard')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-dashboard'
-            ? 'bg-blue-700 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <LayoutDashboard className="w-4 h-4" />
-          <span>200-Pt Dashboard</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
       {/* 3. Update Marks */}
       <button
         onClick={() => onSelectTab('student-marks')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-marks'
-            ? 'bg-blue-700 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -152,26 +154,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('student-events')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-events'
-            ? 'bg-blue-700 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <Calendar className="w-4 h-4 text-sky-600" />
+          <Calendar className="w-4 h-4 text-indigo-500" />
           <span>Upcoming Events</span>
         </div>
         <span className="flex h-2 w-2 relative">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
         </span>
       </button>
 
-      {/* 5. Submissions */}
+      {/* 5. College Clubs & Chapters */}
+      <button
+        onClick={() => onSelectTab('student-clubs')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-clubs'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Users2 className="w-4 h-4 text-indigo-500" />
+          <span>College Clubs</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+          Clubs
+        </span>
+      </button>
+
+      {/* 6. Submissions */}
       <button
         onClick={() => onSelectTab('student-submissions')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-submissions'
-            ? 'bg-blue-700 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -182,12 +202,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 6. Marking Schema */}
+      {/* 7. Marking Schema */}
       <button
         onClick={() => onSelectTab('student-schema')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-schema'
-            ? 'bg-blue-700 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -203,7 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-3 px-1">
           <button
             onClick={onOpenSubmitModal}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Add Certificate</span>
@@ -219,12 +239,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         Faculty Options
       </div>
 
-      {/* 1. Profile */}
+      {/* 1. Home Dashboard */}
+      <button
+        onClick={() => onSelectTab('mentor-dashboard')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'mentor-dashboard' || activeTab === 'home'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Home className="w-4 h-4" />
+          <span>Home</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 2. Profile */}
       <button
         onClick={() => onSelectTab('profile')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'profile'
-            ? 'bg-purple-600 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -235,12 +271,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Submission Review */}
+      {/* 3. Submission Review */}
       <button
         onClick={() => onSelectTab('mentor-reviews')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations'
-            ? 'bg-purple-600 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -251,12 +287,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 3. Student Marks (Sem-wise) */}
+      {/* 4. Student Marks (Sem-wise) */}
       <button
         onClick={() => onSelectTab('mentor-marks')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-marks'
-            ? 'bg-purple-600 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -269,60 +305,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </span>
       </button>
 
-      {/* 4. Marking Schema */}
-      <button
-        onClick={() => onSelectTab('student-schema')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-schema'
-            ? 'bg-purple-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <BookOpen className="w-4 h-4" />
-          <span>Marking Schema</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 5. Events & Activities */}
-      <button
-        onClick={() => onSelectTab('student-events')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-events'
-            ? 'bg-purple-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Calendar className="w-4 h-4" />
-          <span>Events & Activities</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* Mentor Dashboard Overview */}
-      <button
-        onClick={() => onSelectTab('mentor-dashboard')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'mentor-dashboard'
-            ? 'bg-purple-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <LayoutDashboard className="w-4 h-4" />
-          <span>Mentorship Overview</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* Mentees */}
+      {/* 5. Assigned Mentees */}
       <button
         onClick={() => onSelectTab('mentor-mentees')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-mentees'
-            ? 'bg-purple-600 text-white shadow-xs'
+            ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -333,12 +321,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
+      {/* 6. Marking Schema */}
+      <button
+        onClick={() => onSelectTab('student-schema')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-schema' || activeTab === 'mentor-schema'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <BookOpen className="w-4 h-4" />
+          <span>Marking Schema</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 7. Events & Activities */}
+      <button
+        onClick={() => onSelectTab('student-events')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-events'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Calendar className="w-4 h-4" />
+          <span>Events & Activities</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
       {/* Schema Change Request Button */}
       {onOpenSchemaRequestModal && (
         <div className="pt-2 px-1">
           <button
             onClick={onOpenSchemaRequestModal}
-            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition cursor-pointer"
           >
             <GitPullRequest className="w-3.5 h-3.5" />
             <span>Request Schema Change</span>
@@ -354,7 +374,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         HOD Executive Options
       </div>
 
-      {/* 1. Profile */}
+      {/* 1. Home Dashboard */}
+      <button
+        onClick={() => onSelectTab('hod-dashboard')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'hod-dashboard' || activeTab === 'home'
+            ? 'bg-slate-900 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Home className="w-4 h-4" />
+          <span>Home</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 2. Profile */}
       <button
         onClick={() => onSelectTab('profile')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -370,7 +406,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Submission & Queue */}
+      {/* 3. Submission & Queue */}
       <button
         onClick={() => onSelectTab('hod-requests')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -386,11 +422,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 3. Marking Schema Manager */}
+      {/* 4. Marking Schema Manager */}
       <button
         onClick={() => onSelectTab('hod-schemas')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'hod-schemas'
+          activeTab === 'hod-schemas' || activeTab === 'hod-schema'
             ? 'bg-slate-900 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
@@ -402,7 +438,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 4. Events & Activities */}
+      {/* 5. Events & Activities */}
       <button
         onClick={() => onSelectTab('student-events')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -418,23 +454,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* HOD Analytics Dashboard */}
-      <button
-        onClick={() => onSelectTab('hod-dashboard')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'hod-dashboard'
-            ? 'bg-slate-900 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <BarChart3 className="w-4 h-4" />
-          <span>Department Dashboard</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* Mentor Allocation and Report */}
+      {/* 6. Mentor Allocation and Report */}
       <button
         onClick={() => onSelectTab('hod-allocation')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -445,7 +465,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <Users className="w-4 h-4" />
-          <span>Mentee Allocation and Report</span>
+          <span>Mentee Allocation & Report</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
@@ -453,17 +473,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   );
 
   return (
-    <aside className="w-64 sm:w-72 shrink-0 bg-white border-r border-slate-200/90 p-4 min-h-screen flex flex-col justify-between shadow-lg lg:shadow-none">
-      <div className="space-y-4">
+    <aside className="w-56 sm:w-60 lg:w-60 shrink-0 bg-white border-r border-slate-200/90 p-3 sm:p-3.5 min-h-screen flex flex-col justify-between shadow-lg lg:shadow-none">
+      <div className="space-y-3">
         {/* Top Header Row with Close Button (if drawer is open) */}
         <div className="flex items-center justify-between pb-1">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Account & Menu
           </div>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               title="Close menu"
             >
               <X className="w-4 h-4" />
@@ -481,8 +501,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           aria-label="Upload Profile Photo"
         />
 
-        {/* Medium-sized Profile Photo with Small Edit Icon */}
-        <div className="p-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-slate-100/80 border border-slate-200/90 shadow-2xs text-center relative group">
+        {/* Profile Photo and User Info without bulky outer rectangular border */}
+        <div className="py-1 text-center relative group">
           {/* Notification toast if any */}
           {photoNotification && (
             <div className="mb-2 p-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 text-[10px] font-semibold animate-fade-in">
@@ -490,71 +510,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Medium size avatar container */}
-          <div className="relative inline-block mx-auto mb-2.5">
+          {/* Compact avatar container */}
+          <div className="relative inline-block mx-auto mb-2">
             <div
               onClick={handleAvatarClick}
-              className="relative rounded-2xl overflow-hidden cursor-pointer group/avatar ring-3 ring-white shadow-md mx-auto"
+              className="relative rounded-2xl overflow-hidden cursor-pointer group/avatar ring-2 ring-slate-100 shadow-sm mx-auto"
               title="Click to select image file from your device"
             >
               <img
                 src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
                 alt={user.name}
-                className={`w-18 h-18 sm:w-20 sm:h-20 object-cover bg-slate-200 transition duration-200 group-hover/avatar:scale-105 ${
+                className={`w-14 h-14 sm:w-16 sm:h-16 object-cover bg-slate-200 transition duration-200 group-hover/avatar:scale-105 ${
                   isUploadingPhoto ? 'opacity-40 blur-[1px]' : ''
                 }`}
               />
               
               {/* Hover overlay with Camera icon */}
               <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-1">
-                <Camera className="w-5 h-5 drop-shadow-sm mb-0.5" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Change</span>
+                <Camera className="w-4 h-4 drop-shadow-sm mb-0.5" />
+                <span className="text-[8px] font-bold uppercase tracking-wider">Change</span>
               </div>
 
               {/* Uploading Spinner */}
               {isUploadingPhoto && (
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 text-white">
-                  <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+                  <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
                 </div>
               )}
             </div>
 
-            {/* Small Edit Icon button placed on the corner of the medium profile photo */}
+            {/* Small Edit Icon button placed on the corner of profile photo */}
             <button
               type="button"
               onClick={handleAvatarClick}
               title="Select image from files"
-              className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md ring-2 ring-white transition cursor-pointer hover:scale-110 active:scale-95"
+              className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm ring-2 ring-white transition cursor-pointer hover:scale-110 active:scale-95"
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="w-3 h-3" />
             </button>
           </div>
 
           {/* User Details */}
-          <div className="space-y-1 min-w-0">
+          <div className="space-y-0.5 min-w-0">
             <h3
               onClick={() => onSelectTab('profile')}
-              className="text-sm font-bold text-slate-900 truncate hover:text-indigo-600 transition cursor-pointer"
+              className="text-xs sm:text-sm font-bold text-slate-900 truncate hover:text-indigo-600 transition cursor-pointer"
               title={user.name}
             >
               {user.name}
             </h3>
-            <p className="text-[11px] text-slate-500 font-medium truncate">
+            <p className="text-[10px] text-slate-500 font-medium truncate">
               {user.role === 'hod'
                 ? 'Head of Department'
                 : user.role === 'mentor'
                 ? 'Faculty Mentor'
                 : user.roll_no ? `USN: ${user.roll_no}` : 'Student'}
             </p>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white border border-slate-200 text-slate-700 shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-slate-50 border border-slate-200 text-slate-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>{user.department_code || 'CSE'} • {user.role.toUpperCase()}</span>
             </div>
           </div>
         </div>
 
         {/* List of Navigation Options */}
-        <div className="pt-1">
+        <div className="pt-0.5">
           {user.role === 'student' && renderStudentNav()}
           {user.role === 'mentor' && renderMentorNav()}
           {user.role === 'hod' && renderHODNav()}
@@ -562,18 +582,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer Info & Sign Out */}
-      <div className="pt-4 border-t border-slate-100 space-y-3 mt-4">
-        <div className="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
-          <div className="flex items-center gap-1.5">
-            <Award className="w-3.5 h-3.5 text-indigo-600" />
-            <span className="font-medium">AICTE Schema</span>
+      <div className="pt-3 border-t border-slate-100 space-y-2 mt-3">
+        <div className="flex items-center justify-between text-[10px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
+          <div className="flex items-center gap-1">
+            <Award className="w-3 h-3 text-indigo-600" />
+            <span className="font-medium">AICTE Target</span>
           </div>
-          <span className="font-bold font-mono text-slate-800">200 Pts Target</span>
+          <span className="font-bold font-mono text-slate-800">200 Pts</span>
         </div>
 
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 transition cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/60 transition cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Sign Out</span>

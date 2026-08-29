@@ -117,6 +117,7 @@ export interface Submission {
   file_size: number;
   status: SubmissionStatus;
   points_awarded: number;
+  semester?: number;
   base_points?: number;
   mentor_feedback?: string | null;
   ai_audit_results?: string | AIAuditResult | null;
@@ -178,9 +179,34 @@ export interface MarksResponse {
   summary: MarksSummary;
 }
 
+export interface SemesterBreakdown {
+  semester: number;
+  earned_raw_points: number;
+  effective_points: number;
+  max_credit_limit: number;
+  excess_points: number;
+  is_capped: boolean;
+  submissions_count: number;
+  percentage_of_limit: number;
+}
+
+export interface YearBreakdown {
+  year: number;
+  semesters: number[];
+  earned_raw_points: number;
+  effective_points: number;
+  max_credit_limit: number;
+  excess_points: number;
+  submissions_count: number;
+}
+
 export interface StudentDashboardStats {
   student: User;
   total_points: number;
+  raw_total_points?: number;
+  semester_capped_points?: number;
+  total_excess_points?: number;
+  semester_limit_per_semester?: number;
   target_points: number;
   progress_percentage: number;
   milestone_tier: 'Not Started' | 'Bronze' | 'Silver' | 'Gold' | 'Diamond';
@@ -199,6 +225,8 @@ export interface StudentDashboardStats {
     color: string;
     submissions_count: number;
   }>;
+  semester_breakdown?: SemesterBreakdown[];
+  year_breakdown?: YearBreakdown[];
   recent_submissions: Submission[];
   upcoming_events: DepartmentEvent[];
 }

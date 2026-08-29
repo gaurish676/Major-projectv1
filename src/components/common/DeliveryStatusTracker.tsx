@@ -61,7 +61,7 @@ export const DeliveryStatusTracker: React.FC<DeliveryStatusTrackerProps> = ({
         {isApproved ? (
           <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            <span>+{points} pts Added 🎉</span>
+            <span>+{points} pts Added</span>
           </span>
         ) : isRejected ? (
           <span className="inline-flex items-center gap-1 text-rose-700 font-bold">
@@ -82,7 +82,7 @@ export const DeliveryStatusTracker: React.FC<DeliveryStatusTrackerProps> = ({
     <div className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200">
       <div className="flex items-center justify-between mb-3">
         <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-          <span className="text-indigo-600 font-semibold">📍 Certificate Progress Tracker</span>
+          <span className="text-indigo-600 font-semibold">Certificate Progress Tracker</span>
           <span className="text-slate-400 font-normal">| Live Status</span>
         </div>
         <span className="text-[10px] text-slate-500 font-mono">
@@ -181,7 +181,7 @@ export const DeliveryStatusTracker: React.FC<DeliveryStatusTrackerProps> = ({
               }`}
             >
               {isApproved
-                ? 'Step 3: Approved! 🎉'
+                ? 'Step 3: Approved'
                 : isRejected
                 ? 'Step 3: Action Required'
                 : 'Step 3: Degree Credits'}

@@ -10,6 +10,7 @@ export interface AuthUser {
   role: 'hod' | 'mentor' | 'student';
   department_id: string;
   roll_no?: string;
+  semester?: number;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -24,6 +25,7 @@ export function generateToken(user: AuthUser): string {
       email: user.email,
       role: user.role,
       department_id: user.department_id,
+      semester: user.semester,
     },
     JWT_SECRET,
     { expiresIn: '7d' }

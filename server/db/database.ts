@@ -80,6 +80,7 @@ function initSchema(db: DatabaseSync): void {
   try { db.exec('ALTER TABLE users ADD COLUMN designation TEXT;'); } catch {}
   try { db.exec('ALTER TABLE users ADD COLUMN office_location TEXT;'); } catch {}
   try { db.exec('ALTER TABLE submissions ADD COLUMN ai_audit_results TEXT;'); } catch {}
+  try { db.exec('ALTER TABLE submissions ADD COLUMN semester INTEGER;'); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_categories (
@@ -133,6 +134,7 @@ function initSchema(db: DatabaseSync): void {
       file_size INTEGER NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'rejected')),
       points_awarded INTEGER NOT NULL DEFAULT 0,
+      semester INTEGER,
       mentor_feedback TEXT,
       ai_audit_results TEXT,
       completion_date TEXT NOT NULL,
@@ -193,6 +195,7 @@ function initSchema(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_users_mentor ON users(mentor_id);
     CREATE INDEX IF NOT EXISTS idx_users_dept ON users(department_id);
     CREATE INDEX IF NOT EXISTS idx_submissions_student ON submissions(student_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_semester ON submissions(semester);
     CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
     CREATE INDEX IF NOT EXISTS idx_submissions_category ON submissions(category_id);
     CREATE INDEX IF NOT EXISTS idx_student_marks_student ON student_marks(student_id);

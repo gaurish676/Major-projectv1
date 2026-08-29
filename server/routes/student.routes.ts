@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { queryAll, queryOne } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
+import { calculateStudentPoints } from '../services/pointsCalculator';
+import { generateRandomStudentMarks } from '../services/curriculumSubjects';
 
 const router = Router();
 
@@ -30,50 +32,9 @@ router.get('/dashboard', authenticate, requireRole(['student']), async (req: Aut
       WHERE u.id = ?
     `, [studentId]);
 
-    // Categories breakdown with earned points and caps
-    const categories = await queryAll(`
-      SELECT 
-        c.id,
-        c.name,
-        c.description,
-        c.max_cap_points,
-        c.icon,
-        c.color,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as raw_earned_points,
-        COUNT(s.id) as submissions_count
-      FROM schema_categories c
-      LEFT JOIN submissions s ON s.category_id = c.id AND s.student_id = ?
-      GROUP BY c.id
-      ORDER BY c.name ASC
-    `, [studentId]);
-
-    // Calculate capped points per category
-    let totalCappedPoints = 0;
-    const categoriesBreakdown = categories.map((cat) => {
-      const earned = Number(cat.raw_earned_points);
-      const capped = Math.min(earned, cat.max_cap_points);
-      totalCappedPoints += capped;
-      return {
-        id: cat.id,
-        name: cat.name,
-        description: cat.description,
-        max_cap_points: cat.max_cap_points,
-        icon: cat.icon,
-        color: cat.color,
-        earned_points: earned,
-        capped_points: capped,
-        submissions_count: Number(cat.submissions_count),
-      };
-    });
-
-    const targetPoints = 200;
-    const progressPercentage = Math.min(100, Math.round((totalCappedPoints / targetPoints) * 1000) / 10);
-
-    let milestoneTier = 'Not Started';
-    if (totalCappedPoints >= 200) milestoneTier = 'Diamond';
-    else if (totalCappedPoints >= 150) milestoneTier = 'Gold';
-    else if (totalCappedPoints >= 100) milestoneTier = 'Silver';
-    else if (totalCappedPoints >= 50) milestoneTier = 'Bronze';
+    // Calculate points strictly applying Semester Credit Limits and Category Caps
+    const currentSem = student?.semester || 1;
+    const pointsData = await calculateStudentPoints(studentId, currentSem);
 
     // Counts of submissions
     const subCounts = await queryOne(`
@@ -117,16 +78,22 @@ router.get('/dashboard', authenticate, requireRole(['student']), async (req: Aut
 
     res.json({
       student,
-      total_points: totalCappedPoints,
-      target_points: targetPoints,
-      progress_percentage: progressPercentage,
-      milestone_tier: milestoneTier,
+      total_points: pointsData.total_effective_points,
+      raw_total_points: pointsData.raw_total_points,
+      semester_capped_points: pointsData.semester_capped_points,
+      total_excess_points: pointsData.total_excess_points,
+      semester_limit_per_semester: pointsData.semester_limit_per_semester,
+      target_points: pointsData.target_points,
+      progress_percentage: pointsData.progress_percentage,
+      milestone_tier: pointsData.milestone_tier,
       cgpa: student.cgpa || 0,
       semester: student.semester || 1,
       approved_submissions_count: subCounts?.approved_count || 0,
       pending_submissions_count: subCounts?.pending_count || 0,
       rejected_submissions_count: subCounts?.rejected_count || 0,
-      categories_breakdown: categoriesBreakdown,
+      categories_breakdown: pointsData.categories_breakdown,
+      semester_breakdown: pointsData.semester_breakdown,
+      year_breakdown: pointsData.year_breakdown,
       recent_submissions: recentSubmissions,
       upcoming_events: upcomingEvents,
     });
@@ -384,6 +351,158 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
   }
 });
 
+// DELETE /api/student/marks/semester/:semester - Delete all subject marks for a semester
+router.delete('/marks/semester/:semester', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.user!.id;
+    const semester = parseInt(req.params.semester, 10);
+
+    if (isNaN(semester)) {
+      return res.status(400).json({ error: 'Valid semester number is required' });
+    }
+
+    const { executeRun } = await import('../db/database');
+    await executeRun(`DELETE FROM student_marks WHERE student_id = ? AND semester = ?`, [studentId, semester]);
+
+    res.json({ message: `All subjects for semester ${semester} deleted successfully` });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/student/marks/batch - Insert multiple subject marks at once
+router.post('/marks/batch', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.user!.id;
+    const { semester = 6, subjects = [] } = req.body;
+
+    if (!Array.isArray(subjects) || subjects.length === 0) {
+      return res.status(400).json({ error: 'At least one subject is required' });
+    }
+
+    const { executeRun } = await import('../db/database');
+    const now = new Date().toISOString();
+
+    for (const sub of subjects) {
+      if (!sub.subject_name || !sub.subject_name.trim()) continue;
+
+      const markId = `mark_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const theory = Number(sub.theory_marks) || 0;
+      const theoryM = Number(sub.theory_max) || 100;
+      const task = Number(sub.task_marks) || 0;
+      const taskM = Number(sub.task_max) || 25;
+      const isLab = Boolean(sub.has_lab);
+      const lab = isLab ? (Number(sub.lab_marks) || 0) : 0;
+      const labM = isLab ? (Number(sub.lab_max) || 50) : 0;
+
+      const totalScored = theory + task + lab;
+      const totalMax = theoryM + taskM + labM;
+      const percentage = totalMax > 0 ? (totalScored / totalMax) * 100 : 0;
+      const { grade, grade_points } = calculateGradeAndPoints(percentage);
+
+      await executeRun(`
+        INSERT INTO student_marks (
+          id, student_id, semester, subject_code, subject_name, credits,
+          theory_marks, theory_max, task_marks, task_max, has_lab,
+          lab_marks, lab_max, grade, grade_points, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        markId,
+        studentId,
+        Number(semester) || 6,
+        (sub.subject_code || '').trim(),
+        sub.subject_name.trim(),
+        Number(sub.credits) || 4,
+        theory,
+        theoryM,
+        task,
+        taskM,
+        isLab ? 1 : 0,
+        lab,
+        labM,
+        grade,
+        grade_points,
+        now,
+        now,
+      ]);
+    }
+
+    res.json({ message: 'All subjects saved successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/student/marks/batch-update - Update all subject marks at once
+router.put('/marks/batch-update', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.user!.id;
+    const { subjects = [] } = req.body;
+
+    if (!Array.isArray(subjects) || subjects.length === 0) {
+      return res.status(400).json({ error: 'No subjects provided for update' });
+    }
+
+    const { executeRun } = await import('../db/database');
+    const now = new Date().toISOString();
+
+    for (const sub of subjects) {
+      if (!sub.id || !sub.subject_name) continue;
+
+      const theory = Number(sub.theory_marks) || 0;
+      const theoryM = Number(sub.theory_max) || 100;
+      const task = Number(sub.task_marks) || 0;
+      const taskM = Number(sub.task_max) || 25;
+      const isLab = Boolean(sub.has_lab);
+      const lab = isLab ? (Number(sub.lab_marks) || 0) : 0;
+      const labM = isLab ? (Number(sub.lab_max) || 50) : 0;
+
+      const totalScored = theory + task + lab;
+      const totalMax = theoryM + taskM + labM;
+      const percentage = totalMax > 0 ? (totalScored / totalMax) * 100 : 0;
+      const { grade, grade_points } = calculateGradeAndPoints(percentage);
+
+      await executeRun(`
+        UPDATE student_marks SET
+          subject_code = ?,
+          subject_name = ?,
+          credits = ?,
+          theory_marks = ?,
+          theory_max = ?,
+          task_marks = ?,
+          task_max = ?,
+          has_lab = ?,
+          lab_marks = ?,
+          lab_max = ?,
+          grade = ?,
+          grade_points = ?,
+          updated_at = ?
+        WHERE id = ? AND student_id = ?
+      `, [
+        (sub.subject_code || '').trim(),
+        sub.subject_name.trim(),
+        Number(sub.credits) || 4,
+        theory,
+        theoryM,
+        task,
+        taskM,
+        isLab ? 1 : 0,
+        lab,
+        labM,
+        grade,
+        grade_points,
+        now,
+        sub.id,
+        studentId,
+      ]);
+    }
+
+    res.json({ message: 'All subjects updated successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // DELETE /api/student/marks/:id - Delete subject mark
 router.delete('/marks/:id', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -410,33 +529,10 @@ router.post('/marks/seed-defaults', authenticate, requireRole(['student']), asyn
     const studentId = req.user!.id;
     const semester = Number(req.body.semester) || 6;
 
-    const defaultSubjectsBySem: Record<number, Array<{ code: string; name: string; credits: number; theory: number; theoryMax: number; task: number; taskMax: number; hasLab: boolean; lab: number; labMax: number }>> = {
-      6: [
-        { code: '21CS61', name: 'Software Engineering & Agile Methodologies', credits: 4, theory: 78, theoryMax: 100, task: 22, taskMax: 25, hasLab: false, lab: 0, labMax: 0 },
-        { code: '21CS62', name: 'Cloud Computing & Distributed Systems', credits: 4, theory: 84, theoryMax: 100, task: 23, taskMax: 25, hasLab: true, lab: 44, labMax: 50 },
-        { code: '21CS63', name: 'Machine Learning & Pattern Recognition', credits: 4, theory: 81, theoryMax: 100, task: 21, taskMax: 25, hasLab: true, lab: 46, labMax: 50 },
-        { code: '21CS64', name: 'Compiler Design & Automata', credits: 3, theory: 74, theoryMax: 100, task: 20, taskMax: 25, hasLab: false, lab: 0, labMax: 0 },
-        { code: '21CSL66', name: 'Machine Learning & Cloud Lab', credits: 2, theory: 0, theoryMax: 0, task: 24, taskMax: 25, hasLab: true, lab: 48, labMax: 50 },
-      ],
-      5: [
-        { code: '21CS51', name: 'Database Management Systems', credits: 4, theory: 82, theoryMax: 100, task: 22, taskMax: 25, hasLab: true, lab: 45, labMax: 50 },
-        { code: '21CS52', name: 'Computer Networks', credits: 4, theory: 76, theoryMax: 100, task: 21, taskMax: 25, hasLab: true, lab: 43, labMax: 50 },
-        { code: '21CS53', name: 'Theory of Computation', credits: 3, theory: 79, theoryMax: 100, task: 20, taskMax: 25, hasLab: false, lab: 0, labMax: 0 },
-        { code: '21CS54', name: 'Web Technologies & Frameworks', credits: 3, theory: 88, theoryMax: 100, task: 24, taskMax: 25, hasLab: true, lab: 47, labMax: 50 },
-      ],
-    };
-
-    const subjectsToSeed = defaultSubjectsBySem[semester] || defaultSubjectsBySem[6];
+    const generated = generateRandomStudentMarks(studentId, semester, 3);
     const { executeRun } = await import('../db/database');
-    const now = new Date().toISOString();
 
-    for (const s of subjectsToSeed) {
-      const markId = `mark_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const totalScored = s.theory + s.task + (s.hasLab ? s.lab : 0);
-      const totalMax = s.theoryMax + s.taskMax + (s.hasLab ? s.labMax : 0);
-      const percentage = totalMax > 0 ? (totalScored / totalMax) * 100 : 0;
-      const { grade, grade_points } = calculateGradeAndPoints(percentage);
-
+    for (const s of generated) {
       await executeRun(`
         INSERT INTO student_marks (
           id, student_id, semester, subject_code, subject_name, credits,
@@ -444,27 +540,27 @@ router.post('/marks/seed-defaults', authenticate, requireRole(['student']), asyn
           lab_marks, lab_max, grade, grade_points, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        markId,
+        s.id,
         studentId,
         semester,
-        s.code,
-        s.name,
+        s.subject_code,
+        s.subject_name,
         s.credits,
-        s.theory,
-        s.theoryMax,
-        s.task,
-        s.taskMax,
-        s.hasLab ? 1 : 0,
-        s.hasLab ? s.lab : 0,
-        s.hasLab ? s.labMax : 0,
-        grade,
-        grade_points,
-        now,
-        now,
+        s.theory_marks,
+        s.theory_max,
+        s.task_marks,
+        s.task_max,
+        s.has_lab,
+        s.lab_marks,
+        s.lab_max,
+        s.grade,
+        s.grade_points,
+        s.created_at,
+        s.updated_at,
       ]);
     }
 
-    res.json({ message: 'Default subjects preloaded successfully' });
+    res.json({ message: `Default subjects and marks preloaded for Semester ${semester}` });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

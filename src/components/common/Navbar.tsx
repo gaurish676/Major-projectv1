@@ -15,15 +15,16 @@ import {
 interface NavbarProps {
   onToggleSidebar?: () => void;
   onNavigateProfile?: () => void;
+  onNavigateHome?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfile }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfile, onNavigateHome }) => {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0B1329] text-white border-b border-slate-800/80 shadow-md">
+    <header className="sticky top-0 z-40 bg-[#172554] text-white border-b border-blue-900/60 shadow-md">
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-14 flex items-center justify-between">
         {/* Left: Clearly Visible 3-Lines (Hamburger) Button + Brand */}
@@ -31,20 +32,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
           {/* Top-Left: Clearly visible 3-lines Menu Button */}
           <button
             onClick={onToggleSidebar}
-            className="flex items-center justify-center p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white border border-slate-700/80 shadow-xs transition cursor-pointer group shrink-0 min-h-[40px] min-w-[40px]"
+            className="flex items-center justify-center p-2 rounded-xl bg-blue-900/60 hover:bg-blue-900 text-white border border-blue-800/80 shadow-xs transition cursor-pointer group shrink-0 min-h-[40px] min-w-[40px]"
             title="Open Menu & Profile Sidebar"
             aria-label="Open Navigation & Profile Menu"
           >
             {/* 3 crisp, clearly visible horizontal lines */}
             <div className="flex flex-col justify-center items-center gap-1 w-5 h-4.5">
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-sky-400 group-hover:w-5.5" />
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-sky-400 group-hover:w-5.5" />
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-sky-400 group-hover:w-5.5" />
+              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-300 group-hover:w-5.5" />
+              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-300 group-hover:w-5.5" />
+              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-300 group-hover:w-5.5" />
             </div>
           </button>
 
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-blue-600/30">
+          <div
+            onClick={onNavigateHome}
+            className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition group"
+            title="Go to Home Dashboard"
+          >
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-600/30 transition">
               <GraduationCap className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
@@ -52,11 +57,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
                 <span className="font-bold text-white tracking-tight text-sm sm:text-base truncate">
                   Creditz
                 </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-sky-300 border border-blue-500/30 shrink-0">
+                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 shrink-0">
                   200-PT
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-blue-200/70 font-medium truncate mt-0.5">
                 Department of Computer Science & Engineering
               </p>
             </div>
@@ -71,11 +76,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
               <div className="relative">
                 <button
                   onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition relative cursor-pointer"
+                  className="p-2 rounded-lg text-blue-200 hover:text-white hover:bg-blue-900/60 transition relative cursor-pointer"
                   aria-label="Notifications"
                 >
                   <Bell className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-slate-900" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-[#172554]" />
                 </button>
 
                 {notificationOpen && (
@@ -108,20 +113,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 transition cursor-pointer"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-blue-900/60 hover:bg-blue-900/90 border border-blue-800/80 transition cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-md bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 flex items-center justify-center font-bold text-xs">
+                  <div className="w-6 h-6 rounded-md bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 flex items-center justify-center font-bold text-xs">
                     {user.name.charAt(0)}
                   </div>
                   <div className="hidden sm:block text-left">
                     <div className="text-xs font-semibold text-white truncate max-w-[130px] leading-tight">
                       {user.name}
                     </div>
-                    <div className="text-[10px] text-slate-400 capitalize font-medium leading-none mt-0.5">
+                    <div className="text-[10px] text-blue-200/80 capitalize font-medium leading-none mt-0.5">
                       {user.role === 'hod' ? 'Head of Department' : user.role === 'mentor' ? 'Faculty Mentor' : 'Student'}
                     </div>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-blue-200" />
                 </button>
 
                 {dropdownOpen && (
@@ -172,7 +177,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
                         logout();
                         setDropdownOpen(false);
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition font-semibold cursor-pointer"
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition font-semibold cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Sign Out</span>
@@ -185,9 +190,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
               <button
                 onClick={logout}
                 title="Sign Out"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-100 hover:text-white bg-blue-900/60 hover:bg-blue-900 border border-blue-800/80 transition cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5 text-slate-400" />
+                <LogOut className="w-3.5 h-3.5 text-blue-200" />
                 <span>Sign Out</span>
               </button>
             </>

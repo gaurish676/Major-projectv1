@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { queryAll, queryOne, executeRun } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
+import { calculateStudentPoints } from '../services/pointsCalculator';
 
 const router = Router();
 
@@ -14,19 +15,14 @@ router.get('/dashboard', authenticate, requireRole(['hod']), async (req: Authent
       WHERE u.id = ?
     `, [req.user!.id]);
 
-    // Student aggregate metrics
-    const studentStats = await queryAll(`
-      SELECT 
-        u.id,
-        u.name,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as approved_points
+    // Student aggregate metrics with semester capping
+    const students = await queryAll(`
+      SELECT u.id, u.name, u.semester
       FROM users u
-      LEFT JOIN submissions s ON s.student_id = u.id
       WHERE u.role = 'student' AND u.department_id = ?
-      GROUP BY u.id
     `, [req.user!.department_id]);
 
-    const totalStudents = studentStats.length;
+    const totalStudents = students.length;
     const totalMentors = (await queryOne(`
       SELECT COUNT(*) as count FROM users WHERE role = 'mentor' AND department_id = ?
     `, [req.user!.department_id]))?.count || 0;
@@ -42,8 +38,9 @@ router.get('/dashboard', authenticate, requireRole(['hod']), async (req: Authent
       none: 0,    // 0
     };
 
-    studentStats.forEach((st) => {
-      const pts = Number(st.approved_points);
+    for (const st of students) {
+      const pData = await calculateStudentPoints(st.id, st.semester || 1);
+      const pts = pData.total_effective_points;
       pointsSum += pts;
       if (pts >= 200) {
         milestoneDistribution.diamond++;
@@ -59,7 +56,7 @@ router.get('/dashboard', authenticate, requireRole(['hod']), async (req: Authent
       } else {
         milestoneDistribution.none++;
       }
-    });
+    }
 
     const avgDepartmentPoints = totalStudents > 0 ? Math.round((pointsSum / totalStudents) * 10) / 10 : 0;
     const targetCompletionRate = totalStudents > 0 ? Math.round((completedCount / totalStudents) * 1000) / 10 : 0;
@@ -147,7 +144,7 @@ router.get('/dashboard', authenticate, requireRole(['hod']), async (req: Authent
 // 2. Mentee-Mentor Allocation Roster
 router.get('/allocations', authenticate, requireRole(['hod']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const students = await queryAll(`
+    const rawStudents = await queryAll(`
       SELECT 
         u.id, 
         u.name, 
@@ -158,7 +155,6 @@ router.get('/allocations', authenticate, requireRole(['hod']), async (req: Authe
         u.mentor_id,
         m.name as mentor_name,
         m.email as mentor_email,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as approved_points,
         COUNT(CASE WHEN s.status = 'pending' THEN 1 END) as pending_submissions
       FROM users u
       LEFT JOIN users m ON u.mentor_id = m.id
@@ -167,6 +163,16 @@ router.get('/allocations', authenticate, requireRole(['hod']), async (req: Authe
       GROUP BY u.id
       ORDER BY u.roll_no ASC
     `, [req.user!.department_id]);
+
+    const students = await Promise.all(rawStudents.map(async (st) => {
+      const pData = await calculateStudentPoints(st.id, st.semester || 1);
+      return {
+        ...st,
+        approved_points: pData.total_effective_points,
+        raw_points: pData.raw_total_points,
+        excess_points: pData.total_excess_points,
+      };
+    }));
 
     const mentors = await queryAll(`
       SELECT 
@@ -819,19 +825,15 @@ router.get('/audit-logs', authenticate, requireRole(['hod']), async (req: Authen
 // 5. Full Department Report Export Data
 router.get('/export', authenticate, requireRole(['hod']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const reportData = await queryAll(`
+    const rawStudents = await queryAll(`
       SELECT 
+        u.id,
         u.roll_no,
         u.name as student_name,
         u.email as student_email,
         u.semester,
         u.cgpa,
         m.name as mentor_name,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as total_approved_points,
-        CASE 
-          WHEN COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) >= 200 THEN 'Completed (Eligible for Degree)'
-          ELSE 'In Progress'
-        END as status_tier,
         COUNT(CASE WHEN s.status = 'approved' THEN 1 END) as approved_submissions,
         COUNT(CASE WHEN s.status = 'pending' THEN 1 END) as pending_submissions
       FROM users u
@@ -842,6 +844,24 @@ router.get('/export', authenticate, requireRole(['hod']), async (req: Authentica
       ORDER BY u.roll_no ASC
     `, [req.user!.department_id]);
 
+    const reportData = await Promise.all(rawStudents.map(async (st) => {
+      const pData = await calculateStudentPoints(st.id, st.semester || 1);
+      return {
+        roll_no: st.roll_no,
+        student_name: st.student_name,
+        student_email: st.student_email,
+        semester: st.semester,
+        cgpa: st.cgpa,
+        mentor_name: st.mentor_name,
+        total_approved_points: pData.total_effective_points,
+        raw_total_points: pData.raw_total_points,
+        excess_points: pData.total_excess_points,
+        status_tier: pData.total_effective_points >= 200 ? 'Completed (Eligible for Degree)' : 'In Progress',
+        approved_submissions: Number(st.approved_submissions),
+        pending_submissions: Number(st.pending_submissions),
+      };
+    }));
+
     res.json(reportData);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -851,7 +871,7 @@ router.get('/export', authenticate, requireRole(['hod']), async (req: Authentica
 // 6. Complete Department Compliance & Accreditation Report Dossier
 router.get('/reports', authenticate, requireRole(['hod']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const students = await queryAll(`
+    const rawStudents = await queryAll(`
       SELECT 
         u.id,
         u.roll_no,
@@ -859,15 +879,41 @@ router.get('/reports', authenticate, requireRole(['hod']), async (req: Authentic
         u.email,
         u.semester,
         u.cgpa,
-        m.name as mentor_name,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.points_awarded ELSE 0 END), 0) as approved_points
+        m.name as mentor_name
       FROM users u
       LEFT JOIN users m ON u.mentor_id = m.id
-      LEFT JOIN submissions s ON s.student_id = u.id
       WHERE u.role = 'student' AND u.department_id = ?
-      GROUP BY u.id
       ORDER BY u.roll_no ASC
     `, [req.user!.department_id]);
+
+    const clearanceSummary = {
+      cleared: 0,
+      near_completion: 0,
+      in_progress: 0,
+      at_risk: 0,
+    };
+
+    const students = await Promise.all(rawStudents.map(async (st) => {
+      const pData = await calculateStudentPoints(st.id, st.semester || 1);
+      const pts = pData.total_effective_points;
+      if (pts >= 200) {
+        clearanceSummary.cleared++;
+      } else if (pts >= 150) {
+        clearanceSummary.near_completion++;
+      } else if (pts >= 50) {
+        clearanceSummary.in_progress++;
+      } else {
+        clearanceSummary.at_risk++;
+      }
+
+      return {
+        ...st,
+        approved_points: pts,
+        raw_total_points: pData.raw_total_points,
+        excess_points: pData.total_excess_points,
+        milestone_tier: pData.milestone_tier,
+      };
+    }));
 
     const submissions = await queryAll(`
       SELECT 
@@ -884,26 +930,6 @@ router.get('/reports', authenticate, requireRole(['hod']), async (req: Authentic
       WHERE u.department_id = ?
       ORDER BY s.submitted_at DESC
     `, [req.user!.department_id]);
-
-    const clearanceSummary = {
-      cleared: 0,
-      near_completion: 0,
-      in_progress: 0,
-      at_risk: 0,
-    };
-
-    students.forEach((st) => {
-      const pts = Number(st.approved_points || 0);
-      if (pts >= 200) {
-        clearanceSummary.cleared++;
-      } else if (pts >= 150) {
-        clearanceSummary.near_completion++;
-      } else if (pts >= 50) {
-        clearanceSummary.in_progress++;
-      } else {
-        clearanceSummary.at_risk++;
-      }
-    });
 
     res.json({
       students,

@@ -1,6 +1,7 @@
 import { getDb, saveDb, queryOne } from './database';
 import fs from 'fs';
 import path from 'path';
+import { generateRandomStudentMarks } from '../services/curriculumSubjects';
 
 export async function seedDatabase() {
   const existingUser = await queryOne('SELECT id FROM users LIMIT 1');
@@ -90,7 +91,7 @@ export async function seedDatabase() {
         <!-- Header seal -->
         <circle cx="400" cy="85" r="32" fill="#0f172a"/>
         <circle cx="400" cy="85" r="28" fill="none" stroke="#eab308" stroke-width="2"/>
-        <text x="400" y="92" font-family="sans-serif" font-size="20" font-weight="bold" fill="#facc15" text-anchor="middle">★</text>
+        <polygon points="400,72 405,82 416,84 408,92 410,103 400,97 390,103 392,92 384,84 395,82" fill="#facc15"/>
         
         <text x="400" y="145" font-family="Georgia, serif" font-size="24" font-weight="bold" fill="#0f172a" text-anchor="middle" letter-spacing="2">CERTIFICATE OF ACHIEVEMENT</text>
         <text x="400" y="170" font-family="sans-serif" font-size="12" fill="#64748b" text-anchor="middle" letter-spacing="4">OFFICIAL ACADEMIC & ACTIVITY CREDENTIAL</text>
@@ -198,31 +199,31 @@ export async function seedDatabase() {
     ('usr_std_8', 'Ananya Joshi', 'ananya@university.edu', '${defaultHash}', 'student', 'dept_cse', 'usr_mentor_2', 8.60, 2, '1RV21CS108', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80');
   `);
 
-  // 5. Submissions (Rahul has 125 approved points + 1 pending!)
+  // 5. Submissions (With specific semesters mapped)
   await db.exec(`
-    INSERT INTO submissions (id, student_id, schema_id, schema_version_snapshot, activity_title, category_id, description, file_url, file_name, file_size, status, points_awarded, mentor_feedback, completion_date, submitted_at, reviewed_at, reviewed_by) VALUES
-    ('sub_rahul_1', 'usr_std_1', 'sch_cert_1', 1, 'NPTEL Cloud Computing 12-Week Elite Certification', 'cat_cert', 'Completed 12-week NPTEL course with proctored exam score of 88% (Elite + Silver).', '/uploads/nptel_cloud_computing_elite.svg', 'nptel_cloud_computing_elite.svg', 1048576, 'approved', 30, 'Verified credentials with NPTEL registry. Excellent performance.', '2024-10-18', '2024-10-20T10:30:00Z', '2024-10-22T14:15:00Z', 'usr_mentor_1'),
-    ('sub_rahul_2', 'usr_std_1', 'sch_comp_2', 1, 'Smart India Hackathon (SIH 2024) National Finalist', 'cat_comp', 'Built an AI-driven triage system for rural primary healthcare centers.', '/uploads/smart_india_hackathon_finalist.svg', 'smart_india_hackathon_finalist.svg', 2097152, 'approved', 20, 'Verified team submission and prototype demonstration. Commendable effort.', '2024-12-14', '2024-12-16T11:00:00Z', '2024-12-17T09:40:00Z', 'usr_mentor_1'),
-    ('sub_rahul_3', 'usr_std_1', 'sch_intern_1', 1, 'Microsoft Research Systems Lab Summer Internship', 'cat_intern', '10 weeks research internship on distributed systems and telemetry parsing.', '/uploads/internship_microsoft_fellow.svg', 'internship_microsoft_fellow.svg', 1572864, 'approved', 30, 'Outstanding project report and supervisor evaluation verified.', '2024-07-28', '2024-08-01T15:20:00Z', '2024-08-03T16:00:00Z', 'usr_mentor_1'),
-    ('sub_rahul_4', 'usr_std_1', 'sch_vol_1', 1, 'NSS 7-Day Residential Rural Development Camp', 'cat_vol', 'Led village digital literacy and green computing workshop for high school students.', '/uploads/nptel_cloud_computing_elite.svg', 'nss_camp_certificate.svg', 840000, 'approved', 25, 'Verified by NSS Officer. Great community initiative.', '2024-04-10', '2024-04-12T08:30:00Z', '2024-04-15T11:20:00Z', 'usr_mentor_1'),
-    ('sub_rahul_5', 'usr_std_1', 'sch_sports_2', 1, 'Inter-College Cultural Tech Fest Hack Winner', 'cat_sports', 'Won 1st prize in State-level Design Sprint Championship.', '/uploads/smart_india_hackathon_finalist.svg', 'fest_winner.svg', 950000, 'approved', 20, 'Valid certificate verified.', '2024-09-22', '2024-09-25T14:10:00Z', '2024-09-27T10:05:00Z', 'usr_mentor_1'),
+    INSERT INTO submissions (id, student_id, schema_id, schema_version_snapshot, activity_title, category_id, description, file_url, file_name, file_size, status, points_awarded, semester, mentor_feedback, completion_date, submitted_at, reviewed_at, reviewed_by) VALUES
+    ('sub_rahul_1', 'usr_std_1', 'sch_cert_1', 1, 'NPTEL Cloud Computing 12-Week Elite Certification', 'cat_cert', 'Completed 12-week NPTEL course with proctored exam score of 88% (Elite + Silver).', '/uploads/nptel_cloud_computing_elite.svg', 'nptel_cloud_computing_elite.svg', 1048576, 'approved', 30, 5, 'Verified credentials with NPTEL registry. Excellent performance.', '2024-10-18', '2024-10-20T10:30:00Z', '2024-10-22T14:15:00Z', 'usr_mentor_1'),
+    ('sub_rahul_2', 'usr_std_1', 'sch_comp_2', 1, 'Smart India Hackathon (SIH 2024) National Finalist', 'cat_comp', 'Built an AI-driven triage system for rural primary healthcare centers.', '/uploads/smart_india_hackathon_finalist.svg', 'smart_india_hackathon_finalist.svg', 2097152, 'approved', 20, 5, 'Verified team submission and prototype demonstration. Commendable effort.', '2024-12-14', '2024-12-16T11:00:00Z', '2024-12-17T09:40:00Z', 'usr_mentor_1'),
+    ('sub_rahul_3', 'usr_std_1', 'sch_intern_1', 1, 'Microsoft Research Systems Lab Summer Internship', 'cat_intern', '10 weeks research internship on distributed systems and telemetry parsing.', '/uploads/internship_microsoft_fellow.svg', 'internship_microsoft_fellow.svg', 1572864, 'approved', 30, 4, 'Outstanding project report and supervisor evaluation verified.', '2024-07-28', '2024-08-01T15:20:00Z', '2024-08-03T16:00:00Z', 'usr_mentor_1'),
+    ('sub_rahul_4', 'usr_std_1', 'sch_vol_1', 1, 'NSS 7-Day Residential Rural Development Camp', 'cat_vol', 'Led village digital literacy and green computing workshop for high school students.', '/uploads/nptel_cloud_computing_elite.svg', 'nss_camp_certificate.svg', 840000, 'approved', 25, 3, 'Verified by NSS Officer. Great community initiative.', '2024-04-10', '2024-04-12T08:30:00Z', '2024-04-15T11:20:00Z', 'usr_mentor_1'),
+    ('sub_rahul_5', 'usr_std_1', 'sch_sports_2', 1, 'Inter-College Cultural Tech Fest Hack Winner', 'cat_sports', 'Won 1st prize in State-level Design Sprint Championship.', '/uploads/smart_india_hackathon_finalist.svg', 'fest_winner.svg', 950000, 'approved', 20, 4, 'Valid certificate verified.', '2024-09-22', '2024-09-25T14:10:00Z', '2024-09-27T10:05:00Z', 'usr_mentor_1'),
     
     -- Rahul's Pending Review Submission (Ready for Mentor Ravi to review live in demo!)
-    ('sub_rahul_pending_1', 'usr_std_1', 'sch_cert_3', 1, 'AWS Certified Solutions Architect Associate (SAA-C03)', 'cat_cert', 'Cleared AWS Solutions Architect exam with score 840/1000. Credential ID: AWS-84920481', '/uploads/aws_solutions_architect_pending.svg', 'aws_solutions_architect_pending.svg', 1840000, 'pending', 0, NULL, '2025-01-20', '2025-01-22T09:15:00Z', NULL, NULL),
+    ('sub_rahul_pending_1', 'usr_std_1', 'sch_cert_3', 1, 'AWS Certified Solutions Architect Associate (SAA-C03)', 'cat_cert', 'Cleared AWS Solutions Architect exam with score 840/1000. Credential ID: AWS-84920481', '/uploads/aws_solutions_architect_pending.svg', 'aws_solutions_architect_pending.svg', 1840000, 'pending', 0, 6, NULL, '2025-01-20', '2025-01-22T09:15:00Z', NULL, NULL),
 
     -- Priya's submissions (70 approved pts)
-    ('sub_priya_1', 'usr_std_2', 'sch_comp_4', 1, 'IEEE Best Student Paper Presentation', 'cat_comp', 'Presented paper on Federated Learning in Healthcare at IEEE Bangalore Section.', '/uploads/priya_iee_paper.svg', 'priya_iee_paper.svg', 1240000, 'approved', 20, 'Verified paper acceptance and presentation certificate.', '2024-11-10', '2024-11-12T16:00:00Z', '2024-11-14T10:00:00Z', 'usr_mentor_1'),
-    ('sub_priya_2', 'usr_std_2', 'sch_cert_1', 1, 'NPTEL Deep Learning Specialization (Elite)', 'cat_cert', '12-week course completed with 82% score.', '/uploads/nptel_cloud_computing_elite.svg', 'priya_nptel_dl.svg', 980000, 'approved', 30, 'Elite certificate confirmed.', '2024-10-15', '2024-10-18T12:00:00Z', '2024-10-19T15:30:00Z', 'usr_mentor_1'),
-    ('sub_priya_3', 'usr_std_2', 'sch_intern_2', 1, '6-Week Full Stack Internship at Infosys Springboard', 'cat_intern', 'Built REST APIs and frontend dashboard for internal employee tracking.', '/uploads/internship_microsoft_fellow.svg', 'infosys_internship.svg', 1100000, 'approved', 20, 'Verified certificate.', '2024-06-30', '2024-07-05T09:00:00Z', '2024-07-08T11:00:00Z', 'usr_mentor_1'),
+    ('sub_priya_1', 'usr_std_2', 'sch_comp_4', 1, 'IEEE Best Student Paper Presentation', 'cat_comp', 'Presented paper on Federated Learning in Healthcare at IEEE Bangalore Section.', '/uploads/priya_iee_paper.svg', 'priya_iee_paper.svg', 1240000, 'approved', 20, 3, 'Verified paper acceptance and presentation certificate.', '2024-11-10', '2024-11-12T16:00:00Z', '2024-11-14T10:00:00Z', 'usr_mentor_1'),
+    ('sub_priya_2', 'usr_std_2', 'sch_cert_1', 1, 'NPTEL Deep Learning Specialization (Elite)', 'cat_cert', '12-week course completed with 82% score.', '/uploads/nptel_cloud_computing_elite.svg', 'priya_nptel_dl.svg', 980000, 'approved', 30, 3, 'Elite certificate confirmed.', '2024-10-15', '2024-10-18T12:00:00Z', '2024-10-19T15:30:00Z', 'usr_mentor_1'),
+    ('sub_priya_3', 'usr_std_2', 'sch_intern_2', 1, '6-Week Full Stack Internship at Infosys Springboard', 'cat_intern', 'Built REST APIs and frontend dashboard for internal employee tracking.', '/uploads/internship_microsoft_fellow.svg', 'infosys_internship.svg', 1100000, 'approved', 20, 2, 'Verified certificate.', '2024-06-30', '2024-07-05T09:00:00Z', '2024-07-08T11:00:00Z', 'usr_mentor_1'),
 
     -- Amit's submissions (190 approved pts - Diamond near completion!)
-    ('sub_amit_1', 'usr_std_5', 'sch_sports_1', 1, 'All India Inter-University Badminton Gold', 'cat_sports', 'Won gold in national university championship singles.', '/uploads/amit_inter_univ_sports.svg', 'amit_sports_gold.svg', 1600000, 'approved', 30, 'Excellent athletic achievement.', '2024-08-15', '2024-08-18T10:00:00Z', '2024-08-20T14:00:00Z', 'usr_mentor_2'),
-    ('sub_amit_2', 'usr_std_5', 'sch_comp_1', 1, 'HackTheNorth 2024 Winner (1st Prize)', 'cat_comp', '1st place out of 200 international teams.', '/uploads/smart_india_hackathon_finalist.svg', 'hackthenorth_winner.svg', 2100000, 'approved', 40, 'Outstanding achievement.', '2024-09-18', '2024-09-20T11:00:00Z', '2024-09-22T09:30:00Z', 'usr_mentor_2'),
-    ('sub_amit_3', 'usr_std_5', 'sch_intern_1', 1, 'Google Summer of Code (GSoC) 12-Week Contributor', 'cat_intern', 'Contributed core parser modules to Linux Foundation project.', '/uploads/internship_microsoft_fellow.svg', 'gsoc_completion.svg', 1450000, 'approved', 30, 'GSoC completion verified.', '2024-08-30', '2024-09-02T13:00:00Z', '2024-09-04T15:00:00Z', 'usr_mentor_2'),
-    ('sub_amit_4', 'usr_std_5', 'sch_cert_1', 1, 'Coursera Deep Learning Specialization by Andrew Ng', 'cat_cert', 'Completed all 5 deeplearning.ai courses with 95% average.', '/uploads/nptel_cloud_computing_elite.svg', 'dl_specialization.svg', 1300000, 'approved', 30, 'Verified specialization badge.', '2024-05-10', '2024-05-12T14:00:00Z', '2024-05-14T11:00:00Z', 'usr_mentor_2'),
-    ('sub_amit_5', 'usr_std_5', 'sch_vol_1', 1, 'NSS Rural Literacy & Health Camp Coordinator', 'cat_vol', 'Served as Lead Coordinator for 10-day NSS camp.', '/uploads/nptel_cloud_computing_elite.svg', 'nss_lead.svg', 900000, 'approved', 25, 'Endorsed by Principal.', '2024-03-20', '2024-03-22T10:00:00Z', '2024-03-25T16:00:00Z', 'usr_mentor_2'),
-    ('sub_amit_6', 'usr_std_5', 'sch_vol_2', 1, 'ACM Student Chapter Vice Chair 2023-24', 'cat_vol', 'Organized 12 tech talks and national symposium.', '/uploads/smart_india_hackathon_finalist.svg', 'acm_chair.svg', 880000, 'approved', 20, 'Chapter report verified.', '2024-04-28', '2024-05-01T09:00:00Z', '2024-05-03T10:00:00Z', 'usr_mentor_2'),
-    ('sub_amit_7', 'usr_std_5', 'sch_work_1', 1, '5-Day Quantum Computing Hands-On Workshop (IISc)', 'cat_work', 'Hands on Qiskit algorithms and quantum circuit implementation.', '/uploads/nptel_cloud_computing_elite.svg', 'quantum_workshop.svg', 780000, 'approved', 15, 'Verified certificate.', '2024-06-15', '2024-06-18T10:00:00Z', '2024-06-20T12:00:00Z', 'usr_mentor_2');
+    ('sub_amit_1', 'usr_std_5', 'sch_sports_1', 1, 'All India Inter-University Badminton Gold', 'cat_sports', 'Won gold in national university championship singles.', '/uploads/amit_inter_univ_sports.svg', 'amit_sports_gold.svg', 1600000, 'approved', 30, 7, 'Excellent athletic achievement.', '2024-08-15', '2024-08-18T10:00:00Z', '2024-08-20T14:00:00Z', 'usr_mentor_2'),
+    ('sub_amit_2', 'usr_std_5', 'sch_comp_1', 1, 'HackTheNorth 2024 Winner (1st Prize)', 'cat_comp', '1st place out of 200 international teams.', '/uploads/smart_india_hackathon_finalist.svg', 'hackthenorth_winner.svg', 2100000, 'approved', 40, 7, 'Outstanding achievement.', '2024-09-18', '2024-09-20T11:00:00Z', '2024-09-22T09:30:00Z', 'usr_mentor_2'),
+    ('sub_amit_3', 'usr_std_5', 'sch_intern_1', 1, 'Google Summer of Code (GSoC) 12-Week Contributor', 'cat_intern', 'Contributed core parser modules to Linux Foundation project.', '/uploads/internship_microsoft_fellow.svg', 'gsoc_completion.svg', 1450000, 'approved', 30, 6, 'GSoC completion verified.', '2024-08-30', '2024-09-02T13:00:00Z', '2024-09-04T15:00:00Z', 'usr_mentor_2'),
+    ('sub_amit_4', 'usr_std_5', 'sch_cert_1', 1, 'Coursera Deep Learning Specialization by Andrew Ng', 'cat_cert', 'Completed all 5 deeplearning.ai courses with 95% average.', '/uploads/nptel_cloud_computing_elite.svg', 'dl_specialization.svg', 1300000, 'approved', 30, 5, 'Verified specialization badge.', '2024-05-10', '2024-05-12T14:00:00Z', '2024-05-14T11:00:00Z', 'usr_mentor_2'),
+    ('sub_amit_5', 'usr_std_5', 'sch_vol_1', 1, 'NSS Rural Literacy & Health Camp Coordinator', 'cat_vol', 'Served as Lead Coordinator for 10-day NSS camp.', '/uploads/nptel_cloud_computing_elite.svg', 'nss_lead.svg', 900000, 'approved', 25, 4, 'Endorsed by Principal.', '2024-03-20', '2024-03-22T10:00:00Z', '2024-03-25T16:00:00Z', 'usr_mentor_2'),
+    ('sub_amit_6', 'usr_std_5', 'sch_vol_2', 1, 'ACM Student Chapter Vice Chair 2023-24', 'cat_vol', 'Organized 12 tech talks and national symposium.', '/uploads/smart_india_hackathon_finalist.svg', 'acm_chair.svg', 880000, 'approved', 20, 4, 'Chapter report verified.', '2024-04-28', '2024-05-01T09:00:00Z', '2024-05-03T10:00:00Z', 'usr_mentor_2'),
+    ('sub_amit_7', 'usr_std_5', 'sch_work_1', 1, '5-Day Quantum Computing Hands-On Workshop (IISc)', 'cat_work', 'Hands on Qiskit algorithms and quantum circuit implementation.', '/uploads/nptel_cloud_computing_elite.svg', 'quantum_workshop.svg', 780000, 'approved', 15, 5, 'Verified certificate.', '2024-06-15', '2024-06-18T10:00:00Z', '2024-06-20T12:00:00Z', 'usr_mentor_2');
   `);
 
   // 6. Schema Change Requests (Pipeline between Mentor & HOD)
@@ -249,6 +250,41 @@ export async function seedDatabase() {
     ('log_3', 'usr_mentor_1', 'SCHEMA_REQUEST_SUBMITTED', 'Submitted Schema Request for Certified Kubernetes Administrator (CKA).', '2025-01-20T14:30:00Z');
   `);
 
+  // 9. Student Semester Marks (Random / Dummy editable subjects & marks across all students for all 8 semesters)
+  const studentOffsets: Record<string, number> = {
+    usr_std_1: 4,  // Rahul Verma
+    usr_std_2: 8,  // Priya Patel
+    usr_std_3: -2, // Rohan Gupta
+    usr_std_4: 9,  // Neha Singh
+    usr_std_5: 11, // Amit Kumar
+    usr_std_6: 5,  // Sneha Nair
+    usr_std_7: -1, // Vikram Rao
+    usr_std_8: 6,  // Ananya Joshi
+  };
+
+  const studentIds = ['usr_std_1', 'usr_std_2', 'usr_std_3', 'usr_std_4', 'usr_std_5', 'usr_std_6', 'usr_std_7', 'usr_std_8'];
+  const allSemesters = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  for (const sId of studentIds) {
+    const offset = studentOffsets[sId] ?? 0;
+    for (const sem of allSemesters) {
+      const generatedMarks = generateRandomStudentMarks(sId, sem, offset);
+      for (const sm of generatedMarks) {
+        await db.exec(`
+          INSERT INTO student_marks (
+            id, student_id, semester, subject_code, subject_name, credits,
+            theory_marks, theory_max, task_marks, task_max, has_lab,
+            lab_marks, lab_max, grade, grade_points, created_at, updated_at
+          ) VALUES (
+            '${sm.id}', '${sm.student_id}', ${sm.semester}, '${sm.subject_code}', '${sm.subject_name.replace(/'/g, "''")}', ${sm.credits},
+            ${sm.theory_marks}, ${sm.theory_max}, ${sm.task_marks}, ${sm.task_max}, ${sm.has_lab},
+            ${sm.lab_marks}, ${sm.lab_max}, '${sm.grade}', ${sm.grade_points}, '${sm.created_at}', '${sm.updated_at}'
+          );
+        `);
+      }
+    }
+  }
+
   saveDb();
-  console.log('Database seeded successfully with all roles, schemas, submissions, and events!');
+  console.log('Database seeded successfully with all roles, schemas, submissions, events, and student marks!');
 }
