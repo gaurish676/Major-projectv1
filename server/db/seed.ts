@@ -181,6 +181,7 @@ export async function seedDatabase() {
 
   await db.exec(`
     INSERT INTO users (id, name, email, password_hash, role, department_id, mentor_id, cgpa, semester, roll_no, avatar) VALUES
+    ('usr_dev', 'System Developer Ops', 'dev@university.edu', '${defaultHash}', 'developer', 'dept_cse', NULL, NULL, NULL, 'EMP-DEV-000', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80'),
     ('usr_hod_1', 'Dr. Rajesh Sharma', 'hod@university.edu', '${defaultHash}', 'hod', 'dept_cse', NULL, NULL, NULL, 'EMP-CSE-001', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'),
     
     ('usr_mentor_1', 'Prof. Ravi Kumar', 'ravi@university.edu', '${defaultHash}', 'mentor', 'dept_cse', NULL, NULL, NULL, 'EMP-CSE-042', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'),

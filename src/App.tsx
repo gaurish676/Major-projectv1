@@ -29,6 +29,7 @@ import { StudentMentorAllocation } from './pages/hod/StudentMentorAllocation';
 
 // Common Pages
 import { ProfilePage } from './pages/common/ProfilePage';
+import { DevConsole } from './pages/dev/DevConsole';
 
 const MainLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -46,7 +47,9 @@ const MainLayout: React.FC = () => {
   // Set default tab on login / persona switch based on role
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'hod') {
+    if (user.role === 'developer') {
+      setActiveTab('dev-console');
+    } else if (user.role === 'hod') {
       setActiveTab('hod-dashboard');
     } else if (user.role === 'mentor') {
       setActiveTab('mentor-dashboard');
@@ -76,8 +79,10 @@ const MainLayout: React.FC = () => {
       <Navbar
         onToggleSidebar={handleToggleSidebar}
         onNavigateProfile={() => setActiveTab('profile')}
+        onNavigateDevConsole={() => setActiveTab('dev-console')}
         onNavigateHome={() => {
-          if (user.role === 'student') setActiveTab('student-dashboard');
+          if (user.role === 'developer') setActiveTab('dev-console');
+          else if (user.role === 'student') setActiveTab('student-dashboard');
           else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
           else setActiveTab('hod-dashboard');
         }}
@@ -127,19 +132,22 @@ const MainLayout: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-3 sm:p-4 lg:p-5 min-w-0 overflow-y-auto">
-          {/* Universal Profile View for any active entity */}
+          {/* Universal Profile & Developer Console Views */}
           {activeTab === 'profile' && (
             <ProfilePage
               onBack={() => {
-                if (user.role === 'hod') setActiveTab('hod-dashboard');
+                if (user.role === 'developer') setActiveTab('dev-console');
+                else if (user.role === 'hod') setActiveTab('hod-dashboard');
                 else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
                 else setActiveTab('student-dashboard');
               }}
             />
           )}
 
+          {(activeTab === 'dev-console' || user.role === 'developer') && activeTab !== 'profile' && <DevConsole />}
+
           {/* Student Views */}
-          {user.role === 'student' && activeTab !== 'profile' && (
+          {user.role === 'student' && activeTab !== 'profile' && activeTab !== 'dev-console' && (
             <>
               {(activeTab === 'student-dashboard' || activeTab === 'home') && (
                 <StudentDashboard
@@ -160,7 +168,7 @@ const MainLayout: React.FC = () => {
           )}
 
           {/* Mentor Views */}
-          {user.role === 'mentor' && activeTab !== 'profile' && (
+          {user.role === 'mentor' && activeTab !== 'profile' && activeTab !== 'dev-console' && (
             <>
               {(activeTab === 'mentor-dashboard' || activeTab === 'home') && (
                 <MentorDashboard
@@ -185,7 +193,7 @@ const MainLayout: React.FC = () => {
           )}
 
           {/* HOD Views */}
-          {user.role === 'hod' && activeTab !== 'profile' && (
+          {user.role === 'hod' && activeTab !== 'profile' && activeTab !== 'dev-console' && (
             <>
               {(activeTab === 'hod-dashboard' || activeTab === 'home') && (
                 <HODDashboard onNavigateTab={setActiveTab} />

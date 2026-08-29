@@ -15,7 +15,9 @@ import {
   User as UserIcon,
   Hash,
   BookOpen,
+  Terminal,
 } from 'lucide-react';
+import { DEV_CONFIG } from '../../config/devConfig';
 
 const defaultFallbackStudents = [
   { id: 'usr_std_1', name: 'Rahul Verma', roll_no: '4NN22CS089', semester: 6, cgpa: 8.45, email: 'rahul@university.edu' },
@@ -170,6 +172,28 @@ export const Login: React.FC = () => {
     } finally {
       setIsSubmitting(false);
       setActiveDemoRole(null);
+    }
+  };
+
+  const handleDevAccess = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await switchPersona('usr_dev');
+    } catch (err: any) {
+      console.warn('Developer switch persona fallback to login:', err);
+      try {
+        await login('dev@university.edu', 'demo123');
+      } catch (loginErr: any) {
+        console.error('Developer login failed:', loginErr);
+        setError(loginErr.message || 'Developer portal access failed. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -551,8 +575,23 @@ export const Login: React.FC = () => {
       </div>
 
       {/* Page Footer */}
-      <div className="max-w-5xl mx-auto w-full text-center text-[11px] text-slate-500 py-3 border-t border-slate-900">
-        Nitte University CSE Department • Creditz Academic Tracking & Accreditation Portal
+      <div className="max-w-5xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 py-3 border-t border-slate-900">
+        <div>
+          Nitte University CSE Department • Creditz Academic Tracking & Accreditation Portal
+        </div>
+
+        {DEV_CONFIG.ENABLE_TEMPORARY_DEV_ACCESS_ON_AUTH && (
+          <button
+            type="button"
+            onClick={handleDevAccess}
+            disabled={isSubmitting}
+            className="flex items-center gap-1.5 text-slate-600 hover:text-slate-300 transition text-[11px] font-mono cursor-pointer opacity-70 hover:opacity-100"
+            title="Internal System Maintenance & Developer Portal"
+          >
+            <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Developer Console</span>
+          </button>
+        )}
       </div>
     </div>
   );

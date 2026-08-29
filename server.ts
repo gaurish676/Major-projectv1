@@ -11,6 +11,7 @@ import studentRoutes from './server/routes/student.routes';
 import mentorRoutes from './server/routes/mentor.routes';
 import hodRoutes from './server/routes/hod.routes';
 import eventRoutes from './server/routes/event.routes';
+import devRoutes from './server/routes/dev.routes';
 
 async function startServer() {
   const app = express();
@@ -49,6 +50,7 @@ async function startServer() {
   app.use('/api/mentor', mentorRoutes);
   app.use('/api/hod', hodRoutes);
   app.use('/api/events', eventRoutes);
+  app.use('/api/dev', devRoutes);
 
   // Development: Vite Middleware / Production: Static Files
   if (process.env.NODE_ENV !== 'production') {

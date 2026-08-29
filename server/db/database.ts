@@ -58,7 +58,7 @@ function initSchema(db: DatabaseSync): void {
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('hod', 'mentor', 'student')),
+      role TEXT NOT NULL CHECK(role IN ('hod', 'mentor', 'student', 'developer')),
       department_id TEXT NOT NULL,
       mentor_id TEXT,
       cgpa REAL,
@@ -73,6 +73,41 @@ function initSchema(db: DatabaseSync): void {
       FOREIGN KEY (mentor_id) REFERENCES users(id)
     );
   `);
+
+  // Safely update schema CHECK constraint if table was created with old check constraint
+  try {
+    const userTableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get() as any;
+    if (userTableInfo && userTableInfo.sql && !userTableInfo.sql.includes('developer')) {
+      db.exec('PRAGMA foreign_keys = OFF;');
+      db.exec('ALTER TABLE users RENAME TO users_old;');
+      db.exec(`
+        CREATE TABLE users (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          role TEXT NOT NULL CHECK(role IN ('hod', 'mentor', 'student', 'developer')),
+          department_id TEXT NOT NULL,
+          mentor_id TEXT,
+          cgpa REAL,
+          semester INTEGER,
+          roll_no TEXT,
+          avatar TEXT,
+          phone TEXT,
+          bio TEXT,
+          designation TEXT,
+          office_location TEXT,
+          FOREIGN KEY (department_id) REFERENCES departments(id),
+          FOREIGN KEY (mentor_id) REFERENCES users(id)
+        );
+      `);
+      db.exec('INSERT INTO users SELECT * FROM users_old;');
+      db.exec('DROP TABLE users_old;');
+      db.exec('PRAGMA foreign_keys = ON;');
+    }
+  } catch (migErr) {
+    console.warn('Users table migration check warning:', migErr);
+  }
 
   // Safely ensure new columns exist if table was previously created
   try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT;'); } catch {}

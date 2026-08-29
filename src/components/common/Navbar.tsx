@@ -10,15 +10,17 @@ import {
   Clock,
   Menu,
   User as UserIcon,
+  Sliders,
 } from 'lucide-react';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
   onNavigateProfile?: () => void;
   onNavigateHome?: () => void;
+  onNavigateDevConsole?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfile, onNavigateHome }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfile, onNavigateHome, onNavigateDevConsole }) => {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -169,6 +171,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
                       >
                         <UserIcon className="w-4 h-4" />
                         <span>View & Edit Profile</span>
+                      </button>
+                    )}
+
+                    {user.role === 'developer' && onNavigateDevConsole && (
+                      <button
+                        onClick={() => {
+                          onNavigateDevConsole();
+                          setDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-purple-700 bg-purple-50/70 hover:bg-purple-100 flex items-center gap-2 transition font-bold cursor-pointer"
+                      >
+                        <Sliders className="w-4 h-4 text-purple-600" />
+                        <span>Developer Console</span>
                       </button>
                     )}
 
