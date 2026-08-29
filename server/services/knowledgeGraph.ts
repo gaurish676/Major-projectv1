@@ -384,7 +384,7 @@ export async function buildKnowledgeGraph(): Promise<InstitutionalKnowledgeGraph
  */
 export async function getStudentKnowledgeContext(studentId: string): Promise<GraphEvidence> {
   const kg = await buildKnowledgeGraph();
-  const student = await queryOne('SELECT * FROM users WHERE id = ? AND role = "student"', [studentId]);
+  const student = await queryOne("SELECT * FROM users WHERE id = ? AND role = 'student'", [studentId]);
 
   if (!student) {
     throw new Error(`Student with ID ${studentId} not found in Creditz system.`);

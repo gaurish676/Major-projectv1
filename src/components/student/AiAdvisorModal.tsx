@@ -34,13 +34,12 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
   const [query, setQuery] = useState('');
   const [advisorData, setAdvisorData] = useState<GraphRAGAdvisorResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'advice' | 'evidence' | 'graph'>('advice');
 
   const presetQueries = [
-    'What should I do to reach 200 points?',
-    'Which categories have remaining headroom?',
+    'How do I reach my 200 points goal?',
+    'Which categories can I still get points in?',
     'What activities can I complete this semester?',
-    'Show my developed skills & recommended activities',
+    'Show my developed skills & recommended tasks',
   ];
 
   const fetchAdvisorRecommendation = async (customQuery?: string) => {
@@ -80,14 +79,14 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white tracking-tight">GraphRAG Student AI Advisor</h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1">
-                  <Network className="w-3 h-3 text-sky-400" />
-                  Knowledge Graph Derived
+                <h2 className="text-lg font-bold text-white tracking-tight">AI Credit & Clearance Advisor</h2>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  Verified Rules
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Deterministic degree target calculations grounded in university schema caps
+              <p className="text-xs text-slate-300">
+                Your personal guide for credit point clearance, activity recommendations, and university caps
               </p>
             </div>
           </div>
@@ -98,51 +97,6 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex items-center justify-between px-5 bg-[#070D1E] border-b border-indigo-950 text-xs shrink-0">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab('advice')}
-              className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-2 ${
-                activeTab === 'advice'
-                  ? 'border-indigo-500 text-indigo-300 bg-indigo-950/30'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>AI Guidance & Action Plan</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('evidence')}
-              className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-2 ${
-                activeTab === 'evidence'
-                  ? 'border-indigo-500 text-indigo-300 bg-indigo-950/30'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Graph Evidence ({evidence?.current_points || 0}/200 Pts)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('graph')}
-              className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-2 ${
-                activeTab === 'graph'
-                  ? 'border-indigo-500 text-indigo-300 bg-indigo-950/30'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Network className="w-3.5 h-3.5" />
-              <span>Graph Node Inspector</span>
-            </button>
-          </div>
-
-          {advisorData?.model_used && (
-            <span className="text-[10px] text-slate-500 font-mono hidden sm:block">
-              Engine: {advisorData.model_used}
-            </span>
-          )}
         </div>
 
         {/* Modal Scrollable Body */}
@@ -161,8 +115,8 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Ask GraphRAG Advisor (e.g., 'What activities can I do to get 30 points?')"
-                  className="w-full pl-4 pr-10 py-2.5 bg-[#060C1B] border border-indigo-900/60 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                  placeholder="Ask a question (e.g. 'How do I get 30 points this semester?')"
+                  className="w-full pl-4 pr-10 py-2.5 bg-[#060C1B] border border-indigo-900/60 rounded-xl text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
                 />
                 <button
                   type="submit"
@@ -182,7 +136,7 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Ask GraphRAG</span>
+                    <span>Ask Advisor</span>
                   </>
                 )}
               </button>
@@ -190,8 +144,8 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
 
             {/* Quick Preset Prompt Chips */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mr-1">
-                Suggested:
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mr-1">
+                Quick Questions:
               </span>
               {presetQueries.map((pq, idx) => (
                 <button
@@ -213,20 +167,20 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
             <div className="flex flex-col items-center justify-center py-16 space-y-3">
               <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
               <div className="text-center">
-                <p className="text-xs font-bold text-indigo-300">Retrieving Knowledge Graph Entities...</p>
-                <p className="text-[11px] text-slate-500">
-                  Extracting student points, category caps, semester limits & eligible catalog items
+                <p className="text-xs font-bold text-indigo-300">Checking your credit rules & status...</p>
+                <p className="text-[11px] text-slate-400">
+                  Calculating points earned, available caps, and eligible activities for you
                 </p>
               </div>
             </div>
-          ) : activeTab === 'advice' && advice ? (
+          ) : advice ? (
             <div className="space-y-5">
               {/* Executive Summary Card */}
               <div className="p-4 rounded-xl bg-[#0d1733] border border-indigo-900/50 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-sky-400" />
-                    <h3 className="text-sm font-bold text-white">Graph-Grounded Assessment</h3>
+                    <h3 className="text-sm font-bold text-white">Your Progress Assessment</h3>
                   </div>
                   {evidence && (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -241,13 +195,13 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
                 </div>
               </div>
 
-              {/* Recommended Activities from Graph */}
+              {/* Recommended Activities */}
               {advice.recommended_activities && advice.recommended_activities.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                       <BookOpen className="w-4 h-4 text-indigo-400" />
-                      <span>Recommended Eligible Activities (From Graph Catalog)</span>
+                      <span>Recommended Activities to Earn Points</span>
                     </h3>
                     {onOpenSubmitModal && (
                       <button
@@ -333,172 +287,14 @@ export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
                 </div>
               )}
             </div>
-          ) : activeTab === 'evidence' && evidence ? (
-            <div className="space-y-5">
-              {/* Numerical Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-[#070D1E] border border-slate-800 text-center space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Effective Points</div>
-                  <div className="text-xl font-extrabold text-sky-400">{evidence.current_points}</div>
-                  <div className="text-[10px] text-slate-500">Out of {evidence.target_points} Goal</div>
-                </div>
-                <div className="p-3 rounded-xl bg-[#070D1E] border border-slate-800 text-center space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Remaining Needed</div>
-                  <div className="text-xl font-extrabold text-amber-400">{evidence.remaining_points}</div>
-                  <div className="text-[10px] text-slate-500">To Reach 200 Pts</div>
-                </div>
-                <div className="p-3 rounded-xl bg-[#070D1E] border border-slate-800 text-center space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Current Sem Cap</div>
-                  <div className="text-xl font-extrabold text-indigo-400">{evidence.semester_headroom}</div>
-                  <div className="text-[10px] text-slate-500">Pts Headroom Left</div>
-                </div>
-                <div className="p-3 rounded-xl bg-[#070D1E] border border-slate-800 text-center space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Milestone Tier</div>
-                  <div className="text-base font-extrabold text-emerald-400 mt-1">{evidence.milestone_tier}</div>
-                  <div className="text-[10px] text-slate-500">Sem {evidence.current_semester}</div>
-                </div>
-              </div>
-
-              {/* Category Headroom Breakdown Table */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Category Headroom Audit
-                </h3>
-                <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#060C1B]">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-[#0D1836] text-slate-400 font-semibold text-[11px]">
-                      <tr>
-                        <th className="p-3">Category Domain</th>
-                        <th className="p-3 text-center">Earned</th>
-                        <th className="p-3 text-center">Category Cap</th>
-                        <th className="p-3 text-center">Headroom</th>
-                        <th className="p-3 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {evidence.category_headroom.map((ch) => (
-                        <tr key={ch.category_id} className="hover:bg-slate-900/40">
-                          <td className="p-3 font-semibold text-slate-200">{ch.category_name}</td>
-                          <td className="p-3 text-center font-bold text-sky-400">{ch.earned} pts</td>
-                          <td className="p-3 text-center text-slate-400">{ch.cap} pts</td>
-                          <td className="p-3 text-center font-bold text-amber-400">{ch.headroom} pts</td>
-                          <td className="p-3 text-right">
-                            {ch.status === 'CAPPED' ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                Capped
-                              </span>
-                            ) : ch.status === 'IN_PROGRESS' ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                                In Progress
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
-                                Not Started
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Completed Proof List in Graph */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Approved Proof & Certificates in Knowledge Graph ({evidence.completed_activities_list.length})
-                </h3>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {evidence.completed_activities_list.map((ca) => (
-                    <div
-                      key={ca.id}
-                      className="p-2.5 rounded-lg bg-[#070D1E] border border-slate-800 flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <div>
-                          <span className="font-semibold text-slate-200">{ca.title}</span>
-                          <span className="text-[10px] text-slate-500 ml-2">
-                            ({ca.category_name} • Sem {ca.semester})
-                          </span>
-                        </div>
-                      </div>
-                      <span className="font-bold text-emerald-400">+{ca.points} Pts</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : activeTab === 'graph' ? (
-            /* Graph Node & Edge Inspector */
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#060C1B] border border-indigo-900/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-sky-400" />
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                      Derived Knowledge Graph Topology
-                    </h3>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    Idempotent Graph Synchronization
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Below is the structural entity-relationship model generated from Creditz database records.
-                  Gemini GraphRAG consumes these exact graph nodes and typed relationships as ground truth.
-                </p>
-
-                {/* Simulated Visual Graph Structure Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-1">
-                  <div className="p-2.5 rounded-lg bg-[#0D1836] border border-indigo-900/60">
-                    <div className="text-[10px] text-slate-400 font-semibold">Student Entity</div>
-                    <div className="font-bold text-indigo-300 mt-0.5">{evidence?.student_name}</div>
-                    <div className="text-[10px] text-slate-500">Sem {evidence?.current_semester}</div>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-[#0D1836] border border-indigo-900/60">
-                    <div className="text-[10px] text-slate-400 font-semibold">Department Node</div>
-                    <div className="font-bold text-indigo-300 mt-0.5">{evidence?.department_name}</div>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-[#0D1836] border border-indigo-900/60">
-                    <div className="text-[10px] text-slate-400 font-semibold">Faculty Mentor</div>
-                    <div className="font-bold text-indigo-300 mt-0.5">{evidence?.mentor_name}</div>
-                  </div>
-                </div>
-
-                {/* Graph Relationships Schema Tree */}
-                <div className="pt-3 border-t border-slate-800 space-y-1.5 text-xs text-slate-300 font-mono">
-                  <div className="text-[11px] font-bold text-sky-400 font-sans mb-2">
-                    Graph Relationship Edges Active for Student:
-                  </div>
-                  <div className="p-2 bg-[#080E21] rounded border border-slate-800">
-                    Student ({evidence?.student_name}) → <span className="text-amber-400 font-bold">BELONGS_TO</span> → Department ({evidence?.department_name})
-                  </div>
-                  <div className="p-2 bg-[#080E21] rounded border border-slate-800">
-                    Student ({evidence?.student_name}) → <span className="text-amber-400 font-bold">MENTORED_BY</span> → Faculty ({evidence?.mentor_name})
-                  </div>
-                  <div className="p-2 bg-[#080E21] rounded border border-slate-800">
-                    Student ({evidence?.student_name}) → <span className="text-emerald-400 font-bold">COMPLETED</span> → {evidence?.completed_activities_count} Approved Activities
-                  </div>
-                  <div className="p-2 bg-[#080E21] rounded border border-slate-800">
-                    Activity → <span className="text-sky-400 font-bold">HAS_CATEGORY</span> → 6 Schema Categories (with domain caps)
-                  </div>
-                  <div className="p-2 bg-[#080E21] rounded border border-slate-800">
-                    Certificate → <span className="text-purple-400 font-bold">PROVES</span> → Activity Verification Proofs
-                  </div>
-                </div>
-              </div>
-            </div>
           ) : null}
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-[#0C1733] border-t border-indigo-900/50 flex items-center justify-between text-xs text-slate-400 shrink-0">
+        <div className="p-4 bg-[#0C1733] border-t border-indigo-900/50 flex items-center justify-between text-xs text-slate-300 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Deterministic GraphRAG Layer Grounded in University Rules</span>
+            <span>Grounded in Official University Credit Regulations</span>
           </div>
           <button
             onClick={onClose}

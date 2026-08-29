@@ -175,7 +175,7 @@ Return ONLY a valid JSON object with the following schema:
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: [
         {
           role: 'user',
@@ -204,7 +204,7 @@ Return ONLY a valid JSON object with the following schema:
 
     const parsed: AIAuditResult = JSON.parse(responseText.trim());
     parsed.audited_at = new Date().toISOString();
-    parsed.model_used = 'gemini-2.5-flash';
+    parsed.model_used = 'gemini-3.6-flash';
 
     return parsed;
   } catch (err: any) {

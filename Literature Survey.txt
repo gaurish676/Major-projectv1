@@ -127,7 +127,18 @@ Standard ungrounded LLM chatbots are fundamentally unsuitable for institutional 
 3. **Lack of Relational Awareness**: Standard chatbots treat student queries in isolation, lacking awareness of multi-hop institutional relationships (*Student → Faculty Mentor → Department → Activity → Category Cap*).
 
 ### How the Creditz Knowledge Graph Bridge Resolves the Gap
-The **Creditz** architecture bridges this research gap by decoupling the authoritative data layer from the generative intelligence layer:
+The **Creditz** architecture bridges this research gap by establishing a **5-Tier Institutional Observation & Reasoning Pipeline**, ensuring that AI does not become an unconstrained decision maker, but rather an observation and explanation layer situated between database records and human administrators:
+
+$$\text{Database} \xrightarrow{\text{Records}} \text{Knowledge Graph} \xrightarrow{\text{Topology}} \text{Rules Engine} \xrightarrow{\text{Validation}} \text{Gemini AI} \xrightarrow{\text{Explanation}} \text{Human Evaluator}$$
+
+1. **Database** tells you **what happened** (*Authoritative transactional CRUD log*).
+2. **Knowledge Graph** tells you **what it is connected to** (*Relational entity-edge topology*).
+3. **Rules Engine** tells you **whether it is valid** (*Deterministic cap & credit limit math*).
+4. **Gemini AI** explains **what it means** (*Natural-language evidence-grounded synthesis*).
+5. **Humans (Student / Mentor / HOD)** decide **what to do** (*Final decision-making authority*).
+
+This architecture supports 15 core institutional GraphRAG use cases: Certificate intelligence, Duplicate/anomaly detection, Credit/rule validation, Semester/category monitoring, Student risk detection, Faculty workload monitoring, HOD institutional analytics, CRUD impact analysis, Audit/explainability, Institutional natural-language querying, Cross-entity investigation, AI-assisted reports, Pattern/cluster detection, Rule-change impact analysis, and Human decision support.
+
 * **Source of Truth**: The relational database and deterministic application logic calculate all mathematical metrics ($Remaining Points = Target Points - Current Points$), category headroom, and semester ceilings with 100% accuracy.
 * **Derived Knowledge Graph Layer**: Synthesizes flat database records into an interconnected relational topology:
   $$\text{Student} \rightarrow \text{Activity} \rightarrow \text{Category} \rightarrow \text{Certificate} \rightarrow \text{Organization} \rightarrow \text{Points} \rightarrow \text{Semester} \rightarrow \text{Rule}$$

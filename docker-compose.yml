@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  creditz-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creditz-app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - creditz-data:/app/data
+      - creditz-uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  creditz-data:
+    driver: local
+  creditz-uploads:
+    driver: local

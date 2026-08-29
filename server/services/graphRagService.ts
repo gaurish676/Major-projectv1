@@ -42,7 +42,7 @@ export async function getGraphRAGRecommendation(
   if (ai) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [
           {
             role: 'user',
@@ -75,7 +75,7 @@ export async function getGraphRAGRecommendation(
           },
           is_graph_rag: true,
           generated_at: new Date().toISOString(),
-          model_used: 'gemini-2.5-flash (GraphRAG Grounded)',
+          model_used: 'gemini-3.6-flash (GraphRAG Grounded)',
         };
       }
     } catch (err: any) {

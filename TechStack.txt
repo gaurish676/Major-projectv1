@@ -206,7 +206,36 @@ Express registers modular REST API router modules mounted on `/api`:
 * **Data Integrity**: Relational transactional databases are specifically engineered for ACID compliance, concurrent writes, and strict record management. Storing user credentials, submission statuses, and audit logs in SQLite ensures zero transactional data corruption.
 * **Derived Intelligence**: The Knowledge Graph is an ephemeral, dynamically synthesized view of relational data. Treating the graph as a derived layer allows GraphRAG to query rich multi-hop relationships without risking transactional synchronization discrepancies or database state corruption.
 
-### 7.2 Why GraphRAG Outperforms Ungrounded Direct LLM Queries
+### 7.2 The 5-Tier Institutional Observation Paradigm
+The architectural strength of **Creditz** lies in ensuring the AI **does not become an unconstrained authority**. Instead, it functions as an institutional observation, reasoning, and explanation layer situated between raw database records and human administrators:
+
+$$\text{Database} \xrightarrow{\text{Records}} \text{Graph} \xrightarrow{\text{Topology}} \text{Rules Engine} \xrightarrow{\text{Validation}} \text{Gemini AI} \xrightarrow{\text{Explanation}} \text{Human Evaluator}$$
+
+1. **Database** tells you **what happened** (*Authoritative transactional CRUD log*).
+2. **Knowledge Graph** tells you **what it is connected to** (*Relational entity-edge topology*).
+3. **Rules Engine** tells you **whether it is valid** (*Deterministic cap & credit limit math*).
+4. **Gemini AI** explains **what it means** (*Natural-language evidence-grounded synthesis*).
+5. **Humans (Student / Mentor / HOD)** decide **what to do** (*Final decision-making authority*).
+
+### 7.3 Major GraphRAG Institutional Use-Case Categories
+The GraphRAG architecture in **Creditz** satisfies 15 core institutional use cases:
+1. **Certificate Intelligence**: Automated multi-modal OCR parsing and metadata extraction from uploaded proofs.
+2. **Duplicate & Anomaly Detection**: Cross-checking student submissions against existing records to flag duplicate claims or tampered documents.
+3. **Credit & Rule Validation**: Deterministic verification of base point allocations against institution-wide category limits.
+4. **Semester & Category Monitoring**: Dynamic audit of per-semester ceilings (30 pts) and category domain caps (e.g., NPTEL 50 pts).
+5. **Student Risk Detection**: Identifying credit deficits early in academic semesters to prevent last-minute graduation clearance blocks.
+6. **Faculty Workload Monitoring**: Tracking pending review queues across allocated faculty mentors to balance verification tasks.
+7. **HOD Institutional Analytics**: Department-wide degree clearance metrics, compliance reporting, and activity trend visualization.
+8. **CRUD Impact Analysis**: Automatically re-calculating student credit headroom and node-edge graph states whenever submissions are added, updated, or deleted.
+9. **Audit & Explainability**: Displaying inspectable graph evidence side-by-side with AI-generated advice and certificate audit badges.
+10. **Institutional Natural-Language Querying**: Allowing students to ask complex academic queries in natural language and receive evidence-grounded responses.
+11. **Cross-Entity Investigation**: Tracing relationships across Students, Mentors, Issuing Organizations, Skills, and Activity Categories.
+12. **AI-Assisted Reports**: Generating compliance summaries and student target roadmaps automatically.
+13. **Pattern & Cluster Detection**: Identifying high-frequency skill trends and popular extra-curricular activities across student cohorts.
+14. **Rule-Change Impact Analysis**: Simulating how updates to category caps by HODs affect student clearance progress.
+15. **Human Decision Support**: Empowering Faculty Mentors and HODs with confidence scores and discrepancy flags to make fast, informed approval decisions.
+
+### 7.4 Why GraphRAG Outperforms Ungrounded Direct LLM Queries
 * **Elimination of Hallucinations**: Directly asking an ungrounded LLM *"How do I get 200 points?"* results in invented course titles, wrong point values, and invalid university policies. GraphRAG supplies the LLM with exact, real-time institutional evidence (current points, remaining deficit, category caps, eligible catalog items).
 * **Deterministic Mathematical Precision**: LLMs struggle with precise arithmetic. GraphRAG calculates remaining points ($200 - Current = Remaining$) and available headroom deterministically before invoking Gemini, using the LLM solely for natural language explanation and strategy synthesis.
 * **Contextual Policy Alignment**: GraphRAG enforces institutional category domain caps (e.g., max 50 pts in NPTEL) and semester ceilings (30 pts/semester), ensuring that recommended activities are 100% eligible for credit clearance.
