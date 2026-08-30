@@ -74,7 +74,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
+    <div className="h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased overflow-hidden">
       {/* Top Navbar with 1-Click Persona Switcher */}
       <Navbar
         onToggleSidebar={handleToggleSidebar}
@@ -88,10 +88,10 @@ const MainLayout: React.FC = () => {
         }}
       />
 
-      <div className="flex-1 flex max-w-[1536px] w-full mx-auto">
+      <div className="flex-1 flex min-h-0 max-w-[1536px] w-full mx-auto overflow-hidden">
         {/* Desktop Sidebar */}
         {isDesktopSidebarOpen && (
-          <div className="hidden lg:block transition-all">
+          <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto shrink-0 transition-all">
             <Sidebar
               activeTab={activeTab}
               onSelectTab={setActiveTab}
@@ -131,7 +131,7 @@ const MainLayout: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-5 min-w-0 overflow-y-auto">
+        <main className="flex-1 min-w-0 h-full overflow-y-auto p-3 sm:p-4 lg:p-5">
           {/* Universal Profile & Developer Console Views */}
           {activeTab === 'profile' && (
             <ProfilePage
