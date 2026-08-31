@@ -354,7 +354,7 @@ router.post('/register', async (req, res) => {
       role,
       deptId,
       assignedMentorId,
-      role === 'student' ? 8.5 : null,
+      role === 'student' ? 0 : null,
       defaultSem,
       defaultRoll,
       avatar

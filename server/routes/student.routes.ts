@@ -6,6 +6,40 @@ import { generateRandomStudentMarks } from '../services/curriculumSubjects';
 
 const router = Router();
 
+/**
+ * Recalculates CGPA from all saved marks and writes it back to users.cgpa.
+ * Called after every mark add, update, or delete so the dashboard always
+ * shows the live computed value instead of the stale registration default.
+ */
+async function recalculateAndSaveCGPA(studentId: string): Promise<void> {
+  const { executeRun } = await import('../db/database');
+  const allMarks = await queryAll(
+    `SELECT credits, grade_points FROM student_marks WHERE student_id = ?`,
+    [studentId]
+  );
+
+  if (allMarks.length === 0) {
+    // No marks at all — reset CGPA to 0
+    await executeRun(`UPDATE users SET cgpa = 0 WHERE id = ?`, [studentId]);
+    return;
+  }
+
+  let totalCredits = 0;
+  let weightedGP = 0;
+  allMarks.forEach((m: any) => {
+    const cr = Number(m.credits) || 0;
+    const gp = Number(m.grade_points) || 0;
+    totalCredits += cr;
+    weightedGP += cr * gp;
+  });
+
+  const cgpa = totalCredits > 0
+    ? Math.round((weightedGP / totalCredits) * 100) / 100
+    : 0;
+
+  await executeRun(`UPDATE users SET cgpa = ? WHERE id = ?`, [cgpa, studentId]);
+}
+
 // Student Dashboard Full Summary
 router.get('/dashboard', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -262,6 +296,10 @@ router.post('/marks', authenticate, requireRole(['student']), async (req: Authen
     ]);
 
     const created = await queryOne(`SELECT * FROM student_marks WHERE id = ?`, [markId]);
+
+    // Recalculate CGPA after adding a new mark
+    await recalculateAndSaveCGPA(studentId);
+
     res.status(201).json(created);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -344,6 +382,9 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
       studentId,
     ]);
 
+    // Recalculate and persist CGPA after single mark update
+    await recalculateAndSaveCGPA(studentId);
+
     const updated = await queryOne(`SELECT * FROM student_marks WHERE id = ?`, [markId]);
     res.json(updated);
   } catch (err: any) {
@@ -352,6 +393,7 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
 });
 
 // DELETE /api/student/marks/semester/:semester - Delete all subject marks for a semester
+// NOTE: This route MUST be defined BEFORE DELETE /marks/:id
 router.delete('/marks/semester/:semester', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const studentId = req.user!.id;
@@ -363,6 +405,9 @@ router.delete('/marks/semester/:semester', authenticate, requireRole(['student']
 
     const { executeRun } = await import('../db/database');
     await executeRun(`DELETE FROM student_marks WHERE student_id = ? AND semester = ?`, [studentId, semester]);
+
+    // Recalculate CGPA after semester deletion
+    await recalculateAndSaveCGPA(studentId);
 
     res.json({ message: `All subjects for semester ${semester} deleted successfully` });
   } catch (err: any) {
@@ -427,6 +472,9 @@ router.post('/marks/batch', authenticate, requireRole(['student']), async (req: 
       ]);
     }
 
+    // Recalculate CGPA after batch insert
+    await recalculateAndSaveCGPA(studentId);
+
     res.json({ message: 'All subjects saved successfully' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -434,6 +482,8 @@ router.post('/marks/batch', authenticate, requireRole(['student']), async (req: 
 });
 
 // PUT /api/student/marks/batch-update - Update all subject marks at once
+// NOTE: This route MUST be defined BEFORE PUT /marks/:id to prevent Express
+// from matching "batch-update" as the :id parameter.
 router.put('/marks/batch-update', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const studentId = req.user!.id;
@@ -497,6 +547,9 @@ router.put('/marks/batch-update', authenticate, requireRole(['student']), async 
       ]);
     }
 
+    // Recalculate and persist CGPA after batch update
+    await recalculateAndSaveCGPA(studentId);
+
     res.json({ message: 'All subjects updated successfully' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -516,6 +569,9 @@ router.delete('/marks/:id', authenticate, requireRole(['student']), async (req: 
 
     const { executeRun } = await import('../db/database');
     await executeRun(`DELETE FROM student_marks WHERE id = ? AND student_id = ?`, [markId, studentId]);
+
+    // Recalculate CGPA after deletion
+    await recalculateAndSaveCGPA(studentId);
 
     res.json({ message: 'Subject mark record deleted successfully' });
   } catch (err: any) {
