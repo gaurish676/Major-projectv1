@@ -4,6 +4,8 @@ import { User, Submission } from '../../types';
 import { apiRequest } from '../../lib/api';
 import { StatusBadge, MilestoneBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
+import { StudentCreditReportModal } from '../../components/common/StudentCreditReportModal';
+import { StudentCreditReportData } from '../../types';
 import {
   Users,
   Search,
@@ -16,14 +18,25 @@ import {
   FileCheck2,
   Calendar,
   Layers,
+  BarChart3,
+  Printer,
 } from 'lucide-react';
 
-export const MenteeList: React.FC = () => {
+interface MenteeListProps {
+  onViewStudentAnalytics?: (studentId: string) => void;
+}
+
+export const MenteeList: React.FC<MenteeListProps> = ({ onViewStudentAnalytics }) => {
   const { user } = useAuth();
   const [mentees, setMentees] = useState<any[]>([]);
   const [filteredMentees, setFilteredMentees] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Credit Report Modal state
+  const [selectedCreditReportData, setSelectedCreditReportData] = useState<StudentCreditReportData | null>(null);
+  const [isCreditReportModalOpen, setIsCreditReportModalOpen] = useState(false);
+  const [isExtractingReport, setIsExtractingReport] = useState(false);
 
   // Dossier Modal state for a selected student
   const [selectedStudentDossier, setSelectedStudentDossier] = useState<{
@@ -37,6 +50,20 @@ export const MenteeList: React.FC = () => {
   // Evidence PDF preview state
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const handleExtractReport = async (studentId: string) => {
+    try {
+      setIsExtractingReport(true);
+      const data = await apiRequest<StudentCreditReportData>(`/api/student/credit-report?student_id=${studentId}`);
+      setSelectedCreditReportData(data);
+      setIsCreditReportModalOpen(true);
+    } catch (err) {
+      console.error('Failed to extract student credit report:', err);
+    } finally {
+      setIsExtractingReport(false);
+    }
+  };
+
 
   const loadMentees = async () => {
     try {
@@ -93,7 +120,7 @@ export const MenteeList: React.FC = () => {
             <span>Assigned Faculty Mentorship Roster</span>
           </h1>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Official department list of mentees under your supervision. View individual progress and activity dossiers.
+            Official department list of mentees under your supervision. View individual progress and activity submissions.
           </p>
         </div>
 
@@ -190,13 +217,35 @@ export const MenteeList: React.FC = () => {
                     </td>
 
                     <td className="py-2.5 px-3 text-center">
-                      <button
-                        onClick={() => openStudentDossier(m.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white transition cursor-pointer"
-                      >
-                        <Eye className="w-3 h-3 text-purple-300" />
-                        <span>Dossier</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {onViewStudentAnalytics && (
+                          <button
+                            onClick={() => onViewStudentAnalytics(m.id)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition cursor-pointer"
+                            title="View Student Visual Analytics & Performance Charts"
+                          >
+                            <BarChart3 className="w-3 h-3 text-indigo-600" />
+                            <span>Visuals</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleExtractReport(m.id)}
+                          disabled={isExtractingReport}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition cursor-pointer disabled:opacity-50"
+                          title="Extract Official Student Credit Transcript as PDF"
+                        >
+                          <Printer className="w-3 h-3 text-sky-600" />
+                          <span>PDF</span>
+                        </button>
+                        <button
+                          onClick={() => openStudentDossier(m.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white transition cursor-pointer"
+                          title="View Verified Submissions & Certificates"
+                        >
+                          <Eye className="w-3 h-3 text-purple-300" />
+                          <span>Submissions</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -226,16 +275,39 @@ export const MenteeList: React.FC = () => {
                     </span>
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Sem {selectedStudentDossier.student.semester} • CGPA: {selectedStudentDossier.student.cgpa} • Total Points: <strong className="text-purple-400 font-mono">{selectedStudentDossier.total_points}/200p</strong>
+                    Sem {selectedStudentDossier.student.semester} • CGPA: {selectedStudentDossier.student.cgpa} • Total Points: <strong className="text-purple-400 font-mono">{selectedStudentDossier.total_points} / 200 pts</strong>
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedStudentDossier(null)}
-                className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {onViewStudentAnalytics && (
+                  <button
+                    onClick={() => {
+                      const sid = selectedStudentDossier.student.id;
+                      setSelectedStudentDossier(null);
+                      onViewStudentAnalytics(sid);
+                    }}
+                    className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>Visual Analytics</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => handleExtractReport(selectedStudentDossier.student.id)}
+                  disabled={isExtractingReport}
+                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-sky-400" />
+                  <span>PDF Report</span>
+                </button>
+                <button
+                  onClick={() => setSelectedStudentDossier(null)}
+                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Dossier Body */}
@@ -315,6 +387,13 @@ export const MenteeList: React.FC = () => {
           setSelectedSubmission(null);
         }}
         submission={selectedSubmission}
+      />
+
+      {/* Official Student Credit Report Modal (PDF Export) */}
+      <StudentCreditReportModal
+        isOpen={isCreditReportModalOpen}
+        onClose={() => setIsCreditReportModalOpen(false)}
+        reportData={selectedCreditReportData}
       />
     </div>
   );

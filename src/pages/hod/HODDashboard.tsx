@@ -82,7 +82,7 @@ export const HODDashboard: React.FC<HODDashboardProps> = ({ onNavigateTab }) => 
             </button>
           </div>
           <p className="text-xs text-slate-300 mt-1">
-            {departmentName} Overview • Central 200 Activity Points tracking & schema management.
+            {departmentName} Overview • Central 200 Activity Points tracking & department overview.
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export const HODDashboard: React.FC<HODDashboardProps> = ({ onNavigateTab }) => 
           className="px-4 py-2.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0"
         >
           <Sliders className="w-4 h-4" />
-          <span>Activity Schema Rules</span>
+          <span>Point Rules & Categories</span>
         </button>
       </div>
 

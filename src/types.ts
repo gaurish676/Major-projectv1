@@ -23,6 +23,38 @@ export interface User {
   pending_count?: number;
 }
 
+export interface StudentCreditReportData {
+  student: User;
+  points_summary: {
+    total_effective_points: number;
+    raw_total_points: number;
+    semester_capped_points: number;
+    total_excess_points: number;
+    semester_limit_per_semester: number;
+    target_points: number;
+    progress_percentage: number;
+    milestone_tier: 'Not Started' | 'Bronze' | 'Silver' | 'Gold' | 'Diamond';
+    is_cleared: boolean;
+  };
+  categories_breakdown: any[];
+  semester_breakdown: any[];
+  year_breakdown: any[];
+  submissions: Submission[];
+  academic_summary: {
+    total_subjects: number;
+    total_credits: number;
+    cumulative_sgpa: number;
+  };
+  verification_id: string;
+  institution: {
+    name: string;
+    accreditation: string;
+    department: string;
+  };
+  generated_at: string;
+}
+
+
 export interface Department {
   id: string;
   name: string;

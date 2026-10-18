@@ -102,6 +102,119 @@ router.get('/dashboard', authenticate, requireRole(['student']), async (req: Aut
   }
 });
 
+// GET /api/student/credit-report - Complete official credit dossier for PDF generation & visualization
+router.get('/credit-report', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    let studentId = req.user!.id;
+    if ((req.user!.role === 'mentor' || req.user!.role === 'hod') && req.query.student_id) {
+      studentId = req.query.student_id as string;
+    }
+
+    const student = await queryOne(`
+      SELECT 
+        u.id, 
+        u.name, 
+        u.email, 
+        u.role, 
+        u.department_id, 
+        u.cgpa, 
+        u.semester, 
+        u.roll_no, 
+        u.avatar, 
+        d.name as department_name,
+        d.code as department_code,
+        m.name as mentor_name,
+        m.email as mentor_email
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN users m ON u.mentor_id = m.id
+      WHERE u.id = ?
+    `, [studentId]);
+
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    // Role security check for mentors
+    if (req.user!.role === 'mentor' && student.mentor_id && student.mentor_id !== req.user!.id) {
+      res.status(403).json({ error: 'Unauthorized to view this mentee report' });
+      return;
+    }
+
+    const currentSem = student?.semester || 1;
+    const pointsData = await calculateStudentPoints(studentId, currentSem);
+
+    // Fetch all submissions for complete transcript
+    const allSubmissions = await queryAll(`
+      SELECT 
+        s.*,
+        sch.activity_name as schema_activity_name,
+        sch.base_points,
+        c.name as category_name,
+        c.icon as category_icon,
+        c.color as category_color,
+        reviewer.name as reviewer_name
+      FROM submissions s
+      JOIN activity_schema sch ON s.schema_id = sch.id
+      JOIN schema_categories c ON s.category_id = c.id
+      LEFT JOIN users reviewer ON s.reviewed_by = reviewer.id
+      WHERE s.student_id = ?
+      ORDER BY s.submitted_at DESC
+    `, [studentId]);
+
+    // Subject marks summary
+    const marks = await queryAll(`
+      SELECT * FROM student_marks WHERE student_id = ? ORDER BY semester ASC
+    `, [studentId]);
+
+    let totalCredits = 0;
+    let weightedGradePoints = 0;
+    marks.forEach((m: any) => {
+      const cr = Number(m.credits) || 3;
+      totalCredits += cr;
+      weightedGradePoints += (Number(m.grade_points) || 0) * cr;
+    });
+    const cumulativeSGPA = totalCredits > 0 ? Math.round((weightedGradePoints / totalCredits) * 100) / 100 : (student.cgpa || 8.4);
+
+    const verificationId = `CRD-${student.department_code || 'CSE'}-${student.roll_no ? student.roll_no.replace(/[^a-zA-Z0-9]/g, '') : 'STU'}-${Math.abs(student.id.split('').reduce((a: number, b: string) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)).toString(36).toUpperCase()}`;
+
+    res.json({
+      student,
+      points_summary: {
+        total_effective_points: pointsData.total_effective_points,
+        raw_total_points: pointsData.raw_total_points,
+        semester_capped_points: pointsData.semester_capped_points,
+        total_excess_points: pointsData.total_excess_points,
+        semester_limit_per_semester: pointsData.semester_limit_per_semester,
+        target_points: pointsData.target_points,
+        progress_percentage: pointsData.progress_percentage,
+        milestone_tier: pointsData.milestone_tier,
+        is_cleared: pointsData.total_effective_points >= pointsData.target_points,
+      },
+      categories_breakdown: pointsData.categories_breakdown,
+      semester_breakdown: pointsData.semester_breakdown,
+      year_breakdown: pointsData.year_breakdown,
+      submissions: allSubmissions,
+      academic_summary: {
+        total_subjects: marks.length,
+        total_credits: totalCredits,
+        cumulative_sgpa: cumulativeSGPA,
+      },
+      verification_id: verificationId,
+      institution: {
+        name: 'Autonomous Institute of Technology & Sciences',
+        accreditation: 'Accredited by NBA & NAAC with A++ Grade | Affiliated to State Technological University',
+        department: student.department_name || 'Department of Computer Science & Engineering',
+      },
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // Helper for Grade calculation
 function calculateGradeAndPoints(percentage: number): { grade: string; grade_points: number } {
   if (percentage >= 90) return { grade: 'O', grade_points: 10 };

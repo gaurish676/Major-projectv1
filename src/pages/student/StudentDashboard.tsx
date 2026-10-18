@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { StudentDashboardStats, Submission } from '../../types';
 import { apiRequest } from '../../lib/api';
-import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
 import { DegreeClearanceMeter } from '../../components/common/DegreeClearanceMeter';
 import { DeliveryStatusTracker } from '../../components/common/DeliveryStatusTracker';
-import { getCategoryPlainName, CATEGORIES } from '../../lib/categories';
+import { StudentCreditReportModal } from '../../components/common/StudentCreditReportModal';
+import { StudentCreditReportData } from '../../types';
+import { getCategoryPlainName } from '../../lib/categories';
 import {
   Eye,
   PlusCircle,
@@ -14,21 +15,16 @@ import {
   TrendingUp,
   CheckCircle2,
   Clock,
-  Award,
   User as UserIcon,
   ChevronRight,
+  ChevronDown,
   Camera,
-  Sparkles,
-  Zap,
   FileSpreadsheet,
   Calendar,
-  Users2,
-  Building2,
-  ArrowRight,
   Layers,
-  ShieldCheck,
-  AlertCircle,
   Info,
+  Printer,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface StudentDashboardProps {
@@ -45,6 +41,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isCreditReportOpen, setIsCreditReportOpen] = useState(false);
+  const [creditReportData, setCreditReportData] = useState<StudentCreditReportData | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [showAllSemesters, setShowAllSemesters] = useState(false);
+
+  const handleOpenCreditReport = async () => {
+    try {
+      setIsGeneratingReport(true);
+      const data = await apiRequest<StudentCreditReportData>('/api/student/credit-report');
+      setCreditReportData(data);
+      setIsCreditReportOpen(true);
+    } catch (err) {
+      console.error('Failed to load credit report:', err);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
   const loadDashboard = async () => {
     try {
@@ -81,14 +94,20 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const totalSubmissions = recent_submissions.length;
   const approvedSubmissions = recent_submissions.filter((s) => s.status === 'approved').length;
 
+  const currentSem = student.semester || 6;
+  const currentSemData = stats.semester_breakdown?.find((s) => s.semester === currentSem);
+  const currentSemApproved = currentSemData?.approved_points || 0;
+  const currentSemPending = currentSemData?.pending_points || 0;
+  const currentSemPct = Math.min(100, Math.round((currentSemApproved / 30) * 100));
+
   return (
     <div className="space-y-4">
-      {/* Top Header: Student Welcome & Direct Snap CTA */}
+      {/* Top Header */}
       <div className="bg-[#0B1329] rounded-2xl p-4 sm:p-5 text-white border border-slate-800/80 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/20 text-sky-300 border border-blue-500/30">
-              Student Clearance Portal
+              Student Credit Portal
             </span>
             <span className="text-xs text-slate-400">Department of Computer Science & Engineering</span>
           </div>
@@ -125,43 +144,40 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-
-          {/* Connect College Clubs / Registered Clubs Action */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Extract Credit Report (PDF) Action */}
           <button
-            onClick={() => onNavigateTab('student-clubs')}
-            className="px-4 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/30 flex items-center justify-between sm:justify-center gap-3 transition transform active:scale-95 cursor-pointer shrink-0 border border-blue-400/30 group"
-            title="Connect college club pages and view registered chapters"
+            onClick={handleOpenCreditReport}
+            disabled={isGeneratingReport}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs flex items-center gap-2 transition transform active:scale-95 cursor-pointer disabled:opacity-50 border border-indigo-400/30"
+            title="Generate and download official student credit transcript as PDF"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sky-200">
-                <Users2 className="w-4 h-4 text-white" />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-white">College Clubs</span>
-                  <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-500 text-white shadow-2xs">
-                    Connected
-                  </span>
-                </div>
-                <div className="text-[10px] text-sky-200 font-normal">View Registered Chapters</div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-sky-200 group-hover:translate-x-0.5 transition" />
+            <Printer className="w-4 h-4 text-sky-200" />
+            <span>{isGeneratingReport ? 'Generating...' : 'Credit Report (PDF)'}</span>
+          </button>
+
+          {/* Add Certificate Action */}
+          <button
+            onClick={onOpenSubmitModal}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs flex items-center gap-2 transition transform active:scale-95 cursor-pointer border border-emerald-400/30"
+            title="Upload new activity certificate"
+          >
+            <PlusCircle className="w-4 h-4 text-emerald-100" />
+            <span>Upload Certificate</span>
           </button>
         </div>
       </div>
 
-      {/* #2 FEATURE: Plain-English "Degree Clearance Meter" */}
+      {/* Degree Clearance Meter */}
       <DegreeClearanceMeter
         stats={stats}
         onOpenSubmitModal={onOpenSubmitModal}
         onNavigateTab={onNavigateTab}
       />
 
-      {/* 3 Overview Metric Blocks */}
+      {/* Overview Metric Blocks */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* 1. Approved Credits */}
+        {/* Approved Credits */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -182,7 +198,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </p>
         </div>
 
-        {/* 2. Pending Credits */}
+        {/* Pending Credits */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -203,11 +219,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </p>
         </div>
 
-        {/* 3. Total Submissions */}
+        {/* Total Submissions */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Total Proofs Uploaded
+              Total Certificates Uploaded
             </span>
             <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
@@ -220,13 +236,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             <span className="text-xs font-semibold text-slate-400">certificates</span>
           </div>
           <p className="text-[11px] text-slate-500">
-            Cryptographically audited
+            Digitally verified & recorded
           </p>
         </div>
       </div>
 
-      {/* Quick Action Cards: Update Marks & Upcoming Events */}
+      {/* Quick Action Navigation Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* 1. Subject Marks Tracker */}
         <div
           onClick={() => onNavigateTab('student-marks')}
           className="bg-gradient-to-r from-emerald-50 to-teal-50/50 hover:from-emerald-100 hover:to-teal-100/60 border border-emerald-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition group shadow-2xs"
@@ -237,18 +254,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold text-emerald-950 group-hover:text-emerald-800 flex items-center gap-1.5">
-                <span>Update Subject Marks</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-200/70 text-emerald-900 font-extrabold">New</span>
+                <span>Academic Marks</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-200/70 text-emerald-900 font-extrabold">SGPA</span>
               </div>
-              <p className="text-[11px] text-emerald-700">Enter theory marks, task marks, and lab marks to track your SGPA</p>
+              <p className="text-[11px] text-emerald-700">Internal exam scores, lab marks & semester SGPA</p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition shrink-0" />
         </div>
 
+        {/* 2. Upcoming College Events & Clubs */}
         <div
           onClick={() => onNavigateTab('student-events')}
-          className="bg-gradient-to-r from-blue-50 to-sky-50/50 hover:from-blue-100 hover:to-sky-100/60 border border-blue-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition group shadow-2xs"
+          className="bg-gradient-to-r from-sky-50 to-blue-50/50 hover:from-sky-100 hover:to-blue-100/60 border border-sky-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition group shadow-2xs"
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -256,20 +274,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold text-blue-950 group-hover:text-blue-800 flex items-center gap-1.5">
-                <span>Explore Upcoming Events</span>
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
+                <span>Campus Activities & Clubs</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] bg-blue-200/70 text-blue-900 font-extrabold">Explore</span>
               </div>
-              <p className="text-[11px] text-blue-700">Earn fast +20 to +40 activity points by joining college hackathons & fests</p>
+              <p className="text-[11px] text-blue-700">Hackathons, technical workshops & student clubs</p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-blue-600 group-hover:translate-x-0.5 transition shrink-0" />
         </div>
       </div>
 
-      {/* Semester Credit Cap Section (AICTE 30 Credits/Semester Limit) */}
+      {/* Clean Semester Limit Section (Replaces 8 Cramped Boxes with Focused Current Semester + Collapsible View) */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
@@ -278,91 +293,152 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
-                <span>Semester Credit Limit Status</span>
+                <span>Current Semester Limit</span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
                   Cap: 30 Pts / Sem
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                AICTE regulations restrict earning to max 30 activity credits per semester. Extra certificates in a single semester are logged but capped.
+                AICTE regulations allow earning up to 30 activity points per semester.
               </p>
             </div>
           </div>
+
+          <button
+            onClick={() => setShowAllSemesters(!showAllSemesters)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 border border-indigo-200 transition cursor-pointer self-start sm:self-auto"
+          >
+            {showAllSemesters ? (
+              <>
+                <span>Hide Other Semesters</span>
+                <ChevronDown className="w-3.5 h-3.5 rotate-180 transition-transform" />
+              </>
+            ) : (
+              <>
+                <span>View All 8 Semesters</span>
+                <ChevronDown className="w-3.5 h-3.5 transition-transform" />
+              </>
+            )}
+          </button>
         </div>
 
-        {/* Semester 1 to 8 Progress Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((semNum) => {
-            const semData = stats?.semester_breakdown?.find((s) => s.semester === semNum);
-            const rawApproved = semData?.raw_approved_points || 0;
-            const cappedApproved = semData?.approved_points || 0;
-            const pending = semData?.pending_points || 0;
-            const excess = semData?.excess_points || 0;
-            const isCapReached = rawApproved >= 30;
-            const pct = Math.min(100, Math.round((cappedApproved / 30) * 100));
+        {/* Current Semester Hero Progress Bar */}
+        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="text-xs font-bold text-slate-800">
+                Semester {currentSem} Progress
+              </span>
+              <span className="text-[11px] text-slate-500 ml-2">
+                ({currentSemApproved} points approved{currentSemPending > 0 ? `, +${currentSemPending} pending` : ''})
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1 font-mono">
+              <span className="text-lg font-bold text-slate-900">{currentSemApproved}</span>
+              <span className="text-xs text-slate-500">/ 30 pts max</span>
+              <span className="text-xs font-bold text-indigo-600 ml-1.5">({currentSemPct}%)</span>
+            </div>
+          </div>
 
-            return (
-              <div
-                key={semNum}
-                className={`p-2.5 rounded-xl border transition flex flex-col justify-between space-y-2 ${
-                  isCapReached
-                    ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300/50'
-                    : cappedApproved > 0
-                    ? 'bg-blue-50/50 border-blue-200'
-                    : 'bg-slate-50 border-slate-200/80'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-700">Sem {semNum}</span>
-                  {isCapReached ? (
-                    <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold" title="Max Semester Cap Reached (30/30)">
-                      ✓
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-mono text-slate-400 font-semibold">/30</span>
-                  )}
-                </div>
+          <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
+              style={{ width: `${currentSemPct}%` }}
+            />
+          </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-base font-extrabold font-mono text-slate-900">
-                      {cappedApproved}
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      {pct}%
-                    </span>
-                  </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span>0 Pts</span>
+            <span>15 Pts (Midway)</span>
+            <span className="text-slate-700 font-semibold">30 Pts (Semester Limit)</span>
+          </div>
+        </div>
 
-                  {/* Progress Bar */}
-                  <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+        {/* Expandable 8-Semester Detailed Grid (Hidden by default to prevent visual clutter) */}
+        {showAllSemesters && (
+          <div className="pt-2">
+            <div className="text-xs font-bold text-slate-700 mb-2">
+              All Semesters Breakdown (Sem 1 to 8):
+            </div>
+            <div className="overflow-x-auto pb-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 min-w-[560px]">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((semNum) => {
+                  const semData = stats?.semester_breakdown?.find((s) => s.semester === semNum);
+                  const rawApproved = semData?.raw_approved_points || 0;
+                  const cappedApproved = semData?.approved_points || 0;
+                  const pending = semData?.pending_points || 0;
+                  const excess = semData?.excess_points || 0;
+                  const isCapReached = rawApproved >= 30;
+                  const pct = Math.min(100, Math.round((cappedApproved / 30) * 100));
+
+                  return (
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        isCapReached ? 'bg-emerald-600' : cappedApproved > 0 ? 'bg-blue-600' : 'bg-slate-300'
+                      key={semNum}
+                      className={`p-2.5 rounded-xl border transition flex flex-col justify-between space-y-2 ${
+                        semNum === currentSem
+                          ? 'ring-2 ring-indigo-500 bg-indigo-50/50 border-indigo-200'
+                          : isCapReached
+                          ? 'bg-emerald-50/70 border-emerald-300'
+                          : cappedApproved > 0
+                          ? 'bg-blue-50/50 border-blue-200'
+                          : 'bg-slate-50 border-slate-200/80'
                       }`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-700">
+                          Sem {semNum} {semNum === currentSem ? '(Current)' : ''}
+                        </span>
+                        {isCapReached ? (
+                          <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold">
+                            ✓
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono text-slate-400 font-semibold">/30</span>
+                        )}
+                      </div>
 
-                <div className="pt-1 text-[9px] text-slate-500 font-medium">
-                  {excess > 0 ? (
-                    <span className="text-amber-700 font-bold bg-amber-100/80 px-1 py-0.2 rounded" title={`${excess} pts exceed the 30 pts/sem cap`}>
-                      +{excess} excess
-                    </span>
-                  ) : pending > 0 ? (
-                    <span className="text-blue-700 font-semibold">+{pending} pend</span>
-                  ) : isCapReached ? (
-                    <span className="text-emerald-700 font-bold">Maxed</span>
-                  ) : (
-                    <span className="text-slate-400">{30 - cappedApproved} rem</span>
-                  )}
-                </div>
+                      <div className="space-y-1">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-base font-extrabold font-mono text-slate-900">
+                            {cappedApproved}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500">
+                            {pct}%
+                          </span>
+                        </div>
+
+                        <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              isCapReached ? 'bg-emerald-600' : cappedApproved > 0 ? 'bg-blue-600' : 'bg-slate-300'
+                            }`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-1 text-[9px] text-slate-500 font-medium">
+                        {excess > 0 ? (
+                          <span className="text-amber-700 font-bold bg-amber-100/80 px-1 py-0.2 rounded">
+                            +{excess} excess
+                          </span>
+                        ) : pending > 0 ? (
+                          <span className="text-blue-700 font-semibold">+{pending} pend</span>
+                        ) : isCapReached ? (
+                          <span className="text-emerald-700 font-bold">Maxed</span>
+                        ) : (
+                          <span className="text-slate-400">{30 - cappedApproved} rem</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        )}
 
-        {/* Policy Notice Footer */}
+        {/* Policy Notice */}
         <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
           <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
           <span>
@@ -371,24 +447,24 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </div>
 
-      {/* #1 FEATURE: My Submitted Certificates with Delivery-Style Status Tracker */}
+      {/* Submitted Certificates List with Clean Compact Status */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
               <FileText className="w-4 h-4 text-indigo-600" />
-              <span>Where is my Certificate? (Delivery-Style Status)</span>
+              <span>Recent Activity Certificates</span>
             </h3>
             <p className="text-xs text-slate-500">
-              Live tracking for all submitted activity certificates — know the exact status of your credits.
+              Check the review status and points awarded for your submitted certificates.
             </p>
           </div>
 
           <button
-            onClick={() => onNavigateTab('submissions')}
+            onClick={() => onNavigateTab('student-submissions')}
             className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
           >
-            <span>View Full Dossier History</span>
+            <span>View All Certificates</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -399,16 +475,16 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <Camera className="w-6 h-6" />
             </div>
             <div className="max-w-sm mx-auto">
-              <p className="text-sm font-bold text-slate-800">No activity certificates submitted yet</p>
+              <p className="text-sm font-bold text-slate-800">No certificates uploaded yet</p>
               <p className="text-xs text-slate-500 mt-1">
-                Drop your certificate file or snap a photo with your phone to instantly claim degree points!
+                Upload your event certificates or technical project credentials to start earning degree points.
               </p>
             </div>
             <button
               onClick={onOpenSubmitModal}
               className="px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition cursor-pointer"
             >
-              Add Certificate
+              Upload Certificate
             </button>
           </div>
         ) : (
@@ -418,10 +494,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 key={sub.id}
                 className="bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-indigo-200 transition p-4 space-y-3"
               >
-                {/* Header row of certificate item */}
+                {/* Header row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h4 className="font-bold text-slate-900 text-sm">
                         {sub.activity_title}
                       </h4>
@@ -429,12 +505,30 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         {getCategoryPlainName(sub.category_id, sub.category_name)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">
-                      Completed on: <strong className="text-slate-600">{sub.completion_date}</strong>
+                    <p className="text-xs text-slate-500">
+                      Completed on: <strong className="text-slate-700">{sub.completion_date}</strong>
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                    {/* Clean Status Badge */}
+                    {sub.status === 'approved' ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg font-bold text-xs border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Approved (+{sub.points_awarded || sub.base_points || 20} pts)</span>
+                      </span>
+                    ) : sub.status === 'rejected' ? (
+                      <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg font-bold text-xs border border-rose-200">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Action Required</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg font-bold text-xs border border-amber-200">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Under Review</span>
+                      </span>
+                    )}
+
                     <button
                       onClick={() => {
                         setSelectedSubmission(sub);
@@ -448,8 +542,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* The 3-Step Delivery Tracker for this certificate */}
-                <DeliveryStatusTracker submission={sub} />
+                {/* Compact 1-line progress indicator */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <DeliveryStatusTracker submission={sub} compact={true} />
+                  {sub.mentor_feedback && (
+                    <span className="text-[11px] text-slate-600 italic truncate max-w-xs">
+                      Note: "{sub.mentor_feedback}"
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -466,7 +567,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         submission={selectedSubmission}
       />
 
-      
+      {/* Official Student Credit Report Modal (PDF Export) */}
+      <StudentCreditReportModal
+        isOpen={isCreditReportOpen}
+        onClose={() => setIsCreditReportOpen(false)}
+        reportData={creditReportData}
+      />
     </div>
   );
 };

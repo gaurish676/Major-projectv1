@@ -96,97 +96,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const renderStudentNav = () => (
     <div className="space-y-1">
       <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        Navigation Options
+        Student Portal
       </div>
 
-      {/* 1. Home Dashboard */}
+      {/* 1. Home / Overview */}
       <button
         onClick={() => onSelectTab('student-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-dashboard' || activeTab === 'home'
+          activeTab === 'student-dashboard' || activeTab === 'home' || activeTab === ''
             ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
         <div className="flex items-center gap-2.5">
           <Home className="w-4 h-4" />
-          <span>Home</span>
+          <span>Home Overview</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Profile */}
-      <button
-        onClick={() => onSelectTab('profile')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'profile'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <UserIcon className="w-4 h-4" />
-          <span>Profile</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 3. Update Marks */}
-      <button
-        onClick={() => onSelectTab('student-marks')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-marks'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-          <span>Update Marks</span>
-        </div>
-        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-          SGPA
-        </span>
-      </button>
-
-      {/* 4. Upcoming Events */}
-      <button
-        onClick={() => onSelectTab('student-events')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-events'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Calendar className="w-4 h-4 text-indigo-500" />
-          <span>Upcoming Events</span>
-        </div>
-        <span className="flex h-2 w-2 relative">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-        </span>
-      </button>
-
-      {/* 5. College Clubs & Chapters */}
-      <button
-        onClick={() => onSelectTab('student-clubs')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-clubs'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Users2 className="w-4 h-4 text-indigo-500" />
-          <span>College Clubs</span>
-        </div>
-        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-          Clubs
-        </span>
-      </button>
-
-      {/* 6. Submissions */}
+      {/* 2. My Certificates / Proof Submissions */}
       <button
         onClick={() => onSelectTab('student-submissions')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -197,36 +126,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <FileCheck2 className="w-4 h-4" />
-          <span>Submission</span>
+          <span>My Certificates</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 7. Marking Schema */}
+      {/* 4. Academic Marks (SGPA) */}
       <button
-        onClick={() => onSelectTab('student-schema')}
+        onClick={() => onSelectTab('student-marks')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-schema'
+          activeTab === 'student-marks'
             ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <BookOpen className="w-4 h-4" />
-          <span>Marking Schema</span>
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <span>Academic Marks</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+          SGPA
+        </span>
+      </button>
+
+      {/* 5. Campus Clubs & Events */}
+      <button
+        onClick={() => onSelectTab('student-events')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'student-events' || activeTab === 'student-clubs'
+            ? 'bg-indigo-600 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Calendar className="w-4 h-4 text-indigo-500" />
+          <span>Clubs & Events</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* Quick Action Button */}
+      {/* Primary Action Button: Upload Certificate */}
       {onOpenSubmitModal && (
-        <div className="pt-3 px-1">
+        <div className="pt-2.5 px-0.5">
           <button
             onClick={onOpenSubmitModal}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Add Certificate</span>
+            <span>Upload Certificate</span>
           </button>
         </div>
       )}
@@ -236,42 +183,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const renderMentorNav = () => (
     <div className="space-y-1">
       <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        Faculty Options
+        Faculty Advisory
       </div>
 
-      {/* 1. Home Dashboard */}
+      {/* 1. Dashboard */}
       <button
         onClick={() => onSelectTab('mentor-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'mentor-dashboard' || activeTab === 'home'
+          activeTab === 'mentor-dashboard' || activeTab === 'home' || activeTab === ''
             ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
         <div className="flex items-center gap-2.5">
           <Home className="w-4 h-4" />
-          <span>Home</span>
+          <span>Dashboard</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Profile */}
+      {/* 2. Assigned Mentees & Visual Reports */}
       <button
-        onClick={() => onSelectTab('profile')}
+        onClick={() => onSelectTab('mentor-mentees')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'profile'
+          activeTab === 'mentor-mentees'
             ? 'bg-indigo-600 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <UserIcon className="w-4 h-4" />
-          <span>Profile</span>
+          <Users className="w-4 h-4 text-purple-600" />
+          <span>Assigned Mentees</span>
         </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
+          Reports
+        </span>
       </button>
 
-      {/* 3. Submission Review */}
+      {/* 3. Verification Queue */}
       <button
         onClick={() => onSelectTab('mentor-reviews')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -281,13 +230,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <FileCheck2 className="w-4 h-4" />
-          <span>Submission Review</span>
+          <FileCheck2 className="w-4 h-4 text-indigo-600" />
+          <span>Verification Queue</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 4. Student Marks (Sem-wise) */}
+      {/* 4. Mentee Academic Marks */}
       <button
         onClick={() => onSelectTab('mentor-marks')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -298,30 +247,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-          <span>Student Marks</span>
+          <span>Mentee Marks</span>
         </div>
         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Sem-wise
+          SGPA
         </span>
       </button>
 
-      {/* 5. Assigned Mentees */}
-      <button
-        onClick={() => onSelectTab('mentor-mentees')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'mentor-mentees'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Users className="w-4 h-4" />
-          <span>Assigned Mentees</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 6. Marking Schema */}
+      {/* 5. Credit Schema Guidelines */}
       <button
         onClick={() => onSelectTab('student-schema')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -331,82 +264,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <BookOpen className="w-4 h-4" />
-          <span>Marking Schema</span>
+          <BookOpen className="w-4 h-4 text-slate-500" />
+          <span>Credit Schema</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
-
-      {/* 7. Events & Activities */}
-      <button
-        onClick={() => onSelectTab('student-events')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-events'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Calendar className="w-4 h-4" />
-          <span>Events & Activities</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* Schema Change Request Button */}
-      {onOpenSchemaRequestModal && (
-        <div className="pt-2 px-1">
-          <button
-            onClick={onOpenSchemaRequestModal}
-            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition cursor-pointer"
-          >
-            <GitPullRequest className="w-3.5 h-3.5" />
-            <span>Request Schema Change</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 
   const renderHODNav = () => (
     <div className="space-y-1">
       <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        HOD Executive Options
+        HOD Executive
       </div>
 
       {/* 1. Home Dashboard */}
       <button
         onClick={() => onSelectTab('hod-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'hod-dashboard' || activeTab === 'home'
+          activeTab === 'hod-dashboard' || activeTab === 'home' || activeTab === ''
             ? 'bg-slate-900 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
         <div className="flex items-center gap-2.5">
           <Home className="w-4 h-4" />
-          <span>Home</span>
+          <span>Department Overview</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 2. Profile */}
+      {/* 2. Mentee Allocation & Reports */}
       <button
-        onClick={() => onSelectTab('profile')}
+        onClick={() => onSelectTab('hod-allocation')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'profile'
+          activeTab === 'hod-allocation' || activeTab === 'hod-allocations' || activeTab === 'hod-reports'
             ? 'bg-slate-900 text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <UserIcon className="w-4 h-4" />
-          <span>Profile</span>
+          <Users className="w-4 h-4 text-indigo-600" />
+          <span>Student Allocation & Reports</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
 
-      {/* 3. Submission & Queue */}
+      {/* 3. Approvals Queue */}
       <button
         onClick={() => onSelectTab('hod-requests')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -416,8 +320,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <FileCheck2 className="w-4 h-4" />
-          <span>Submission Approvals</span>
+          <FileCheck2 className="w-4 h-4 text-emerald-600" />
+          <span>Approvals Queue</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
@@ -432,48 +336,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <Sliders className="w-4 h-4" />
-          <span>Marking Schema</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 5. Events & Activities */}
-      <button
-        onClick={() => onSelectTab('student-events')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'student-events'
-            ? 'bg-slate-900 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Calendar className="w-4 h-4" />
-          <span>Events & Activities</span>
-        </div>
-        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-      </button>
-
-      {/* 6. Mentor Allocation and Report */}
-      <button
-        onClick={() => onSelectTab('hod-allocation')}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-          activeTab === 'hod-allocation' || activeTab === 'hod-allocations' || activeTab === 'hod-reports'
-            ? 'bg-slate-900 text-white shadow-xs'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Users className="w-4 h-4" />
-          <span>Mentee Allocation & Report</span>
+          <Sliders className="w-4 h-4 text-amber-600" />
+          <span>Credit Schema Caps</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
     </div>
   );
 
+
   return (
-    <aside className="w-56 sm:w-60 lg:w-60 shrink-0 bg-white border-r border-slate-200/90 p-3 sm:p-3.5 min-h-screen flex flex-col justify-between shadow-lg lg:shadow-none">
+    <aside className="w-56 sm:w-60 lg:w-60 shrink-0 bg-white border-r border-slate-200/90 p-3 sm:p-3.5 h-full min-h-full flex flex-col justify-between shadow-lg lg:shadow-none">
       <div className="space-y-3">
         {/* Top Header Row with Close Button (if drawer is open) */}
         <div className="flex items-center justify-between pb-1">

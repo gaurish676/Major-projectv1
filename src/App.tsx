@@ -12,7 +12,7 @@ import { SubmissionHistory } from './pages/student/SubmissionHistory';
 import { ExploreSchema } from './pages/student/ExploreSchema';
 import { StudentEvents } from './pages/student/StudentEvents';
 import { UpdateMarks } from './pages/student/UpdateMarks';
-import { CollegeClubs } from './pages/student/CollegeClubs';
+import { StudentVisualAnalytics } from './components/common/StudentVisualAnalytics';
 
 // Mentor Pages
 import { MentorDashboard } from './pages/mentor/MentorDashboard';
@@ -33,10 +33,12 @@ import { ProfilePage } from './pages/common/ProfilePage';
 const MainLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('');
+  const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isSchemaRequestModalOpen, setIsSchemaRequestModalOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
 
   const handleToggleSidebar = () => {
     setIsDesktopSidebarOpen((prev) => !prev);
@@ -71,7 +73,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased overflow-x-hidden">
       {/* Top Navbar with 1-Click Persona Switcher */}
       <Navbar
         onToggleSidebar={handleToggleSidebar}
@@ -86,7 +88,7 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex max-w-[1536px] w-full mx-auto">
         {/* Desktop Sidebar */}
         {isDesktopSidebarOpen && (
-          <div className="hidden lg:block transition-all">
+          <div className="hidden lg:block transition-all shrink-0 sticky top-14 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto z-20">
             <Sidebar
               activeTab={activeTab}
               onSelectTab={setActiveTab}
@@ -125,8 +127,8 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-5 min-w-0 overflow-y-auto">
+        {/* Main Content Area - Native vertical scroll without nested trap */}
+        <main className="flex-1 p-3 sm:p-4 lg:p-5 min-w-0 overflow-x-hidden">
           {/* Universal Profile & Developer Console Views */}
           {activeTab === 'profile' && (
             <ProfilePage
@@ -138,7 +140,7 @@ const MainLayout: React.FC = () => {
             />
           )}
 
-          {/* Student Views */}
+          {/* Student Views - Data Visualization removed per requirement */}
           {user.role === 'student' && activeTab !== 'profile' && (
             <>
               {(activeTab === 'student-dashboard' || activeTab === 'home') && (
@@ -148,18 +150,18 @@ const MainLayout: React.FC = () => {
                 />
               )}
               {activeTab === 'student-marks' && <UpdateMarks />}
-              {activeTab === 'student-clubs' && <CollegeClubs onNavigateTab={setActiveTab} />}
               {activeTab === 'student-submissions' && (
                 <SubmissionHistory
                   onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
                 />
               )}
+              {activeTab === 'student-clubs' && <StudentEvents onNavigateTab={setActiveTab} initialTab="clubs" />}
               {activeTab === 'student-schema' && <ExploreSchema />}
-              {activeTab === 'student-events' && <StudentEvents />}
+              {activeTab === 'student-events' && <StudentEvents onNavigateTab={setActiveTab} initialTab="events" />}
             </>
           )}
 
-          {/* Mentor Views */}
+          {/* Mentor Views - Visual Analytics exclusive to Mentor */}
           {user.role === 'mentor' && activeTab !== 'profile' && (
             <>
               {(activeTab === 'mentor-dashboard' || activeTab === 'home') && (
@@ -168,7 +170,21 @@ const MainLayout: React.FC = () => {
                   onNavigateTab={setActiveTab}
                 />
               )}
-              {activeTab === 'mentor-mentees' && <MenteeList />}
+              {activeTab === 'student-analytics' && (
+                <StudentVisualAnalytics
+                  studentId={viewingStudentId || undefined}
+                  onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                  onBack={() => setActiveTab('mentor-mentees')}
+                />
+              )}
+              {activeTab === 'mentor-mentees' && (
+                <MenteeList
+                  onViewStudentAnalytics={(sid) => {
+                    setViewingStudentId(sid);
+                    setActiveTab('student-analytics');
+                  }}
+                />
+              )}
               {(activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations') && <ReviewSubmissions />}
               {activeTab === 'mentor-marks' && <MentorStudentMarks />}
               {activeTab === 'mentor-requests' && (
@@ -179,8 +195,8 @@ const MainLayout: React.FC = () => {
                 />
               )}
               {(activeTab === 'mentor-schema' || activeTab === 'student-schema') && <ExploreSchema />}
-              {activeTab === 'student-events' && <StudentEvents />}
-              {activeTab === 'student-clubs' && <CollegeClubs onNavigateTab={setActiveTab} />}
+              {activeTab === 'student-events' && <StudentEvents onNavigateTab={setActiveTab} initialTab="events" />}
+              {activeTab === 'student-clubs' && <StudentEvents onNavigateTab={setActiveTab} initialTab="clubs" />}
             </>
           )}
 
@@ -190,10 +206,16 @@ const MainLayout: React.FC = () => {
               {(activeTab === 'hod-dashboard' || activeTab === 'home') && (
                 <HODDashboard onNavigateTab={setActiveTab} />
               )}
+              {activeTab === 'student-analytics' && (
+                <StudentVisualAnalytics
+                  studentId={viewingStudentId || undefined}
+                  onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                />
+              )}
               {(activeTab === 'hod-schemas' || activeTab === 'hod-schema') && <SchemaManager />}
               {activeTab === 'hod-requests' && <MentorRequestsQueue />}
-              {activeTab === 'student-events' && <StudentEvents />}
-              {activeTab === 'student-clubs' && <CollegeClubs onNavigateTab={setActiveTab} />}
+              {activeTab === 'student-events' && <StudentEvents onNavigateTab={setActiveTab} initialTab="events" />}
+              {activeTab === 'student-clubs' && <StudentEvents onNavigateTab={setActiveTab} initialTab="clubs" />}
               {(activeTab === 'hod-allocation' || activeTab === 'hod-allocations' || activeTab === 'hod-reports') && (
                 <StudentMentorAllocation />
               )}

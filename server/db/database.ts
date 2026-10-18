@@ -192,6 +192,23 @@ function initSchema(db: Database.Database): void {
       FOREIGN KEY (student_id) REFERENCES users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      sender_id TEXT NOT NULL,
+      sender_name TEXT NOT NULL,
+      sender_role TEXT NOT NULL,
+      recipient_id TEXT,
+      recipient_role TEXT,
+      category TEXT NOT NULL DEFAULT 'meeting',
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      meeting_time TEXT,
+      meeting_venue TEXT,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (sender_id) REFERENCES users(id)
+    );
+
     -- Create performance indexes for high-frequency queries
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_users_mentor ON users(mentor_id);
@@ -202,7 +219,22 @@ function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_submissions_category ON submissions(category_id);
     CREATE INDEX IF NOT EXISTS idx_student_marks_student ON student_marks(student_id);
     CREATE INDEX IF NOT EXISTS idx_logs_created ON activity_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id);
+    CREATE INDEX IF NOT EXISTS idx_notifications_role ON notifications(recipient_role);
+    CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);
   `);
+
+  try {
+    const existingNotif = db.prepare('SELECT id FROM notifications LIMIT 1').get();
+    if (!existingNotif) {
+      db.prepare(`
+        INSERT INTO notifications (id, sender_id, sender_name, sender_role, recipient_id, recipient_role, category, title, message, meeting_time, meeting_venue, is_read, created_at) VALUES
+        ('notif_seed_1', 'usr_hod_1', 'Dr. Rajesh Sharma', 'hod', NULL, 'mentor', 'meeting', 'Department Faculty Meeting: 200 Activity Clearance', 'All faculty mentors are requested to attend the progress review meeting regarding 200 Activity Points clearances and NAAC accreditation documentation.', 'Tomorrow, 10:30 AM', 'HOD Conference Room (Cabin 101)', 0, '2025-01-22T09:00:00Z'),
+        ('notif_seed_2', 'usr_mentor_1', 'Prof. Ravi Kumar', 'mentor', NULL, 'student', 'meeting', 'Mentorship Meeting & Physical Certificate Verification', 'All assigned scholars are requested to bring original event certificates for verification before semester grade finalization.', 'Friday, 3:00 PM', 'Faculty Wing B, Room 204', 0, '2025-01-22T11:30:00Z'),
+        ('notif_seed_3', 'usr_std_1', 'Rahul Verma', 'student', 'usr_mentor_1', 'mentor', 'meeting', 'Meeting Request: AWS Certificate Review', 'Sir, I have submitted my AWS Cloud certification proof. Requesting a short review slot at your convenience.', 'Thursday, 4:00 PM', 'Faculty Wing B, Room 204', 0, '2025-01-22T14:15:00Z')
+      `).run();
+    }
+  } catch {}
 }
 
 function sanitizeParams(params: any[] = []): any[] {

@@ -1,40 +1,37 @@
-# Creditz (Prototype v2)
+# Creditz (Prototype v3)
 **Institutional Academic & Co-Curricular Activity Credit Management System**
 
-An intelligent, multi-role credit tracking portal designed for higher education institutions (e.g., AICTE 100/200 activity points / VTU mandatory credits). Built for students and faculty of all academic branches (CSE, ECE, Mechanical, Civil, Biotechnology, etc.) with zero unnecessary complexity.
+An intelligent, multi-role credit tracking and accreditation compliance portal designed for higher education institutions (AICTE 100/200 activity points / VTU mandatory credits). Designed with zero unnecessary complexity for non-technical faculty and students, featuring rich individual student visual analytics and official PDF credit transcript extraction.
 
 ---
 
-## 🌟 Key Features (Aligned with Presentation)
+## 🌟 Version 3 Key Enhancements (Panel Feedback Aligned)
 
-### 1. Student Portal
-- **200-Point Degree Clearance Progress:** Real-time visual progress ring tracking graduation readiness.
-- **Semester Credit Ceilings (30 Pts / Sem):** Visual 8-semester tracker enforcing continuous development rules.
-- **Easy Certificate Submission:** Drag-and-drop proof upload (PDF/PNG/JPG) with immediate delivery tracking.
-- **AI Auto-Fill & Fraud Check (Gemini Vision 2.5 Flash):** Automatically extracts certificate title, issuer, and completion date, and verifies against the student profile.
-- **Campus Clubs & Fast-Track Events:** Browse active college chapters (IEEE, NSS, Coding Club, Sports) and upcoming credit events.
-- **Academic Marks & SGPA Tracker:** Track semester-wise internal exam scores and SGPA.
+### 1. Simplified, Intuitive UI for Non-IT Users
+- **Streamlined 4-Pillar Navigation:** Replaced cluttered menus with 4 core intuitive tabs: *Home Overview*, *Visual Analytics*, *My Certificates*, and *Academic Marks*.
+- **Reduced Cognitive Load:** Removed redundant action buttons, photo-picker clutter, and nested menus. Direct 1-click access to the most common actions (Upload Proof, View Visuals, Download PDF Report).
 
-### 2. Faculty Mentor Portal
-- **Assigned Mentee Roster:** Live list of student mentees with clearance status (*Cleared*, *Near Completion*, *On Track*, *At Risk*).
-- **Side-by-Side Certificate Verification Queue:** Inspect uploaded certificate documents alongside AI anomaly audit scores.
-- **1-Click Review:** Approve credits or reject with constructive feedback.
-- **Mentee Academic Marks Review:** Review semester-wise academic grades for holistic mentoring.
-- **Request New Activity Rule:** Submit special activity requests to the HOD.
+### 2. Detailed Data Visualization Suite for Each Student
+- **Domain Distribution Donut Chart:** Interactive SVG visualization showing student credit spread across Hackathons, Online Certifications, Sports, Leadership, and Workshops with institutional cap enforcement.
+- **Semester Velocity Bar Chart (Sem 1 to 8):** Visual comparison of approved credits and capped excess points per semester against the AICTE 30-pts/semester limit line.
+- **Cumulative 200-Point Degree Trajectory:** Visual growth curve with milestone tier indicators (Bronze 50, Silver 100, Gold 150, Diamond 200 Clearance).
+- **Curricular vs Co-Curricular Correlation:** Balanced comparison of semester SGPA against activity credits.
 
-### 3. Head of Department (HOD) Console
-- **Department-Wide Analytics:** Total enrolled students, average points, category distribution, and completion rates.
-- **Category Domain Cap Manager:** Enforce university policy ceilings (e.g., max 50 pts in Online Courses, max 60 pts in Hackathons).
-- **Mentor Request Approvals:** Review and approve custom activity proposals submitted by faculty.
-- **Student-Mentor Allocation:** Manage faculty advisory load and export CSV compliance rosters for university accreditation.
+### 3. Student Credit Report PDF Extraction
+- **Official Institutional Transcript:** Downloadable and printable as an official college degree clearance document.
+- **Institutional Branding:** College name, NBA & NAAC accreditation details, Department of CSE header.
+- **Verification Ref & QR Seal:** Unique digital verification reference code and security seal for anti-tamper authenticity.
+- **Activity Sign-Off Ledger:** Itemized list of all approved activities, dates, points awarded, and faculty reviewer sign-offs.
+- **Formal Signatures Block:** Formal signature blocks for Faculty Mentor and Head of Department (HOD).
+- **A4 Print Engine:** Clean `@media print` CSS formatted specifically for standard paper and browser "Save as PDF" without clipping.
 
 ---
 
 ## 🚀 Quick Start Guide
 
-### 1. Navigate to Prototype Directory
+### 1. Navigate to Prototype v3 Directory
 ```bash
-cd /home/gaurish/Desktop/Major/Major-project-prototype-v2
+cd /home/gaurish/Desktop/Major/Major-project-prototype-v3
 ```
 
 ### 2. Start Development Server
@@ -42,6 +39,7 @@ cd /home/gaurish/Desktop/Major/Major-project-prototype-v2
 npm run dev
 ```
 Open **`http://localhost:3000`** in your web browser.
+
 
 ---
 

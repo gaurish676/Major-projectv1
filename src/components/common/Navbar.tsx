@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { RoleBadge } from './Badge';
+import { NotificationPopover } from './NotificationPopover';
 import {
   GraduationCap,
   ChevronDown,
   LogOut,
-  Bell,
-  CheckCircle,
-  Clock,
   Menu,
   User as UserIcon,
   Sliders,
@@ -22,7 +20,6 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfile, onNavigateHome }) => {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-[#172554] text-white border-b border-blue-900/60 shadow-md">
@@ -73,42 +70,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfi
         <div className="flex items-center gap-2.5 sm:gap-3">
           {user && (
             <>
-              {/* Notification Center */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="p-2 rounded-lg text-blue-200 hover:text-white hover:bg-blue-900/60 transition relative cursor-pointer"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-[#172554]" />
-                </button>
-
-                {notificationOpen && (
-                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-800 z-50 p-3 space-y-2">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                      <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">System Alerts</span>
-                      <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">CSE Academic</span>
-                    </div>
-                    <div className="space-y-2 text-xs">
-                      <div className="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-100 flex items-start gap-2.5">
-                        <CheckCircle className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="font-semibold text-indigo-950 text-xs">Official Schema v1.0 Active</div>
-                          <div className="text-[11px] text-indigo-800 mt-0.5">200 Activity Points graduation requirement in effect.</div>
-                        </div>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-100 flex items-start gap-2.5">
-                        <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="font-semibold text-amber-950 text-xs">Certificate Verification Window</div>
-                          <div className="text-[11px] text-amber-800 mt-0.5">Faculty mentors are reviewing pending submissions.</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Real-time Notification & Meeting Message Space via Bell Icon */}
+              <NotificationPopover />
 
               {/* User Identity Pill & Dropdown */}
               <div className="relative">
