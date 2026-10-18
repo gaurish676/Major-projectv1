@@ -73,17 +73,7 @@ router.post('/switch-persona', async (req, res) => {
       WHERE u.id = ?
     `, [userId]);
 
-    if (!user && (userId === 'usr_dev' || userId === 'dev')) {
-      const { executeRun } = await import('../db/database');
-      await executeRun(`
-        INSERT OR IGNORE INTO users (id, name, email, password_hash, role, department_id, mentor_id, cgpa, semester, roll_no, avatar)
-        VALUES ('usr_dev', 'System Developer Ops', 'dev@university.edu', 'password123', 'developer', 'dept_cse', NULL, NULL, NULL, 'EMP-DEV-000', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80')
-      `);
-      user = await queryOne(`
-        SELECT u.id, u.name, u.email, u.role, u.department_id, u.cgpa, u.semester, u.roll_no, u.avatar, d.name as department_name, d.code as department_code
-        FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.id = 'usr_dev'
-      `);
-    }
+    
 
     if (!user) {
       res.status(404).json({ error: 'Persona not found' });
@@ -123,8 +113,6 @@ router.post('/login', async (req, res) => {
       lookupEmail = 'ravi@university.edu';
     } else if (cleanInput.includes('sharma') || cleanInput.includes('hod')) {
       lookupEmail = 'hod@university.edu';
-    } else if (cleanInput.includes('dev') || cleanInput.includes('developer')) {
-      lookupEmail = 'dev@university.edu';
     }
 
     let user = await queryOne(`
@@ -157,13 +145,6 @@ router.post('/login', async (req, res) => {
         user = await queryOne(`SELECT u.*, d.name as department_name, d.code as department_code FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.role = 'mentor' LIMIT 1`);
       } else if (cleanInput.includes('hod')) {
         user = await queryOne(`SELECT u.*, d.name as department_name, d.code as department_code FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.role = 'hod' LIMIT 1`);
-      } else if (cleanInput.includes('dev') || cleanInput.includes('developer')) {
-        const { executeRun } = await import('../db/database');
-        await executeRun(`
-          INSERT OR IGNORE INTO users (id, name, email, password_hash, role, department_id, mentor_id, cgpa, semester, roll_no, avatar)
-          VALUES ('usr_dev', 'System Developer Ops', 'dev@university.edu', 'password123', 'developer', 'dept_cse', NULL, NULL, NULL, 'EMP-DEV-000', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80')
-        `);
-        user = await queryOne(`SELECT u.*, d.name as department_name, d.code as department_code FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.role = 'developer' OR u.id = 'usr_dev' LIMIT 1`);
       }
     }
 
@@ -354,7 +335,7 @@ router.post('/register', async (req, res) => {
       role,
       deptId,
       assignedMentorId,
-      role === 'student' ? 0 : null,
+      role === 'student' ? 8.5 : null,
       defaultSem,
       defaultRoll,
       avatar

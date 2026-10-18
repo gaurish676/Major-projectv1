@@ -15,9 +15,7 @@ import {
   User as UserIcon,
   Hash,
   BookOpen,
-  Terminal,
-} from 'lucide-react';
-import { DEV_CONFIG } from '../../config/devConfig';
+  } from 'lucide-react';
 
 const defaultFallbackStudents = [
   { id: 'usr_std_1', name: 'Rahul Verma', roll_no: '4NN22CS089', semester: 6, cgpa: 8.45, email: 'rahul@university.edu' },
@@ -175,27 +173,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleDevAccess = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await switchPersona('usr_dev');
-    } catch (err: any) {
-      console.warn('Developer switch persona fallback to login:', err);
-      try {
-        await login('dev@university.edu', 'demo123');
-      } catch (loginErr: any) {
-        console.error('Developer login failed:', loginErr);
-        setError(loginErr.message || 'Developer portal access failed. Please try again.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#0B132B] flex flex-col justify-between text-slate-100 p-4 sm:p-6 lg:p-8 relative">
@@ -236,7 +213,7 @@ export const Login: React.FC = () => {
             </h1>
             <p className="text-xs text-slate-400">
               {authMode === 'login'
-                ? 'Enter your institutional credentials to access Creditz'
+                ? 'Sign in with your college account to track and manage your 200 Activity Points'
                 : 'Join the Creditz academic & activity tracking portal'}
             </p>
           </div>
@@ -580,18 +557,6 @@ export const Login: React.FC = () => {
           Nitte University CSE Department • Creditz Academic Tracking & Accreditation Portal
         </div>
 
-        {DEV_CONFIG.ENABLE_TEMPORARY_DEV_ACCESS_ON_AUTH && (
-          <button
-            type="button"
-            onClick={handleDevAccess}
-            disabled={isSubmitting}
-            className="flex items-center gap-1.5 text-slate-600 hover:text-slate-300 transition text-[11px] font-mono cursor-pointer opacity-70 hover:opacity-100"
-            title="Internal System Maintenance & Developer Portal"
-          >
-            <Terminal className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Developer Console</span>
-          </button>
-        )}
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
 import { DegreeClearanceMeter } from '../../components/common/DegreeClearanceMeter';
 import { DeliveryStatusTracker } from '../../components/common/DeliveryStatusTracker';
-import { AiAdvisorModal } from '../../components/student/AiAdvisorModal';
 import { getCategoryPlainName, CATEGORIES } from '../../lib/categories';
 import {
   Eye,
@@ -46,7 +45,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState(false);
 
   const loadDashboard = async () => {
     try {
@@ -128,28 +126,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* AI Advisor Button - Friendly & Accessible */}
-          <button
-            onClick={() => setIsAiAdvisorOpen(true)}
-            className="px-4 py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-between sm:justify-center gap-3 transition transform active:scale-95 cursor-pointer shrink-0 border border-indigo-400/40 group"
-            title="Open AI Credit Advisor"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7.5 h-7.5 rounded-lg bg-white/20 flex items-center justify-center text-sky-200 shadow-inner">
-                <Sparkles className="w-4.5 h-4.5 text-white animate-pulse" />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-white text-sm tracking-tight">AI Credit Advisor</span>
-                  <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-400 text-slate-950 shadow-2xs">
-                    Smart Help
-                  </span>
-                </div>
-                <div className="text-[10px] text-sky-100 font-normal">Ask how to reach 200 points</div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-sky-200 group-hover:translate-x-0.5 transition" />
-          </button>
 
           {/* Connect College Clubs / Registered Clubs Action */}
           <button
@@ -490,12 +466,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         submission={selectedSubmission}
       />
 
-      {/* GraphRAG AI Advisor Modal */}
-      <AiAdvisorModal
-        isOpen={isAiAdvisorOpen}
-        onClose={() => setIsAiAdvisorOpen(false)}
-        onOpenSubmitModal={onOpenSubmitModal}
-      />
+      
     </div>
   );
 };

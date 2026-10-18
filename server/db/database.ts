@@ -1,8 +1,8 @@
-import { DatabaseSync } from 'node:sqlite';
+import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 
-let dbInstance: DatabaseSync | null = null;
+let dbInstance: Database.Database | null = null;
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'activity_portal.sqlite');
@@ -16,13 +16,13 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-export function getDb(): DatabaseSync {
+export function getDb(): Database.Database {
   if (dbInstance) {
     return dbInstance;
   }
 
   // Open persistent SQLite database on disk
-  const db = new DatabaseSync(DB_PATH);
+  const db = new Database(DB_PATH);
 
   // Configure high-concurrency WAL (Write-Ahead Logging) mode and connection settings
   db.exec('PRAGMA journal_mode = WAL;');
@@ -45,7 +45,7 @@ export function saveDb(): void {
   // No-op in persistent WAL mode - all writes flush directly to WAL on disk
 }
 
-function initSchema(db: DatabaseSync): void {
+function initSchema(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS departments (
       id TEXT PRIMARY KEY,
@@ -58,7 +58,7 @@ function initSchema(db: DatabaseSync): void {
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('hod', 'mentor', 'student', 'developer')),
+      role TEXT NOT NULL CHECK(role IN ('hod', 'mentor', 'student')),
       department_id TEXT NOT NULL,
       mentor_id TEXT,
       cgpa REAL,
@@ -74,40 +74,7 @@ function initSchema(db: DatabaseSync): void {
     );
   `);
 
-  // Safely update schema CHECK constraint if table was created with old check constraint
-  try {
-    const userTableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get() as any;
-    if (userTableInfo && userTableInfo.sql && !userTableInfo.sql.includes('developer')) {
-      db.exec('PRAGMA foreign_keys = OFF;');
-      db.exec('ALTER TABLE users RENAME TO users_old;');
-      db.exec(`
-        CREATE TABLE users (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          email TEXT NOT NULL UNIQUE,
-          password_hash TEXT NOT NULL,
-          role TEXT NOT NULL CHECK(role IN ('hod', 'mentor', 'student', 'developer')),
-          department_id TEXT NOT NULL,
-          mentor_id TEXT,
-          cgpa REAL,
-          semester INTEGER,
-          roll_no TEXT,
-          avatar TEXT,
-          phone TEXT,
-          bio TEXT,
-          designation TEXT,
-          office_location TEXT,
-          FOREIGN KEY (department_id) REFERENCES departments(id),
-          FOREIGN KEY (mentor_id) REFERENCES users(id)
-        );
-      `);
-      db.exec('INSERT INTO users SELECT * FROM users_old;');
-      db.exec('DROP TABLE users_old;');
-      db.exec('PRAGMA foreign_keys = ON;');
-    }
-  } catch (migErr) {
-    console.warn('Users table migration check warning:', migErr);
-  }
+  // Schema initialized without developer role
 
   // Safely ensure new columns exist if table was previously created
   try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT;'); } catch {}
@@ -271,7 +238,7 @@ export async function executeExec(sql: string): Promise<void> {
 /**
  * Executes a callback inside an atomic transaction (BEGIN IMMEDIATE / COMMIT / ROLLBACK)
  */
-export async function runTransaction<T>(callback: (db: DatabaseSync) => Promise<T> | T): Promise<T> {
+export async function runTransaction<T>(callback: (db: Database.Database) => Promise<T> | T): Promise<T> {
   const db = getDb();
   db.exec('BEGIN IMMEDIATE;');
   try {

@@ -29,7 +29,6 @@ import { StudentMentorAllocation } from './pages/hod/StudentMentorAllocation';
 
 // Common Pages
 import { ProfilePage } from './pages/common/ProfilePage';
-import { DevConsole } from './pages/dev/DevConsole';
 
 const MainLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -47,9 +46,7 @@ const MainLayout: React.FC = () => {
   // Set default tab on login / persona switch based on role
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'developer') {
-      setActiveTab('dev-console');
-    } else if (user.role === 'hod') {
+    if (user.role === 'hod') {
       setActiveTab('hod-dashboard');
     } else if (user.role === 'mentor') {
       setActiveTab('mentor-dashboard');
@@ -74,24 +71,22 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
       {/* Top Navbar with 1-Click Persona Switcher */}
       <Navbar
         onToggleSidebar={handleToggleSidebar}
         onNavigateProfile={() => setActiveTab('profile')}
-        onNavigateDevConsole={() => setActiveTab('dev-console')}
         onNavigateHome={() => {
-          if (user.role === 'developer') setActiveTab('dev-console');
-          else if (user.role === 'student') setActiveTab('student-dashboard');
+          if (user.role === 'student') setActiveTab('student-dashboard');
           else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
           else setActiveTab('hod-dashboard');
         }}
       />
 
-      <div className="flex-1 flex min-h-0 max-w-[1536px] w-full mx-auto overflow-hidden">
+      <div className="flex-1 flex max-w-[1536px] w-full mx-auto">
         {/* Desktop Sidebar */}
         {isDesktopSidebarOpen && (
-          <div className="hidden lg:flex lg:flex-col h-full overflow-y-auto shrink-0 transition-all">
+          <div className="hidden lg:block transition-all">
             <Sidebar
               activeTab={activeTab}
               onSelectTab={setActiveTab}
@@ -131,23 +126,20 @@ const MainLayout: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 h-full overflow-y-auto p-3 sm:p-4 lg:p-5">
+        <main className="flex-1 p-3 sm:p-4 lg:p-5 min-w-0 overflow-y-auto">
           {/* Universal Profile & Developer Console Views */}
           {activeTab === 'profile' && (
             <ProfilePage
               onBack={() => {
-                if (user.role === 'developer') setActiveTab('dev-console');
-                else if (user.role === 'hod') setActiveTab('hod-dashboard');
+                if (user.role === 'hod') setActiveTab('hod-dashboard');
                 else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
                 else setActiveTab('student-dashboard');
               }}
             />
           )}
 
-          {(activeTab === 'dev-console' || user.role === 'developer') && activeTab !== 'profile' && <DevConsole />}
-
           {/* Student Views */}
-          {user.role === 'student' && activeTab !== 'profile' && activeTab !== 'dev-console' && (
+          {user.role === 'student' && activeTab !== 'profile' && (
             <>
               {(activeTab === 'student-dashboard' || activeTab === 'home') && (
                 <StudentDashboard
@@ -168,7 +160,7 @@ const MainLayout: React.FC = () => {
           )}
 
           {/* Mentor Views */}
-          {user.role === 'mentor' && activeTab !== 'profile' && activeTab !== 'dev-console' && (
+          {user.role === 'mentor' && activeTab !== 'profile' && (
             <>
               {(activeTab === 'mentor-dashboard' || activeTab === 'home') && (
                 <MentorDashboard
@@ -193,7 +185,7 @@ const MainLayout: React.FC = () => {
           )}
 
           {/* HOD Views */}
-          {user.role === 'hod' && activeTab !== 'profile' && activeTab !== 'dev-console' && (
+          {user.role === 'hod' && activeTab !== 'profile' && (
             <>
               {(activeTab === 'hod-dashboard' || activeTab === 'home') && (
                 <HODDashboard onNavigateTab={setActiveTab} />
