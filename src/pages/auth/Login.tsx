@@ -182,7 +182,6 @@ export const Login: React.FC = () => {
           <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm font-medium text-slate-700">
             <span className="hover:text-[#8eb86e] cursor-pointer">Home</span>
             <span className="hover:text-[#8eb86e] cursor-pointer hidden sm:inline">Links</span>
-            <span className="hover:text-[#8eb86e] cursor-pointer hidden sm:inline">MATLAB</span>
           </div>
         </div>
       </div>

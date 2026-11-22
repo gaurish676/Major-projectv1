@@ -11,14 +11,14 @@ import {
   GraduationCap,
   PlusCircle,
   Printer,
-  Search,
-  ChevronDown,
   CheckCircle2,
   Clock,
-  ClipboardList,
   Eye,
   Award,
   Sparkles,
+  ChevronRight,
+  Layers,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface StudentDashboardProps {
@@ -54,13 +54,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [creditReportData, setCreditReportData] = useState<StudentCreditReportData | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isAIAdvisorOpen, setIsAIAdvisorOpen] = useState(false);
-
-  // Timeline Filters
-  const [timelineFilter, setTimelineFilter] = useState<'7days' | '30days' | 'all'>('7days');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<'dates' | 'courses'>('dates');
 
   const handleOpenCreditReport = async () => {
     try {
@@ -109,11 +102,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const remainingPoints = Math.max(0, targetPoints - approvedPoints);
   const isCleared = remainingPoints === 0;
 
-  // Filter pending or actionable items for Moodle Timeline
+  // Submissions awaiting evaluation
   const pendingSubmissions = recent_submissions.filter((s) => s.status === 'pending');
-  const filteredTimelineItems = pendingSubmissions.filter((item) =>
-    item.activity_title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 antialiased">
@@ -125,151 +115,239 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </h1>
       </div>
 
-      {/* 2. Moodle Card 1: Timeline (matching lms_homepage.png) */}
-      <section className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 space-y-4">
-        <h2 className="text-lg font-bold text-[#ea580c]">Timeline</h2>
-
-        {/* Filter controls matching Moodle */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs text-slate-700">
-          <div className="flex items-center gap-2.5">
-            {/* Days Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFilterDropdownOpen((prev) => !prev);
-                  setIsSortDropdownOpen(false);
-                }}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 flex items-center gap-1.5 font-medium transition cursor-pointer"
-              >
-                <span>
-                  {timelineFilter === '7days'
-                    ? 'Next 7 days'
-                    : timelineFilter === '30days'
-                    ? 'Next 30 days'
-                    : 'All events'}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              {isFilterDropdownOpen && (
-                <div className="absolute left-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 text-xs">
-                  <button
-                    onClick={() => {
-                      setTimelineFilter('7days');
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 transition"
-                  >
-                    Next 7 days
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTimelineFilter('30days');
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 transition"
-                  >
-                    Next 30 days
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTimelineFilter('all');
-                      setIsFilterDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 transition"
-                  >
-                    All events
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSortDropdownOpen((prev) => !prev);
-                  setIsFilterDropdownOpen(false);
-                }}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 flex items-center gap-1.5 font-medium transition cursor-pointer"
-              >
-                <span>{sortBy === 'dates' ? 'Sort by dates' : 'Sort by courses'}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              {isSortDropdownOpen && (
-                <div className="absolute left-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 text-xs">
-                  <button
-                    onClick={() => {
-                      setSortBy('dates');
-                      setIsSortDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 transition"
-                  >
-                    Sort by dates
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSortBy('courses');
-                      setIsSortDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 transition"
-                  >
-                    Sort by courses
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* 2. Moodle Card 1: AICTE Activity Points Progress (Replacing Timeline) */}
+      <section className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-[#ea580c] flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#ea580c]" />
+              <span>AICTE Activity Points & Degree Clearance Progress</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Autonomous Degree Requirement: 200 points across accredited activity domains &bull; Mentor: Prof. {student.mentor_name || 'Joylin Mendonca'}
+            </p>
           </div>
 
-          {/* Search by activity type or name */}
-          <div className="relative sm:w-72">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by activity type or name"
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#8eb86e] focus:ring-1 focus:ring-[#8eb86e] transition"
-            />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                isCleared
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${isCleared ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span>
+                {isCleared
+                  ? 'Degree Clearance Qualified'
+                  : `${remainingPoints} Points Needed for Degree Clearance`}
+              </span>
+            </span>
           </div>
         </div>
 
-        {/* Timeline Content: Action items or Moodle empty state */}
-        <div className="pt-2">
-          {filteredTimelineItems.length > 0 ? (
-            <div className="space-y-2.5">
-              {filteredTimelineItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-white transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        {/* Primary 200-Point Progress Meter with Milestone Badges */}
+        <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
+                {approvedPoints}
+              </span>
+              <span className="text-sm font-bold text-slate-400 font-mono">
+                / {targetPoints} Target Points
+              </span>
+              <span className="text-xs font-bold text-[#5c873f] bg-[#8eb86e]/20 px-2 py-0.5 rounded-full ml-1 font-mono">
+                {percentage}% Completed
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-500 font-medium">Milestone Level:</span>
+              <span className="font-bold text-[#436b28] bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>{stats.milestone_tier || 'Bronze Tier'}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Master Progress Bar */}
+          <div className="space-y-1.5">
+            <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden p-0.5">
+              <div
+                className="bg-gradient-to-r from-[#8eb86e] to-[#5c873f] h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, percentage)}%` }}
+              />
+            </div>
+
+            {/* Milestone markers along 200 points */}
+            <div className="grid grid-cols-4 text-[10px] text-slate-500 font-medium pt-1">
+              <div className="text-left">
+                <span className={approvedPoints >= 50 ? 'text-[#5c873f] font-bold' : ''}>
+                  50 pts (Bronze)
+                </span>
+              </div>
+              <div className="text-center">
+                <span className={approvedPoints >= 100 ? 'text-[#5c873f] font-bold' : ''}>
+                  100 pts (Silver)
+                </span>
+              </div>
+              <div className="text-center">
+                <span className={approvedPoints >= 150 ? 'text-[#5c873f] font-bold' : ''}>
+                  150 pts (Gold)
+                </span>
+              </div>
+              <div className="text-right">
+                <span className={approvedPoints >= 200 ? 'text-emerald-700 font-bold' : ''}>
+                  200 pts (Diamond & Clearance)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Quick Stat Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Approved Points</span>
+            <span className="text-xl font-bold font-mono text-emerald-700 mt-0.5 block">{approvedPoints} pts</span>
+            <span className="text-[10px] text-slate-500 mt-0.5 block">{percentage}% toward degree</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Under Evaluation</span>
+            <span className="text-xl font-bold font-mono text-amber-600 mt-0.5 block">{pendingSubmissions.length} certificates</span>
+            <span className="text-[10px] text-slate-500 mt-0.5 block">Pending mentor review</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Verified Proofs</span>
+            <span className="text-xl font-bold font-mono text-slate-900 mt-0.5 block">{stats.approved_submissions_count || 0} approved</span>
+            <span className="text-[10px] text-slate-500 mt-0.5 block">Faculty verified</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Degree Clearance</span>
+            <span className={`text-xl font-bold font-mono mt-0.5 block ${isCleared ? 'text-emerald-700' : 'text-[#ea580c]'}`}>
+              {isCleared ? 'Cleared' : `${remainingPoints} pts left`}
+            </span>
+            <span className="text-[10px] text-slate-500 mt-0.5 block">Official Logisys criteria</span>
+          </div>
+        </div>
+
+        {/* Category Domain Caps Progress Breakdown */}
+        {stats.categories_breakdown && stats.categories_breakdown.length > 0 && (
+          <div className="space-y-2.5 pt-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-[#5c873f]" />
+                <span>Accredited Category Domain Caps & Progress</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('explore-schema')}
+                className="text-xs text-[#5c873f] hover:underline font-semibold cursor-pointer"
+              >
+                View Marking Rules ➔
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {stats.categories_breakdown.map((cat) => {
+                const catEarned = cat.capped_points || 0;
+                const catMax = cat.max_cap_points || 60;
+                const catPct = Math.min(100, Math.round((catEarned / catMax) * 100));
+                const isCapReached = catEarned >= catMax;
+
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-[#8eb86e]/60 transition flex flex-col justify-between space-y-2"
+                  >
                     <div>
-                      <p className="font-bold text-slate-900">{item.activity_title}</p>
-                      <p className="text-[11px] text-slate-500">
-                        {getCategoryPlainName(item.category_id)} &bull; Submitted{' '}
-                        {new Date(item.submitted_at).toLocaleDateString()}
-                      </p>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-xs text-slate-900 truncate" title={cat.name}>
+                          {cat.name}
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.2 rounded font-mono shrink-0 ${
+                            isCapReached
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200/80 text-slate-700'
+                          }`}
+                        >
+                          {isCapReached ? 'Cap Full' : `${catMax - catEarned}p left`}
+                        </span>
+                      </div>
+
+                      <div className="flex items-baseline justify-between text-xs mt-1">
+                        <span className="font-mono font-bold text-slate-800">
+                          {catEarned} <span className="text-slate-400 font-normal">/ {catMax} pts</span>
+                        </span>
+                        <span className="text-[10px] font-mono font-semibold text-slate-500">
+                          {catPct}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          isCapReached ? 'bg-emerald-600' : 'bg-[#8eb86e]'
+                        }`}
+                        style={{ width: `${catPct}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 self-end sm:self-center">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Pending Submissions / Actions Strip (if any) */}
+        {pendingSubmissions.length > 0 && (
+          <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-amber-900 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-amber-600" />
+                <span>Certificates Awaiting Mentor Evaluation ({pendingSubmissions.length})</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => onNavigateTab('submission-history')}
+                className="text-[11px] font-semibold text-amber-800 hover:underline cursor-pointer"
+              >
+                View in Ledger ➔
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              {pendingSubmissions.slice(0, 3).map((item) => (
+                <div
+                  key={item.id}
+                  className="p-2.5 rounded-lg bg-white border border-amber-200/70 flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-900 truncate">{item.activity_title}</p>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      {getCategoryPlainName(item.category_id)} &bull; Submitted {new Date(item.submitted_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
                       Under Review
                     </span>
                     {item.file_url && (
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedSubmission(item);
                           setIsViewerOpen(true);
                         }}
-                        className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-medium transition flex items-center gap-1 cursor-pointer"
+                        className="px-2 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer"
                         title="View Certificate Proof"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-3 h-3" />
                         <span>Proof</span>
                       </button>
                     )}
@@ -277,14 +355,40 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="py-10 flex flex-col items-center justify-center text-center space-y-2">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
-                <ClipboardList className="w-6 h-6 stroke-1" />
-              </div>
-              <p className="text-sm font-medium text-slate-500">No activities require action</p>
-            </div>
-          )}
+          </div>
+        )}
+
+        {/* Card Footer Quick Actions */}
+        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenSubmitModal}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#7eb462] hover:bg-[#6fa454] text-white shadow-2xs flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Upload Certificate</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenCreditReport}
+              disabled={isGeneratingReport}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+            >
+              <Printer className="w-4 h-4 text-slate-500" />
+              <span>{isGeneratingReport ? 'Generating...' : 'PDF Transcript'}</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigateTab('submission-history')}
+            className="text-xs font-semibold text-[#5c873f] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Full Submissions Ledger</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </section>
 
