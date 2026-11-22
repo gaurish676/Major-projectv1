@@ -10,6 +10,9 @@ import { TopLoadingBar } from './components/common/TopLoadingBar';
 import { DashboardSkeleton } from './components/common/SkeletonLoaders';
 import { SubmitActivityModal } from './components/common/SubmitActivityModal';
 import { SchemaRequestModal } from './components/common/SchemaRequestModal';
+import { StudentCreditReportModal } from './components/common/StudentCreditReportModal';
+import { StudentCreditReportData } from './types';
+import { apiRequest } from './lib/api';
 import { LMSFooter } from './components/common/LMSFooter';
 import { RightBlockDrawer } from './components/common/RightBlockDrawer';
 
@@ -48,6 +51,19 @@ const CreditzPortal: React.FC = () => {
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
+  const [selectedAnalyticsStudentId, setSelectedAnalyticsStudentId] = useState<string | undefined>();
+  const [isCreditReportModalOpen, setIsCreditReportModalOpen] = useState(false);
+  const [creditReportData, setCreditReportData] = useState<StudentCreditReportData | null>(null);
+
+  const handleOpenCreditReport = async () => {
+    try {
+      const data = await apiRequest<StudentCreditReportData>('/api/student/credit-report');
+      setCreditReportData(data);
+      setIsCreditReportModalOpen(true);
+    } catch (err) {
+      console.error('Failed to load credit report transcript:', err);
+    }
+  };
 
   const handleToggleSidebar = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -160,53 +176,88 @@ const CreditzPortal: React.FC = () => {
                   }}
                 />
               )}
-              {activeTab === 'student-dashboard' && (
+              {(activeTab === 'student-dashboard' || activeTab === 'home' || (user.role === 'student' && activeTab === '')) && (
                 <StudentDashboard
                   onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
                   onNavigateTab={setActiveTab}
                 />
               )}
-              {activeTab === 'submission-history' && <SubmissionHistory />}
-              {activeTab === 'explore-schema' && (
+              {(activeTab === 'submission-history' || activeTab === 'student-submissions') && (
+                <SubmissionHistory onOpenSubmitModal={() => setIsSubmitModalOpen(true)} />
+              )}
+              {(activeTab === 'explore-schema' || activeTab === 'student-schema' || activeTab === 'mentor-schema') && (
                 <ExploreSchema onOpenSubmitModal={() => setIsSubmitModalOpen(true)} />
               )}
-              {activeTab === 'student-events' && <StudentEvents />}
-              {activeTab === 'update-marks' && <UpdateMarks />}
-              {activeTab === 'student-analytics' && <StudentVisualAnalytics />}
-              {activeTab === 'mentor-dashboard' && (
+              {(activeTab === 'student-events' || activeTab === 'student-clubs') && (
+                <StudentEvents
+                  onNavigateTab={setActiveTab}
+                  initialTab={activeTab === 'student-clubs' ? 'clubs' : 'events'}
+                />
+              )}
+              {(activeTab === 'update-marks' || activeTab === 'student-marks') && <UpdateMarks />}
+              {activeTab === 'student-analytics' && (
+                <StudentVisualAnalytics
+                  studentId={selectedAnalyticsStudentId}
+                  onBack={() => {
+                    setSelectedAnalyticsStudentId(undefined);
+                    if (user.role === 'mentor') setActiveTab('mentee-list');
+                    else if (user.role === 'hod') setActiveTab('student-mentor-allocation');
+                    else setActiveTab('student-dashboard');
+                  }}
+                  onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+                />
+              )}
+              {(activeTab === 'mentor-dashboard' || (user.role === 'mentor' && activeTab === '')) && (
                 <MentorDashboard onNavigateTab={setActiveTab} />
               )}
-              {activeTab === 'mentee-list' && (
-                <MenteeList onSelectMentee={() => setActiveTab('mentor-dashboard')} />
+              {(activeTab === 'mentee-list' || activeTab === 'mentor-mentees') && (
+                <MenteeList
+                  onSelectMentee={() => setActiveTab('mentor-dashboard')}
+                  onViewStudentAnalytics={(studentId) => {
+                    setSelectedAnalyticsStudentId(studentId);
+                    setActiveTab('student-analytics');
+                  }}
+                />
               )}
-              {activeTab === 'review-submissions' && <ReviewSubmissions />}
-              {activeTab === 'mentor-requests' && <MentorRequests />}
-              {activeTab === 'mentor-student-marks' && <MentorStudentMarks />}
+              {(activeTab === 'review-submissions' || activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations') && (
+                <ReviewSubmissions />
+              )}
+              {activeTab === 'mentor-requests' && (
+                <MentorRequests onOpenModal={() => setIsSchemaRequestModalOpen(true)} />
+              )}
+              {(activeTab === 'mentor-student-marks' || activeTab === 'mentor-marks') && <MentorStudentMarks />}
               {activeTab === 'mentor-placement' && <MentorPlacementEligibility />}
-              {activeTab === 'hod-dashboard' && <HODDashboard onNavigateTab={setActiveTab} />}
-              {activeTab === 'schema-manager' && <SchemaManager />}
-              {activeTab === 'mentor-requests-queue' && <MentorRequestsQueue />}
-              {activeTab === 'student-mentor-allocation' && <StudentMentorAllocation />}
-              {activeTab === 'coordinator-master-sheet' && <CoordinatorMasterSheet />}
-              {activeTab === 'dean-dashboard' && <DeanDashboard />}
+              {(activeTab === 'hod-dashboard' || (user.role === 'hod' && activeTab === '')) && (
+                <HODDashboard onNavigateTab={setActiveTab} />
+              )}
+              {(activeTab === 'schema-manager' || activeTab === 'hod-schemas' || activeTab === 'hod-schema') && (
+                <SchemaManager />
+              )}
+              {(activeTab === 'mentor-requests-queue' || activeTab === 'hod-requests') && (
+                <MentorRequestsQueue />
+              )}
+              {(activeTab === 'student-mentor-allocation' || activeTab === 'hod-allocation' || activeTab === 'hod-allocations' || activeTab === 'hod-reports' || activeTab === 'dean-allocations') && (
+                <StudentMentorAllocation />
+              )}
+              {(activeTab === 'coordinator-master-sheet' || activeTab === 'hod-coordinator-export' || activeTab === 'dean-export') && (
+                <CoordinatorMasterSheet />
+              )}
+              {(activeTab === 'dean-dashboard' || activeTab === 'dean-overview' || (user.role === 'dean' && activeTab === '')) && (
+                <DeanDashboard onNavigateTab={setActiveTab} />
+              )}
             </div>
           </Suspense>
         </main>
       </div>
 
-      {user.role === 'student' && (
-        <RightBlockDrawer
-          isOpen={isRightDrawerOpen}
-          onClose={() => setIsRightDrawerOpen(false)}
-          stats={null}
-          onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-          onOpenCreditReport={() => {
-            const btn = document.querySelector('button[title*="official PDF"]') as HTMLButtonElement;
-            btn?.click();
-          }}
-          onNavigateTab={setActiveTab}
-        />
-      )}
+      <RightBlockDrawer
+        isOpen={isRightDrawerOpen}
+        onClose={() => setIsRightDrawerOpen(false)}
+        stats={null}
+        onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+        onOpenCreditReport={handleOpenCreditReport}
+        onNavigateTab={setActiveTab}
+      />
 
       <LMSFooter />
 
@@ -223,6 +274,14 @@ const CreditzPortal: React.FC = () => {
           isOpen={isSchemaRequestModalOpen}
           onClose={() => setIsSchemaRequestModalOpen(false)}
           onSuccess={() => {}}
+        />
+      )}
+
+      {isCreditReportModalOpen && creditReportData && (
+        <StudentCreditReportModal
+          isOpen={isCreditReportModalOpen}
+          onClose={() => setIsCreditReportModalOpen(false)}
+          data={creditReportData}
         />
       )}
     </div>

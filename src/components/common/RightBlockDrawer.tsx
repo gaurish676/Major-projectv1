@@ -41,6 +41,59 @@ export const RightBlockDrawer: React.FC<RightBlockDrawerProps> = ({
   const { user } = useAuth();
   const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
 
+  const handleDownloadJoylin = async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('activity_portal_token');
+      const res = await fetch('/api/joylin/export-csv', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Joylin_Master_Accreditation_Sheet_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      onClose();
+    } catch (err: any) {
+      alert('Failed to download Master CSV: ' + (err.message || 'Error'));
+    }
+  };
+
+  const handleDownloadLogisys = async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('activity_portal_token');
+      const res = await fetch('/api/logisys/export-csv', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `University_Logisys_ERP_Dataset_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      onClose();
+    } catch (err: any) {
+      alert('Failed to download Logisys ERP CSV: ' + (err.message || 'Error'));
+    }
+  };
+
+  const handleOpenBroadcast = () => {
+    onNavigateTab('dean-dashboard');
+    onClose();
+    setTimeout(() => {
+      const btn = document.querySelector('button[title*="directive or circular"]') as HTMLButtonElement;
+      btn?.click();
+    }, 250);
+  };
+
   if (!isOpen) return null;
 
   const role = user?.role || 'student';
@@ -339,11 +392,7 @@ export const RightBlockDrawer: React.FC<RightBlockDrawerProps> = ({
 
               <div className="space-y-2 pt-2">
                 <button
-                  onClick={() => {
-                    const btn = document.querySelector('button[title*="Master Accreditation"]') as HTMLButtonElement;
-                    btn?.click();
-                    onClose();
-                  }}
+                  onClick={handleDownloadJoylin}
                   className="w-full py-2.5 px-3 rounded-xl bg-[#7eb462] hover:bg-[#6fa454] text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -351,11 +400,7 @@ export const RightBlockDrawer: React.FC<RightBlockDrawerProps> = ({
                 </button>
 
                 <button
-                  onClick={() => {
-                    const btn = document.querySelector('button[title*="Logisys ERP"]') as HTMLButtonElement;
-                    btn?.click();
-                    onClose();
-                  }}
+                  onClick={handleDownloadLogisys}
                   className="w-full py-2.5 px-3 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -363,11 +408,7 @@ export const RightBlockDrawer: React.FC<RightBlockDrawerProps> = ({
                 </button>
 
                 <button
-                  onClick={() => {
-                    const btn = document.querySelector('button[title*="directive or circular"]') as HTMLButtonElement;
-                    btn?.click();
-                    onClose();
-                  }}
+                  onClick={handleOpenBroadcast}
                   className="w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <Building2 className="w-4 h-4 text-slate-500" />

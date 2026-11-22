@@ -459,36 +459,51 @@ export const DeanDashboard: React.FC<DeanDashboardProps> = ({ onNavigateTab }) =
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {DEAN_PORTALS.map((portal) => (
-            <div
-              key={portal.code}
-              className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#8eb86e]/60 transition flex flex-col justify-between space-y-2 group"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
-                    {portal.code}
-                  </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${portal.badgeColor}`}>
-                    {portal.status}
+          {DEAN_PORTALS.map((portal) => {
+            const handlePortalClick = () => {
+              if (portal.code === 'NMAMIT-ACCR-2026') {
+                setActiveTab('departments');
+              } else if (portal.code === 'LOGISYS-ERP-INT') {
+                handleExportLogisysCsv();
+              } else if (portal.code === 'TAP-DRIVES-2026') {
+                setActiveTab('placements');
+              } else if (portal.code === 'AC-REMEDIAL-MSE') {
+                setActiveTab('remedial');
+              }
+            };
+
+            return (
+              <div
+                key={portal.code}
+                onClick={handlePortalClick}
+                className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#8eb86e]/60 transition flex flex-col justify-between space-y-2 group cursor-pointer"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                      {portal.code}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${portal.badgeColor}`}>
+                      {portal.status}
+                    </span>
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-900 mt-1 group-hover:text-[#5c873f] transition">
+                    {portal.title}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    {portal.desc}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span className="font-medium">Council Level: Tier 1</span>
+                  <span className="text-[#5c873f] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                    Access Portal <ChevronRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
-                <h3 className="text-xs font-bold text-slate-900 mt-1 group-hover:text-[#5c873f] transition">
-                  {portal.title}
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                  {portal.desc}
-                </p>
               </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                <span className="font-medium">Council Level: Tier 1</span>
-                <span className="text-[#5c873f] font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                  Access Portal <ChevronRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

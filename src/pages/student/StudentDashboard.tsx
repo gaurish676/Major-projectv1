@@ -300,7 +300,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           {MOODLE_COURSES.map((courseName) => (
             <div
               key={courseName}
+              onClick={() => onNavigateTab('update-marks')}
               className="py-1.5 flex items-center gap-2.5 hover:text-[#5c873f] transition cursor-pointer group"
+              title={`View academic syllabus & marks for ${courseName}`}
             >
               <GraduationCap className="w-4 h-4 text-[#5c873f] shrink-0 group-hover:scale-110 transition" />
               <span className="font-normal group-hover:underline text-slate-700">
@@ -375,6 +377,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <div className="pt-2">
           <button
             type="button"
+            onClick={() => {
+              const el = document.getElementById('my-courses-section');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
           >
             All courses ...

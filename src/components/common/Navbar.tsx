@@ -177,14 +177,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     <button
                       onClick={() => {
-                        if (user.role === 'student') onNavigateTab?.('student-marks');
-                        else if (user.role === 'mentor') onNavigateTab?.('mentor-marks');
+                        if (user.role === 'student') onNavigateTab?.('update-marks');
+                        else if (user.role === 'mentor') onNavigateTab?.('mentor-student-marks');
+                        else onNavigateTab?.('coordinator-master-sheet');
                         setDropdownOpen(false);
                       }}
                       className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium transition cursor-pointer"
                     >
                       <Award className="w-4 h-4 text-slate-400" />
-                      <span>Grades & Academic Marks</span>
+                      <span>
+                        {user.role === 'student'
+                          ? 'Grades & Academic Marks'
+                          : user.role === 'mentor'
+                          ? 'Mentee MSE Counseling Marks'
+                          : 'Institutional Grades & Ledger'}
+                      </span>
                     </button>
 
                     <button
@@ -200,13 +207,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     <button
                       onClick={() => {
-                        if (user.role === 'student') onNavigateTab?.('student-submissions');
+                        if (user.role === 'student') onNavigateTab?.('submission-history');
+                        else if (user.role === 'mentor') onNavigateTab?.('review-submissions');
+                        else onNavigateTab?.('coordinator-master-sheet');
                         setDropdownOpen(false);
                       }}
                       className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium transition cursor-pointer"
                     >
                       <FolderOpen className="w-4 h-4 text-slate-400" />
-                      <span>Submissions Ledger</span>
+                      <span>
+                        {user.role === 'student'
+                          ? 'Submissions Ledger'
+                          : user.role === 'mentor'
+                          ? 'Review Queue'
+                          : 'Master Accreditation Sheet'}
+                      </span>
                     </button>
 
                     <div className="my-1 border-t border-slate-100" />
@@ -322,9 +337,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Activity Credits (Creditz) - Integrated Feature Indicator */}
             <button
-              onClick={() => onNavigateTab?.('submission-history')}
+              onClick={() => {
+                if (user?.role === 'mentor') onNavigateTab?.('review-submissions');
+                else if (user?.role === 'hod') onNavigateTab?.('coordinator-master-sheet');
+                else if (user?.role === 'dean') onNavigateTab?.('dean-export');
+                else onNavigateTab?.('submission-history');
+              }}
               className={`px-2.5 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'submission-history'
+                activeTab === 'submission-history' ||
+                activeTab === 'student-submissions' ||
+                activeTab === 'review-submissions' ||
+                activeTab === 'mentor-reviews' ||
+                activeTab === 'coordinator-master-sheet' ||
+                activeTab === 'dean-export'
                   ? 'text-[#5c873f] font-bold bg-[#8eb86e]/15 border-b-2 border-[#8eb86e]'
                   : 'hover:text-[#8eb86e] hover:bg-slate-50 text-slate-700'
               }`}
@@ -382,7 +407,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <button
                     onClick={() => {
-                      if (user?.role === 'mentor') onNavigateTab?.('mentor-placement');
+                      if (user?.role === 'mentor' || user?.role === 'hod') onNavigateTab?.('mentor-placement');
+                      else if (user?.role === 'dean') onNavigateTab?.('dean-dashboard');
+                      else onNavigateTab?.('student-events');
                       setLinksDropdownOpen(false);
                     }}
                     className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-700 transition cursor-pointer"

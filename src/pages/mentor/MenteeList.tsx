@@ -24,10 +24,14 @@ import {
 } from 'lucide-react';
 
 interface MenteeListProps {
+  onSelectMentee?: (menteeId: string) => void;
   onViewStudentAnalytics?: (studentId: string) => void;
 }
 
-export const MenteeList: React.FC<MenteeListProps> = ({ onViewStudentAnalytics }) => {
+export const MenteeList: React.FC<MenteeListProps> = ({
+  onSelectMentee,
+  onViewStudentAnalytics,
+}) => {
   const { user } = useAuth();
   const [mentees, setMentees] = useState<any[]>([]);
   const [filteredMentees, setFilteredMentees] = useState<any[]>([]);

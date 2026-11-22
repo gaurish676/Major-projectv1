@@ -10,9 +10,14 @@ import {
   Shield,
   Sparkles,
   Info,
+  PlusCircle,
 } from 'lucide-react';
 
-export const ExploreSchema: React.FC = () => {
+interface ExploreSchemaProps {
+  onOpenSubmitModal?: () => void;
+}
+
+export const ExploreSchema: React.FC<ExploreSchemaProps> = ({ onOpenSubmitModal }) => {
   const [categories, setCategories] = useState<SchemaCategory[]>([]);
   const [rules, setRules] = useState<SchemaRule[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -67,9 +72,21 @@ export const ExploreSchema: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
-          <Shield className="w-3.5 h-3.5 text-emerald-600" />
-          <span>HOD Certified Standard</span>
+        <div className="flex items-center gap-2">
+          {onOpenSubmitModal && (
+            <button
+              type="button"
+              onClick={onOpenSubmitModal}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#7eb462] hover:bg-[#6fa454] text-white shadow-2xs flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Upload Certificate</span>
+            </button>
+          )}
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+            <Shield className="w-3.5 h-3.5 text-emerald-600" />
+            <span>HOD Certified Standard</span>
+          </div>
         </div>
       </div>
 
@@ -153,10 +170,23 @@ export const ExploreSchema: React.FC = () => {
             </div>
 
             <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
-              <span>Cap: <strong className="font-mono">{rule.max_cap_points} pts</strong></span>
-              <span className="font-mono text-[9px] bg-slate-100 px-1 py-0.2 rounded border border-slate-200">
-                v{rule.version}
-              </span>
+              <div className="flex items-center gap-2">
+                <span>Cap: <strong className="font-mono">{rule.max_cap_points} pts</strong></span>
+                <span className="font-mono text-[9px] bg-slate-100 px-1 py-0.2 rounded border border-slate-200">
+                  v{rule.version}
+                </span>
+              </div>
+              {onOpenSubmitModal && (
+                <button
+                  type="button"
+                  onClick={onOpenSubmitModal}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold transition cursor-pointer"
+                  title="Submit proof for this rule"
+                >
+                  <PlusCircle className="w-3 h-3 text-emerald-600" />
+                  <span>Claim</span>
+                </button>
+              )}
             </div>
           </div>
         ))}

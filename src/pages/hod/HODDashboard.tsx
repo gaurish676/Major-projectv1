@@ -179,6 +179,7 @@ export const HODDashboard: React.FC<HODDashboardProps> = ({ onNavigateTab }) => 
           {HOD_COURSES.map((courseName) => (
             <div
               key={courseName}
+              onClick={() => onNavigateTab('coordinator-master-sheet')}
               className="py-1.5 flex items-center gap-2.5 hover:text-[#5c873f] transition cursor-pointer group"
             >
               <GraduationCap className="w-4 h-4 text-[#5c873f] shrink-0 group-hover:scale-110 transition" />
@@ -263,6 +264,7 @@ export const HODDashboard: React.FC<HODDashboardProps> = ({ onNavigateTab }) => 
         <div className="pt-2">
           <button
             type="button"
+            onClick={() => onNavigateTab('student-mentor-allocation')}
             className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
           >
             All department courses & committees ...

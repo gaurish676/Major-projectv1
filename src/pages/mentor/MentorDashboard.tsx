@@ -268,6 +268,7 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
           {MENTOR_COURSES.map((courseName) => (
             <div
               key={courseName}
+              onClick={() => onNavigateTab('mentee-list')}
               className="py-1.5 flex items-center gap-2.5 hover:text-[#5c873f] transition cursor-pointer group"
             >
               <GraduationCap className="w-4 h-4 text-[#5c873f] shrink-0 group-hover:scale-110 transition" />
@@ -349,6 +350,7 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
         <div className="pt-2">
           <button
             type="button"
+            onClick={() => onNavigateTab('mentee-list')}
             className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
           >
             All courses & batches ...
