@@ -59,7 +59,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const init = async () => {
       setIsLoading(true);
       await loadPersonas();
-      const storedToken = localStorage.getItem('activity_portal_token');
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryToken = urlParams.get('token');
+      if (queryToken) {
+        localStorage.setItem('activity_portal_token', queryToken);
+        setToken(queryToken);
+      }
+      const storedToken = queryToken || localStorage.getItem('activity_portal_token');
       if (storedToken) {
         await refreshUser();
       } else {

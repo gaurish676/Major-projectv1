@@ -22,9 +22,10 @@ import {
   Camera,
   X,
   LogOut,
-  ShieldCheck,
   GraduationCap,
   Loader2,
+  Briefcase,
+  Download,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -104,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('student-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-dashboard' || activeTab === 'home' || activeTab === ''
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -120,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('student-submissions')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-submissions'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -136,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('student-marks')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-marks'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -154,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('student-events')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-events' || activeTab === 'student-clubs'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
@@ -191,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('mentor-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-dashboard' || activeTab === 'home' || activeTab === ''
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -207,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('mentor-mentees')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-mentees'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -225,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('mentor-reviews')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -241,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('mentor-marks')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'mentor-marks'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -259,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => onSelectTab('student-schema')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
           activeTab === 'student-schema' || activeTab === 'mentor-schema'
-            ? 'bg-indigo-600 text-white shadow-xs'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
             : 'text-slate-700 hover:bg-slate-100'
         }`}
       >
@@ -268,6 +269,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span>Credit Schema</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 6. Campus Placement Cutoffs & Eligibility Matrix */}
+      <button
+        onClick={() => onSelectTab('mentor-placement')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'mentor-placement'
+            ? 'bg-[#8eb86e] text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Briefcase className="w-4 h-4 text-blue-600" />
+          <span>Placement Cutoffs</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 border border-blue-200">
+          Drives
+        </span>
       </button>
     </div>
   );
@@ -338,6 +357,82 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-2.5">
           <Sliders className="w-4 h-4 text-amber-600" />
           <span>Credit Schema Caps</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 5. Joylin Coordinator Master Sheet & Logisys ERP Export */}
+      <button
+        onClick={() => onSelectTab('hod-coordinator-export')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'hod-coordinator-export'
+            ? 'bg-slate-900 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <span>Coordinator Master Sheet</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+          ERP
+        </span>
+      </button>
+    </div>
+  );
+
+  const renderDeanNav = () => (
+    <div className="space-y-1">
+      <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700">
+        Executive Leadership
+      </div>
+
+      {/* 1. Executive Overview */}
+      <button
+        onClick={() => onSelectTab('dean-dashboard')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'dean-dashboard' || activeTab === 'home' || activeTab === 'dean-overview' || activeTab === ''
+            ? 'bg-purple-900 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <LayoutDashboard className="w-4 h-4 text-purple-400" />
+          <span>Executive Overview</span>
+        </div>
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      </button>
+
+      {/* 2. Joylin & Logisys ERP Export */}
+      <button
+        onClick={() => onSelectTab('dean-export')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'dean-export'
+            ? 'bg-purple-900 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <span>Joylin & Logisys ERP Export</span>
+        </div>
+        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+          ERP
+        </span>
+      </button>
+
+      {/* 3. Student & Mentor Allocation */}
+      <button
+        onClick={() => onSelectTab('dean-allocations')}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+          activeTab === 'dean-allocations'
+            ? 'bg-purple-900 text-white shadow-xs'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Users2 className="w-4 h-4 text-indigo-600" />
+          <span>Student & Mentor Allocation</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
@@ -417,7 +512,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={handleAvatarClick}
               title="Select image from files"
-              className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm ring-2 ring-white transition cursor-pointer hover:scale-110 active:scale-95"
+              className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-[#7eb462] hover:bg-[#6fa454] text-white shadow-sm ring-2 ring-white transition cursor-pointer hover:scale-110 active:scale-95"
             >
               <Pencil className="w-3 h-3" />
             </button>
@@ -433,7 +528,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {user.name}
             </h3>
             <p className="text-[10px] text-slate-500 font-medium truncate">
-              {user.role === 'hod'
+              {user.role === 'dean'
+                ? 'Dean of Academic Affairs'
+                : user.role === 'hod'
                 ? 'Head of Department'
                 : user.role === 'mentor'
                 ? 'Faculty Mentor'
@@ -448,6 +545,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* List of Navigation Options */}
         <div className="pt-0.5">
+          {user.role === 'dean' && renderDeanNav()}
           {user.role === 'student' && renderStudentNav()}
           {user.role === 'mentor' && renderMentorNav()}
           {user.role === 'hod' && renderHODNav()}

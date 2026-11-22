@@ -54,6 +54,13 @@ export const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({ onOpenSubm
 
   useEffect(() => {
     loadSubmissions();
+    const handleCreated = () => {
+      loadSubmissions();
+    };
+    window.addEventListener('submission-created', handleCreated);
+    return () => {
+      window.removeEventListener('submission-created', handleCreated);
+    };
   }, [user]);
 
   useEffect(() => {
@@ -98,7 +105,7 @@ export const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({ onOpenSubm
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold">
             Awarded: <span className="text-emerald-700 font-bold font-mono">+{totalEarnedPoints} pts</span>
           </div>

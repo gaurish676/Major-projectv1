@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { StudentCreditReportData } from '../../types';
 import {
   Printer,
@@ -59,7 +60,7 @@ export const StudentCreditReportModal: React.FC<StudentCreditReportModalProps> =
     minute: '2-digit',
   });
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/80 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
       {/* Container */}
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:w-full print:rounded-none">
@@ -432,4 +433,7 @@ export const StudentCreditReportModal: React.FC<StudentCreditReportModalProps> =
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 };

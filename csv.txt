@@ -1,0 +1,163 @@
+Name,USN,Year,Semester,Mentor
+ananya,NNM24CS012,Year 1,Sem 2,Dr. Savitha
+aarav,NNM24CS010,Year 1,Sem 2,Dr. Savitha
+aayush,NNM24CS011,Year 1,Sem 2,Dr. Savitha
+abhay,NNM24CS012,Year 1,Sem 2,Dr. Savitha
+abhinav,NNM24CS013,Year 1,Sem 2,Dr. Savitha
+aditi,NNM24CS014,Year 1,Sem 2,Prof. Sowmya Ashwath
+aditya,NNM24CS015,Year 1,Sem 2,Prof. Sowmya Ashwath
+aishwarya,NNM24CS016,Year 1,Sem 2,Prof. Sowmya Ashwath
+akash,NNM24CS017,Year 1,Sem 2,Prof. Sowmya Ashwath
+akshara,NNM24CS018,Year 1,Sem 2,Prof. Sowmya Ashwath
+alok,NNM24CS019,Year 1,Sem 2,Prof. Sowmya P
+aman,NNM24CS020,Year 1,Sem 2,Prof. Sowmya P
+amrita,NNM24CS021,Year 1,Sem 2,Prof. Sowmya P
+anand,NNM24CS022,Year 1,Sem 2,Prof. Sowmya P
+ananya,NNM24CS023,Year 1,Sem 2,Prof. Sowmya P
+aniket,NNM24CS024,Year 1,Sem 2,Prof. Sowmya S
+aniruddh,NNM24CS025,Year 1,Sem 2,Prof. Sowmya S
+anjali,NNM24CS026,Year 1,Sem 2,Prof. Sowmya S
+ankita,NNM24CS027,Year 1,Sem 2,Prof. Sowmya S
+anmol,NNM24CS028,Year 1,Sem 2,Prof. Sowmya S
+aarav,NNM24CS001,Year 1,Sem 2,Dr. Pradeep Kanchan
+anushree,NNM24CS029,Year 1,Sem 2,Dr. Pradeep Kanchan
+apoorva,NNM24CS030,Year 1,Sem 2,Dr. Pradeep Kanchan
+arjun,NNM24CS031,Year 1,Sem 2,Dr. Pradeep Kanchan
+arnav,NNM24CS032,Year 1,Sem 2,Dr. Pradeep Kanchan
+ashwin,NNM24CS033,Year 1,Sem 2,Dr. Pradeep Kanchan
+atharv,NNM24CS034,Year 1,Sem 2,Dr. Sunil Aithal
+avani,NNM24CS035,Year 1,Sem 2,Dr. Sunil Aithal
+ayush,NNM24CS036,Year 1,Sem 2,Dr. Sunil Aithal
+bhavana,NNM24CS037,Year 1,Sem 2,Dr. Sunil Aithal
+bhavish,NNM24CS038,Year 1,Sem 2,Dr. Sunil Aithal
+brijesh,NNM24CS039,Year 1,Sem 2,Dr. Sunil Aithal
+gaurish,NNM23CS077,Year 2,Sem 4,Dr. Guru Prasad
+chaitra,NNM23CS040,Year 2,Sem 4,Dr. Guru Prasad
+chetan,NNM23CS041,Year 2,Sem 4,Dr. Guru Prasad
+chinmay,NNM23CS042,Year 2,Sem 4,Dr. Guru Prasad
+deepak,NNM23CS043,Year 2,Sem 4,Dr. Guru Prasad
+deepika,NNM23CS044,Year 2,Sem 4,Dr. Guru Prasad
+sampath,NNM23CS167,Year 2,Sem 4,Prof. Aishwarya
+devansh,NNM23CS045,Year 2,Sem 4,Prof. Aishwarya
+dhanush,NNM23CS046,Year 2,Sem 4,Prof. Aishwarya
+dhruv,NNM23CS047,Year 2,Sem 4,Prof. Aishwarya
+disha,NNM23CS048,Year 2,Sem 4,Prof. Aishwarya
+divya,NNM23CS049,Year 2,Sem 4,Prof. Aishwarya
+sharan,NNM23CS176,Year 2,Sem 4,Prof. Pawan Kumar
+ganesh,NNM23CS050,Year 2,Sem 4,Prof. Pawan Kumar
+gautam,NNM23CS051,Year 2,Sem 4,Prof. Pawan Kumar
+gayatri,NNM23CS052,Year 2,Sem 4,Prof. Pawan Kumar
+girish,NNM23CS053,Year 2,Sem 4,Prof. Pawan Kumar
+harini,NNM23CS054,Year 2,Sem 4,Prof. Pawan Kumar
+ronak,NNM23CS153,Year 2,Sem 4,Dr. Sannidhan M. S.
+harish,NNM23CS055,Year 2,Sem 4,Dr. Sannidhan M. S.
+harshita,NNM23CS056,Year 2,Sem 4,Dr. Sannidhan M. S.
+hemant,NNM23CS057,Year 2,Sem 4,Dr. Sannidhan M. S.
+isha,NNM23CS058,Year 2,Sem 4,Dr. Sannidhan M. S.
+ishaan,NNM23CS059,Year 2,Sem 4,Dr. Sannidhan M. S.
+priya,NNM23CS102,Year 2,Sem 4,Prof. Joylin Mendonca
+jagadish,NNM23CS060,Year 2,Sem 4,Prof. Joylin Mendonca
+jahnavi,NNM23CS061,Year 2,Sem 4,Prof. Joylin Mendonca
+jatin,NNM23CS062,Year 2,Sem 4,Prof. Joylin Mendonca
+karan,NNM23CS063,Year 2,Sem 4,Prof. Joylin Mendonca
+karthik,NNM23CS064,Year 2,Sem 4,Prof. Ravi Kumar
+kavya,NNM23CS065,Year 2,Sem 4,Prof. Ravi Kumar
+keerthan,NNM23CS066,Year 2,Sem 4,Prof. Ravi Kumar
+kiran,NNM23CS067,Year 2,Sem 4,Prof. Ravi Kumar
+komal,NNM23CS068,Year 2,Sem 4,Prof. Ravi Kumar
+rahul,NNM22CS101,Year 3,Sem 6,Prof. Anita Desai
+kripa,NNM22CS069,Year 3,Sem 6,Prof. Anita Desai
+kunal,NNM22CS070,Year 3,Sem 6,Prof. Anita Desai
+lakshmi,NNM22CS071,Year 3,Sem 6,Prof. Anita Desai
+lalit,NNM22CS072,Year 3,Sem 6,Prof. Anita Desai
+madhav,NNM22CS073,Year 3,Sem 6,Prof. Anita Desai
+manish,NNM22CS074,Year 3,Sem 6,Prof. Radhakrishna Rao
+mayur,NNM22CS075,Year 3,Sem 6,Prof. Radhakrishna Rao
+meera,NNM22CS076,Year 3,Sem 6,Prof. Radhakrishna Rao
+mihir,NNM22CS077,Year 3,Sem 6,Prof. Radhakrishna Rao
+mohan,NNM22CS078,Year 3,Sem 6,Prof. Radhakrishna Rao
+nandini,NNM22CS079,Year 3,Sem 6,Prof. Radhakrishna Rao
+naresh,NNM22CS080,Year 3,Sem 6,Prof. Shashank Shetty
+navya,NNM22CS081,Year 3,Sem 6,Prof. Shashank Shetty
+neel,NNM22CS082,Year 3,Sem 6,Prof. Shashank Shetty
+neha,NNM22CS083,Year 3,Sem 6,Prof. Shashank Shetty
+nikhil,NNM22CS084,Year 3,Sem 6,Prof. Shashank Shetty
+niranjan,NNM22CS085,Year 3,Sem 6,Prof. Shashank Shetty
+nisha,NNM22CS086,Year 3,Sem 6,Prof. Chinmayee K.
+nitin,NNM22CS087,Year 3,Sem 6,Prof. Chinmayee K.
+ojas,NNM22CS088,Year 3,Sem 6,Prof. Chinmayee K.
+pallavi,NNM22CS089,Year 3,Sem 6,Prof. Chinmayee K.
+pranav,NNM22CS090,Year 3,Sem 6,Prof. Chinmayee K.
+prasad,NNM22CS091,Year 3,Sem 6,Prof. Sandeep Kumar
+pratheek,NNM22CS092,Year 3,Sem 6,Prof. Sandeep Kumar
+preethi,NNM22CS093,Year 3,Sem 6,Prof. Sandeep Kumar
+priya,NNM22CS094,Year 3,Sem 6,Prof. Sandeep Kumar
+rahul,NNM22CS095,Year 3,Sem 6,Prof. Sandeep Kumar
+rajesh,NNM22CS096,Year 3,Sem 6,Prof. Mamatha Balipa
+rakshith,NNM22CS097,Year 3,Sem 6,Prof. Mamatha Balipa
+ram,NNM22CS098,Year 3,Sem 6,Prof. Mamatha Balipa
+ranjith,NNM22CS099,Year 3,Sem 6,Prof. Mamatha Balipa
+rashmi,NNM22CS010,Year 3,Sem 6,Prof. Mamatha Balipa
+ravi,NNM22CS011,Year 3,Sem 6,Prof. Mamatha Balipa
+amit,NNM21CS045,Year 4,Sem 8,Prof. Karthik Pai
+rhea,NNM21CS012,Year 4,Sem 8,Prof. Karthik Pai
+rishabh,NNM21CS013,Year 4,Sem 8,Prof. Karthik Pai
+ritesh,NNM21CS014,Year 4,Sem 8,Prof. Karthik Pai
+riya,NNM21CS015,Year 4,Sem 8,Prof. Karthik Pai
+rohan,NNM21CS016,Year 4,Sem 8,Prof. Karthik Pai
+sneha,NNM21CS088,Year 4,Sem 8,Prof. Divya Rani
+rohit,NNM21CS017,Year 4,Sem 8,Prof. Divya Rani
+sachin,NNM21CS018,Year 4,Sem 8,Prof. Divya Rani
+sahana,NNM21CS019,Year 4,Sem 8,Prof. Divya Rani
+sameer,NNM21CS020,Year 4,Sem 8,Prof. Divya Rani
+sandesh,NNM21CS021,Year 4,Sem 8,Prof. Divya Rani
+sangeetha,NNM21CS022,Year 4,Sem 8,Prof. Puneeth R. P.
+sanjay,NNM21CS023,Year 4,Sem 8,Prof. Puneeth R. P.
+santhosh,NNM21CS024,Year 4,Sem 8,Prof. Puneeth R. P.
+sarvesh,NNM21CS025,Year 4,Sem 8,Prof. Puneeth R. P.
+shashank,NNM21CS026,Year 4,Sem 8,Prof. Puneeth R. P.
+shilpa,NNM21CS027,Year 4,Sem 8,Prof. Puneeth R. P.
+shivani,NNM21CS028,Year 4,Sem 8,Prof. Venugopala Rao
+shravan,NNM21CS029,Year 4,Sem 8,Prof. Venugopala Rao
+shreya,NNM21CS030,Year 4,Sem 8,Prof. Venugopala Rao
+shruti,NNM21CS031,Year 4,Sem 8,Prof. Venugopala Rao
+siddharth,NNM21CS032,Year 4,Sem 8,Prof. Venugopala Rao
+sneha,NNM21CS033,Year 4,Sem 8,Prof. Deepa Shenoy
+sohan,NNM21CS034,Year 4,Sem 8,Prof. Deepa Shenoy
+sourabh,NNM21CS035,Year 4,Sem 8,Prof. Deepa Shenoy
+spandana,NNM21CS036,Year 4,Sem 8,Prof. Deepa Shenoy
+srijan,NNM21CS037,Year 4,Sem 8,Prof. Deepa Shenoy
+sujay,NNM21CS038,Year 4,Sem 8,Prof. Bhargavi Rao
+sumit,NNM21CS039,Year 4,Sem 8,Prof. Bhargavi Rao
+suresh,NNM21CS040,Year 4,Sem 8,Prof. Bhargavi Rao
+surya,NNM21CS041,Year 4,Sem 8,Prof. Bhargavi Rao
+swathi,NNM21CS042,Year 4,Sem 8,Prof. Bhargavi Rao
+tanvi,NNM21CS043,Year 4,Sem 8,Prof. Bhargavi Rao
+
+
+Faculty Mentors Assigned by Year
+Year,Mentor Name,Designation,Assigned Mentees Count
+Year 1,Dr. Savitha,Associate Professor & 1st Year Coordinator,5 Mentees
+Year 1,Prof. Sowmya Ashwath,Assistant Professor & 1st Year Counselor,5 Mentees
+Year 1,Prof. Sowmya P,Assistant Professor, 1st Year Mentor,5 Mentees
+Year 1,Prof. Sowmya S,Assistant Professor, 1st Year Mentor,5 Mentees
+Year 1,Dr. Pradeep Kanchan,Associate Professor, 1st Year Mentor,6 Mentees
+Year 1,Dr. Sunil Aithal,Associate Professor, 1st Year Mentor,6 Mentees
+Year 2,Dr. Guru Prasad,Associate Professor & 2nd Year Head,6 Mentees
+Year 2,Prof. Aishwarya,Assistant Professor & 2nd Year Mentor,6 Mentees
+Year 2,Prof. Pawan Kumar,Assistant Professor & 2nd Year Mentor,6 Mentees
+Year 2,Dr. Sannidhan M. S.,Professor & Senior Mentor, 2nd Year,6 Mentees
+Year 2,Prof. Joylin Mendonca,Assistant Professor & Activity Coordinator,5 Mentees
+Year 2,Prof. Ravi Kumar,Assistant Professor, 2nd Year Mentor,5 Mentees
+Year 3,Prof. Anita Desai,Assistant Professor & 3rd Year Head,6 Mentees
+Year 3,Prof. Radhakrishna Rao,Assistant Professor, 3rd Year Mentor,6 Mentees
+Year 3,Prof. Shashank Shetty,Assistant Professor, 3rd Year Mentor,6 Mentees
+Year 3,Prof. Chinmayee K.,Assistant Professor, 3rd Year Mentor,5 Mentees
+Year 3,Prof. Sandeep Kumar,Assistant Professor, 3rd Year Mentor,5 Mentees
+Year 3,Prof. Mamatha Balipa,Assistant Professor, 3rd Year Mentor,6 Mentees
+Year 4,Prof. Karthik Pai,Assistant Professor & Final Year In-charge,6 Mentees
+Year 4,Prof. Divya Rani,Assistant Professor, 4th Year Mentor,6 Mentees
+Year 4,Prof. Puneeth R. P.,Assistant Professor, 4th Year Mentor,6 Mentees
+Year 4,Prof. Venugopala Rao,Assistant Professor, 4th Year Mentor,5 Mentees
+Year 4,Prof. Deepa Shenoy,Assistant Professor, 4th Year Mentor,5 Mentees
+Year 4,Prof. Bhargavi Rao,Assistant Professor, 4th Year Mentor,6 Mentees

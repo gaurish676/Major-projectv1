@@ -43,6 +43,7 @@ export interface StudentPointsResult {
   student_id: string;
   raw_total_points: number;
   semester_capped_points: number;
+  category_capped_points: number;
   total_effective_points: number;
   target_points: number;
   progress_percentage: number;
@@ -60,9 +61,6 @@ export interface StudentPointsResult {
  * they cannot get more credits than the semester limit (default 30 pts/semester).
  */
 export async function calculateStudentPoints(studentId: string, currentSemester: number = 1): Promise<StudentPointsResult> {
-  const targetPoints = 200;
-  const semesterLimit = SEMESTER_MAX_CREDITS;
-
   // 1. Fetch categories
   const categories = await queryAll(`
     SELECT id, name, description, max_cap_points, icon, color
@@ -76,12 +74,30 @@ export async function calculateStudentPoints(studentId: string, currentSemester:
       s.id,
       s.student_id,
       s.category_id,
+      s.schema_id,
+      s.activity_title,
       s.status,
       s.points_awarded,
       COALESCE(s.semester, ?) as semester
     FROM submissions s
     WHERE s.student_id = ?
   `, [currentSemester, studentId]);
+
+  return computePointsSync(studentId, currentSemester, categories, submissions);
+}
+
+/**
+ * High-performance pure synchronous point computation in memory.
+ * Used for batch exports (Master Sheet & Logisys ERP) to eliminate N+1 DB loops.
+ */
+export function computePointsSync(
+  studentId: string,
+  currentSemester: number,
+  categories: any[],
+  submissions: any[]
+): StudentPointsResult {
+  const targetPoints = 200;
+  const semesterLimit = SEMESTER_MAX_CREDITS;
 
   // 3. Semester-wise points aggregation (Semesters 1 to 8)
   const semMap: Record<number, { raw: number; count: number; approvedCount: number; pendingCount: number }> = {};
@@ -96,11 +112,34 @@ export async function calculateStudentPoints(studentId: string, currentSemester:
   });
 
   let rawTotalPoints = 0;
+  // AICTE Policy: Track approved certificates per activity kind per academic year (strictly max 1 per activity kind per year)
+  const approvedActivityKeysPerYear = new Set<string>();
 
   submissions.forEach((sub) => {
     const sem = Math.max(1, Math.min(8, Number(sub.semester) || currentSemester));
-    const pts = Number(sub.points_awarded) || 0;
+    const year = Math.ceil(sem / 2);
+    let pts = Number(sub.points_awarded) || 0;
     const catId = sub.category_id;
+
+    // Determine unique activity identifier for annual limitation
+    let activityKey = '';
+    const normTitle = (sub.activity_title || '').toLowerCase().trim();
+    if (sub.schema_id && sub.schema_id !== 'rule_default') {
+      activityKey = `${year}_sch_${sub.schema_id}`;
+    } else if (normTitle.includes('blood')) {
+      activityKey = `${year}_blood_donation`;
+    } else {
+      activityKey = `${year}_title_${normTitle}`;
+    }
+
+    if (sub.status === 'approved') {
+      if (approvedActivityKeysPerYear.has(activityKey)) {
+        // Enforce maximum 1 certificate of this activity kind per academic year
+        pts = 0;
+      } else {
+        approvedActivityKeysPerYear.add(activityKey);
+      }
+    }
 
     if (!semMap[sem]) {
       semMap[sem] = { raw: 0, count: 0, approvedCount: 0, pendingCount: 0 };
@@ -201,7 +240,8 @@ export async function calculateStudentPoints(studentId: string, currentSemester:
     };
   });
 
-  const totalEffectivePoints = Math.min(targetPoints, semesterCappedSum);
+  const categoryCappedSum = categoriesBreakdown.reduce((acc, cat) => acc + cat.capped_points, 0);
+  const totalEffectivePoints = Math.min(targetPoints, semesterCappedSum, categoryCappedSum);
   const progressPercentage = Math.min(100, Math.round((totalEffectivePoints / targetPoints) * 1000) / 10);
 
   let milestoneTier: 'Not Started' | 'Bronze' | 'Silver' | 'Gold' | 'Diamond' = 'Not Started';
@@ -214,12 +254,13 @@ export async function calculateStudentPoints(studentId: string, currentSemester:
     student_id: studentId,
     raw_total_points: rawTotalPoints,
     semester_capped_points: semesterCappedSum,
+    category_capped_points: categoryCappedSum,
     total_effective_points: totalEffectivePoints,
     target_points: targetPoints,
     progress_percentage: progressPercentage,
     milestone_tier: milestoneTier,
     semester_limit_per_semester: semesterLimit,
-    total_excess_points: totalExcessPoints,
+    total_excess_points: Math.max(0, rawTotalPoints - totalEffectivePoints),
     semester_breakdown: semesterBreakdown,
     year_breakdown: yearBreakdown,
     categories_breakdown: categoriesBreakdown,

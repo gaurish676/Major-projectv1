@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { queryAll, queryOne } from '../db/database';
+import { queryAll, queryOne, executeRun } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
 import { calculateStudentPoints } from '../services/pointsCalculator';
 import { generateRandomStudentMarks } from '../services/curriculumSubjects';
@@ -402,5 +402,173 @@ router.get('/student-marks', authenticate, requireRole(['mentor', 'hod']), async
     res.status(500).json({ error: err.message });
   }
 });
+
+// 4. Mentor / HOD Marks Update Route with Auto Academic Alert Notification
+const handleMentorUpdateMarks = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const {
+      mark_id,
+      id,
+      student_id,
+      semester,
+      subject_code,
+      subject_name,
+      credits,
+      theory_marks,
+      theory_max,
+      task_marks,
+      task_max,
+      has_lab,
+      lab_marks,
+      lab_max,
+      mse1_marks,
+      mse1_max,
+      mse2_marks,
+      mse2_max,
+      mse_marks,
+    } = req.body;
+
+    const targetMarkId = mark_id || id;
+    let existingMark: any = null;
+
+    if (targetMarkId) {
+      existingMark = await queryOne('SELECT * FROM student_marks WHERE id = ?', [targetMarkId]);
+    }
+
+    if (!existingMark && student_id && subject_code) {
+      existingMark = await queryOne('SELECT * FROM student_marks WHERE student_id = ? AND subject_code = ?', [student_id, subject_code]);
+    }
+
+    const targetStudentId = student_id || existingMark?.student_id;
+    if (!targetStudentId) {
+      res.status(400).json({ error: 'student_id or a valid mark_id is required' });
+      return;
+    }
+
+    const student = await queryOne<{ id: string; name: string; roll_no: string; mentor_id: string }>(
+      'SELECT id, name, roll_no, mentor_id FROM users WHERE id = ?',
+      [targetStudentId]
+    );
+
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    if (req.user!.role === 'mentor' && student.mentor_id && student.mentor_id !== req.user!.id) {
+      res.status(403).json({ error: 'Unauthorized: Student is not assigned to your mentorship roster' });
+      return;
+    }
+
+    const m1 = mse1_marks !== undefined ? Number(mse1_marks) : (mse_marks !== undefined ? Number(mse_marks) : (existingMark?.mse1_marks !== undefined && existingMark?.mse1_marks !== null ? Number(existingMark.mse1_marks) : 0));
+    const m2 = mse2_marks !== undefined ? Number(mse2_marks) : (existingMark?.mse2_marks !== undefined && existingMark?.mse2_marks !== null ? Number(existingMark.mse2_marks) : 0);
+    const m1M = Number(mse1_max) || Number(existingMark?.mse1_max) || 30;
+    const m2M = Number(mse2_max) || Number(existingMark?.mse2_max) || 30;
+
+    // Check if MSE marks < 12 (out of 30, i.e. < 40%). If poor, set is_poor_performance = 1.
+    const hasPoorMse = (m1 < 12) || (m2 > 0 && m2 < 12) || (mse_marks !== undefined && Number(mse_marks) < 12);
+    const isPoor = hasPoorMse ? 1 : 0;
+
+    const subName = (subject_name || existingMark?.subject_name || 'Academic Course').trim();
+    const subCode = (subject_code || existingMark?.subject_code || 'SUB001').trim();
+    const sem = semester ? Number(semester) : (existingMark?.semester || 6);
+    const cred = credits ? Number(credits) : (existingMark?.credits || 4);
+
+    const theory = theory_marks !== undefined ? Number(theory_marks) : (existingMark?.theory_marks ? Number(existingMark.theory_marks) : 0);
+    const theoryM = theory_max !== undefined ? Number(theory_max) : (existingMark?.theory_max ? Number(existingMark.theory_max) : 100);
+    const task = task_marks !== undefined ? Number(task_marks) : (existingMark?.task_marks ? Number(existingMark.task_marks) : 0);
+    const taskM = task_max !== undefined ? Number(task_max) : (existingMark?.task_max ? Number(existingMark.task_max) : 25);
+    const isLab = has_lab !== undefined ? Boolean(has_lab) : Boolean(existingMark?.has_lab);
+    const lab = isLab ? (lab_marks !== undefined ? Number(lab_marks) : (existingMark?.lab_marks ? Number(existingMark.lab_marks) : 0)) : 0;
+    const labM = isLab ? (lab_max !== undefined ? Number(lab_max) : (existingMark?.lab_max ? Number(existingMark.lab_max) : 50)) : 0;
+
+    const totalScored = theory + task + lab;
+    const totalMax = theoryM + taskM + labM;
+    const percentage = totalMax > 0 ? (totalScored / totalMax) * 100 : 0;
+    const { grade, grade_points } = calculateGradeAndPoints(percentage);
+
+    const now = new Date().toISOString();
+    let finalMarkId = existingMark?.id;
+
+    if (existingMark) {
+      await executeRun(`
+        UPDATE student_marks SET
+          semester = ?,
+          subject_code = ?,
+          subject_name = ?,
+          credits = ?,
+          theory_marks = ?,
+          theory_max = ?,
+          task_marks = ?,
+          task_max = ?,
+          has_lab = ?,
+          lab_marks = ?,
+          lab_max = ?,
+          mse1_marks = ?,
+          mse1_max = ?,
+          mse2_marks = ?,
+          mse2_max = ?,
+          is_poor_performance = ?,
+          grade = ?,
+          grade_points = ?,
+          updated_at = ?
+        WHERE id = ?
+      `, [
+        sem, subCode, subName, cred, theory, theoryM, task, taskM,
+        isLab ? 1 : 0, lab, labM, m1, m1M, m2, m2M, isPoor, grade, grade_points, now, existingMark.id
+      ]);
+    } else {
+      finalMarkId = `sm_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      await executeRun(`
+        INSERT INTO student_marks (
+          id, student_id, semester, subject_code, subject_name, credits,
+          theory_marks, theory_max, task_marks, task_max, has_lab, lab_marks, lab_max,
+          mse1_marks, mse1_max, mse2_marks, mse2_max, is_poor_performance,
+          grade, grade_points, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        finalMarkId, targetStudentId, sem, subCode, subName, cred,
+        theory, theoryM, task, taskM, isLab ? 1 : 0, lab, labM,
+        m1, m1M, m2, m2M, isPoor, grade, grade_points, now, now
+      ]);
+    }
+
+    // Automatically create an academic alert notification in notifications table for the student's assigned mentor:
+    if (isPoor === 1 && student.mentor_id) {
+      const mseMarks = (m1 < 12 && m2 > 0 && m2 < 12) ? Math.min(m1, m2) : (m1 < 12 ? m1 : m2);
+      const notifId = `notif_alert_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const notifTitle = 'Poor MSE Performance Alert: ' + student.name;
+      const notifMessage = 'Mentee ' + student.name + ' (' + (student.roll_no || 'N/A') + ') scored below 40% in ' + subName + ' (MSE: ' + mseMarks + '/30). Please conduct academic counseling.';
+
+      await executeRun(`
+        INSERT INTO notifications (
+          id, sender_id, sender_name, sender_role, recipient_id, recipient_role, category,
+          title, message, is_read, created_at
+        ) VALUES (?, ?, ?, 'system', ?, 'mentor', 'academic_alert', ?, ?, 0, ?)
+      `, [
+        notifId,
+        student.id,
+        student.name,
+        student.mentor_id,
+        notifTitle,
+        notifMessage,
+        now,
+      ]);
+    }
+
+    const updated = await queryOne('SELECT * FROM student_marks WHERE id = ?', [finalMarkId]);
+    res.json({
+      success: true,
+      mark: updated,
+      is_poor_performance: Boolean(isPoor),
+      mentor_alert_triggered: Boolean(isPoor && student.mentor_id),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+router.post('/update-marks', authenticate, requireRole(['mentor', 'hod']), handleMentorUpdateMarks);
+router.put('/update-marks', authenticate, requireRole(['mentor', 'hod']), handleMentorUpdateMarks);
 
 export default router;

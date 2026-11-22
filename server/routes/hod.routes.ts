@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { queryAll, queryOne, executeRun } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
 import { calculateStudentPoints } from '../services/pointsCalculator';
+import { importFinalYearStudents } from '../services/importFinalYearStudents';
 
 const router = Router();
 
@@ -281,7 +282,7 @@ router.put('/mentors/:id', authenticate, requireRole(['hod']), async (req: Authe
     const { id } = req.params;
     const { name, email, designation, phone, office_location } = req.body;
 
-    const mentor = await queryOne('SELECT * FROM users WHERE id = ? AND role = "mentor"', [id]);
+    const mentor = await queryOne("SELECT * FROM users WHERE id = ? AND role = 'mentor'", [id]);
     if (!mentor) {
       res.status(404).json({ error: 'Mentor not found.' });
       return;
@@ -334,7 +335,7 @@ router.put('/mentors/:id', authenticate, requireRole(['hod']), async (req: Authe
 router.delete('/mentors/:id', authenticate, requireRole(['hod']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const mentor = await queryOne('SELECT * FROM users WHERE id = ? AND role = "mentor"', [id]);
+    const mentor = await queryOne("SELECT * FROM users WHERE id = ? AND role = 'mentor'", [id]);
     if (!mentor) {
       res.status(404).json({ error: 'Mentor not found.' });
       return;
@@ -386,7 +387,7 @@ router.post('/students', authenticate, requireRole(['hod']), async (req: Authent
     }
 
     if (mentor_id) {
-      const mentor = await queryOne('SELECT id FROM users WHERE id = ? AND role = "mentor"', [mentor_id]);
+      const mentor = await queryOne("SELECT id FROM users WHERE id = ? AND role = 'mentor'", [mentor_id]);
       if (!mentor) {
         res.status(400).json({ error: 'Selected mentor not found.' });
         return;
@@ -436,7 +437,7 @@ router.put('/students/:id', authenticate, requireRole(['hod']), async (req: Auth
     const { id } = req.params;
     const { name, email, roll_no, semester, cgpa, phone, mentor_id } = req.body;
 
-    const student = await queryOne('SELECT * FROM users WHERE id = ? AND role = "student"', [id]);
+    const student = await queryOne("SELECT * FROM users WHERE id = ? AND role = 'student'", [id]);
     if (!student) {
       res.status(404).json({ error: 'Student not found.' });
       return;
@@ -501,7 +502,7 @@ router.put('/students/:id', authenticate, requireRole(['hod']), async (req: Auth
 router.delete('/students/:id', authenticate, requireRole(['hod']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const student = await queryOne('SELECT * FROM users WHERE id = ? AND role = "student"', [id]);
+    const student = await queryOne("SELECT * FROM users WHERE id = ? AND role = 'student'", [id]);
     if (!student) {
       res.status(404).json({ error: 'Student not found.' });
       return;
@@ -540,7 +541,7 @@ router.post('/allocate', authenticate, requireRole(['hod']), async (req: Authent
       return;
     }
 
-    const mentor = mentor_id ? await queryOne('SELECT id, name FROM users WHERE id = ? AND role = "mentor"', [mentor_id]) : null;
+    const mentor = mentor_id ? await queryOne("SELECT id, name FROM users WHERE id = ? AND role = 'mentor'", [mentor_id]) : null;
     if (mentor_id && !mentor) {
       res.status(404).json({ error: 'Selected mentor not found' });
       return;
@@ -578,7 +579,7 @@ router.post('/allocations', authenticate, requireRole(['hod']), async (req: Auth
       return;
     }
 
-    const mentor = mentor_id ? await queryOne('SELECT id, name FROM users WHERE id = ? AND role = "mentor"', [mentor_id]) : null;
+    const mentor = mentor_id ? await queryOne("SELECT id, name FROM users WHERE id = ? AND role = 'mentor'", [mentor_id]) : null;
     if (mentor_id && !mentor) {
       res.status(404).json({ error: 'Selected mentor not found' });
       return;
@@ -605,7 +606,17 @@ router.post('/allocations', authenticate, requireRole(['hod']), async (req: Auth
   }
 });
 
-// 3c. Batch Import Students via CSV data
+// 3b-2. Direct Sync from Server Final Year Excel List
+router.post('/sync-final-year-file', authenticate, requireRole(['hod', 'dean']), async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await importFinalYearStudents();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3c. Batch Import Students via CSV or Excel data
 router.post('/import-students', authenticate, requireRole(['hod']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { students } = req.body;
@@ -618,6 +629,7 @@ router.post('/import-students', authenticate, requireRole(['hod']), async (req: 
     let createdCount = 0;
     let updatedCount = 0;
     const now = new Date().toISOString();
+    const defaultPasswordHash = '$2b$10$HRqQx9t3Yrsm4f.OCzIANOCjXu4MHE0VgzqQlXtw0M3/0Seq33ReC'; // password123
 
     for (let i = 0; i < students.length; i++) {
       const s = students[i];
@@ -626,29 +638,30 @@ router.post('/import-students', authenticate, requireRole(['hod']), async (req: 
       const rollNo = (s.roll_no || `STU${Date.now().toString().slice(-4)}${i}`).toString().trim().toUpperCase();
       const email = (s.email || `${rollNo.toLowerCase()}@college.edu`).toString().trim().toLowerCase();
       const name = s.name.toString().trim();
-      const semester = parseInt(s.semester, 10) || 6;
+      const semester = parseInt(s.semester, 10) || 7;
       const cgpa = parseFloat(s.cgpa) || 8.0;
       const phone = s.phone ? s.phone.toString().trim() : null;
+      const mentorId = s.mentor_id || null;
 
       // Check if student exists by roll_no or email
       const existing = await queryOne(
-        'SELECT id FROM users WHERE (roll_no = ? OR email = ?) AND role = "student"',
+        "SELECT id FROM users WHERE (roll_no = ? OR email = ?) AND role = 'student'",
         [rollNo, email]
       );
 
       if (existing) {
         await executeRun(`
           UPDATE users 
-          SET name = ?, semester = ?, cgpa = ?, phone = COALESCE(?, phone)
+          SET name = ?, semester = ?, cgpa = ?, phone = COALESCE(?, phone), mentor_id = COALESCE(?, mentor_id)
           WHERE id = ?
-        `, [name, semester, cgpa, phone, existing.id]);
+        `, [name, semester, cgpa, phone, mentorId, existing.id]);
         updatedCount++;
       } else {
         const newId = `stu_${rollNo.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`;
         await executeRun(`
-          INSERT INTO users (id, name, email, password_hash, role, department_id, roll_no, semester, cgpa, phone, avatar)
-          VALUES (?, ?, ?, 'student123', 'student', ?, ?, ?, ?, ?, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80')
-        `, [newId, name, email, deptId, rollNo, semester, cgpa, phone]);
+          INSERT INTO users (id, name, email, password_hash, role, department_id, mentor_id, roll_no, semester, cgpa, phone, avatar)
+          VALUES (?, ?, ?, ?, 'student', ?, ?, ?, ?, ?, ?, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80')
+        `, [newId, name, email, defaultPasswordHash, deptId, mentorId, rollNo, semester, cgpa, phone]);
         createdCount++;
       }
     }
@@ -659,7 +672,7 @@ router.post('/import-students', authenticate, requireRole(['hod']), async (req: 
     `, [
       `log_${Date.now()}`,
       req.user!.id,
-      `Imported student list from CSV (${createdCount} added, ${updatedCount} updated)`,
+      `Imported student list (${createdCount} added, ${updatedCount} updated)`,
       now,
     ]);
 
@@ -736,14 +749,20 @@ router.post('/auto-allocate', authenticate, requireRole(['hod']), async (req: Au
 
     const allocationsToSave: { studentId: string; mentorId: string; studentName: string; mentorName: string }[] = [];
 
-    if (method === 'roll_range') {
-      // Sort alphabetically by roll_no, divide into equal contiguous chunks
-      candidateStudents.sort((a, b) => (a.roll_no || '').localeCompare(b.roll_no || ''));
-      const chunkSize = Math.ceil(candidateStudents.length / mentorMap.length);
+    const MAX_MENTEES_CAP = 5;
 
-      candidateStudents.forEach((student, idx) => {
-        const mentorIndex = Math.min(Math.floor(idx / chunkSize), mentorMap.length - 1);
-        const targetMentor = mentorMap[mentorIndex];
+    if (method === 'roll_range') {
+      // Sort alphabetically by roll_no, cycle through mentors without exceeding 5 mentees
+      candidateStudents.sort((a, b) => (a.roll_no || '').localeCompare(b.roll_no || ''));
+      let currentMentorIdx = 0;
+
+      candidateStudents.forEach((student) => {
+        let attempts = 0;
+        while (mentorMap[currentMentorIdx].count >= MAX_MENTEES_CAP && attempts < mentorMap.length) {
+          currentMentorIdx = (currentMentorIdx + 1) % mentorMap.length;
+          attempts++;
+        }
+        const targetMentor = mentorMap[currentMentorIdx];
         targetMentor.count++;
         targetMentor.assignedStudents.push(student.name);
         allocationsToSave.push({
@@ -752,20 +771,20 @@ router.post('/auto-allocate', authenticate, requireRole(['hod']), async (req: Au
           studentName: student.name,
           mentorName: targetMentor.name,
         });
+        currentMentorIdx = (currentMentorIdx + 1) % mentorMap.length;
       });
     } else {
-      // Balanced / Load-Balancing: assign each student to the mentor with the fewest total mentees
+      // Balanced / Load-Balancing: assign each student to the mentor with the fewest total mentees, strictly prioritizing mentors under 5 mentees
       for (const student of candidateStudents) {
-        // Sort mentors by lowest count
         mentorMap.sort((a, b) => a.count - b.count);
-        const targetMentor = mentorMap[0];
-        targetMentor.count++;
-        targetMentor.assignedStudents.push(student.name);
+        const availableMentor = mentorMap.find((m) => m.count < MAX_MENTEES_CAP) || mentorMap[0];
+        availableMentor.count++;
+        availableMentor.assignedStudents.push(student.name);
         allocationsToSave.push({
           studentId: student.id,
-          mentorId: targetMentor.id,
+          mentorId: availableMentor.id,
           studentName: student.name,
-          mentorName: targetMentor.name,
+          mentorName: availableMentor.name,
         });
       }
     }

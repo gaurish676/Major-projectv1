@@ -3,6 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { MentorDashboardStats, Submission } from '../../types';
 import { apiRequest } from '../../lib/api';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
+import { getCategoryPlainName } from '../../lib/categories';
+import { DashboardSkeleton } from '../../components/common/SkeletonLoaders';
 import {
   Users,
   FileCheck2,
@@ -10,9 +12,9 @@ import {
   Clock,
   CheckCircle2,
   Eye,
-  User as UserIcon,
+  Search,
   ChevronRight,
-  FileSpreadsheet,
+  GraduationCap,
 } from 'lucide-react';
 
 interface MentorDashboardProps {
@@ -29,6 +31,7 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [searchMenteeQuery, setSearchMenteeQuery] = useState('');
 
   const loadDashboard = async () => {
     try {
@@ -46,194 +49,120 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
     loadDashboard();
   }, [user]);
 
-  const handleReview = async (action: 'approve' | 'reject', feedback?: string) => {
+  const handleReview = async (
+    action: 'approve' | 'reject',
+    feedback?: string,
+    customPoints?: number,
+    checklist?: any
+  ) => {
     if (!selectedSubmission) return;
     await apiRequest(`/api/submissions/${selectedSubmission.id}/review`, {
       method: 'POST',
       body: JSON.stringify({
         action,
         mentor_feedback: feedback,
+        custom_points: customPoints,
+        verification_checklist: checklist,
       }),
     });
     await loadDashboard();
   };
 
   if (isLoading || !stats) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-2.5">
-          <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-semibold text-slate-500">Loading mentor dashboard...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const { mentor, mentees, pending_submissions } = stats;
 
+  const filteredMentees = mentees.filter((m) => {
+    if (!searchMenteeQuery.trim()) return true;
+    const q = searchMenteeQuery.toLowerCase().trim();
+    return (
+      m.name.toLowerCase().includes(q) ||
+      (m.roll_no && m.roll_no.toLowerCase().includes(q))
+    );
+  });
+
   return (
-    <div className="space-y-4">
-      {/* Top Header */}
-      <div className="bg-slate-900 rounded-xl p-4 sm:p-5 text-white border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              Faculty Mentor Portal
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* 1. Calm, Focused Header */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#8eb86e]/15 text-[#426b27] border border-[#8eb86e]/30">
+              Faculty Mentorship Hub
             </span>
-            <span className="text-xs text-slate-400">CSE Department</span>
+            <span className="text-xs text-slate-500 font-medium">Department of Computer Science & Engineering</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => onNavigateTab('profile')}
-              title="Click to view & edit your faculty mentor profile"
-              className="text-left group cursor-pointer"
-            >
-              <h1 className="text-xl sm:text-2xl font-bold text-white group-hover:text-purple-300 transition flex items-center gap-2">
-                <span>Welcome, {mentor.name}</span>
-                <span className="text-xs font-normal text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-md border border-purple-700/60 group-hover:bg-purple-900 flex items-center gap-1">
-                  <UserIcon className="w-3 h-3" />
-                  <span>View Profile</span>
-                  <ChevronRight className="w-3 h-3 opacity-70" />
-                </span>
-              </h1>
-            </button>
-          </div>
-          <p className="text-xs text-slate-300 mt-1">
-            Review certificate proofs submitted by your assigned students.
+
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+            Welcome, Prof. {mentor.name}!
+          </h1>
+
+          <p className="text-xs text-slate-600">
+            Track student activity points and review submitted certificate proofs for graduation clearance.
           </p>
         </div>
-      </div>
 
-      {/* 3 Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Assigned Students
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+        {/* 3 Quick KPI Stat Badges */}
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <div className="bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl text-center">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Assigned</div>
+            <div className="text-lg font-bold font-mono text-slate-900">{stats.mentees_count} Students</div>
+          </div>
+
+          <div className={`px-3.5 py-2 rounded-xl text-center border ${
+            stats.pending_reviews_count > 0
+              ? 'bg-amber-50 border-amber-300 text-amber-900'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+          }`}>
+            <div className="text-[10px] font-bold uppercase tracking-wider">
+              {stats.pending_reviews_count > 0 ? 'Pending Review' : 'Status'}
+            </div>
+            <div className="text-lg font-bold font-mono">
+              {stats.pending_reviews_count > 0 ? `${stats.pending_reviews_count} Awaiting` : 'All Reviewed'}
             </div>
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono">
-            {stats.mentees_count}
-          </div>
-          <p className="text-[11px] text-slate-500">Students under your mentorship</p>
-        </div>
 
-        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Pending Reviews
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
-            </div>
+          <div className="bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl text-center">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Avg Points</div>
+            <div className="text-lg font-bold font-mono text-indigo-600">{stats.avg_mentee_points} / 200</div>
           </div>
-          <div className="text-2xl font-bold text-amber-600 font-mono">
-            {stats.pending_reviews_count}
-          </div>
-          <p className="text-[11px] text-slate-500">Certificates awaiting review</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Total Approved
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-emerald-600 font-mono">
-            {stats.approved_reviews_count}
-          </div>
-          <p className="text-[11px] text-slate-500">Certificates successfully approved</p>
         </div>
       </div>
 
-      {/* 2 Clean Quick Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* 1. Assigned Mentees Roster & Visuals */}
-        <div
-          onClick={() => onNavigateTab('mentor-mentees')}
-          className="bg-gradient-to-r from-purple-50 to-indigo-50/50 hover:from-purple-100 hover:to-indigo-100/60 border border-purple-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition group shadow-2xs"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-purple-950 group-hover:text-purple-800 flex items-center gap-1.5">
-                <span>Assigned Mentees & Visual Analytics</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-purple-200/70 text-purple-900 font-extrabold">{stats.mentees_count} Students</span>
-              </div>
-              <p className="text-[11px] text-purple-700">
-                Inspect 200-point clearance velocity, visual donut charts, and PDF transcripts
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-purple-600 group-hover:translate-x-0.5 transition shrink-0" />
-        </div>
-
-        {/* 2. Mentee Marks Review */}
-        <div
-          onClick={() => onNavigateTab('mentor-marks')}
-          className="bg-gradient-to-r from-emerald-50 to-teal-50/50 hover:from-emerald-100 hover:to-teal-100/60 border border-emerald-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition group shadow-2xs"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <FileSpreadsheet className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-emerald-950 group-hover:text-emerald-800 flex items-center gap-1.5">
-                <span>Mentee Academic Marks</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-200/70 text-emerald-900 font-extrabold">SGPA / CGPA</span>
-              </div>
-              <p className="text-[11px] text-emerald-700">
-                Inspect semester-wise CIE internal exam scores, lab marks, and SGPA
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition shrink-0" />
-        </div>
-      </div>
-
-      {/* Primary Inbox: Pending Certificate Verification Queue */}
-      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      {/* 2. Priority Action: Pending Verification Queue */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <FileCheck2 className="w-4 h-4 text-purple-600" />
-              <span>Pending Certificate Verification</span>
+              <span>Pending Certificate Verification Queue</span>
               {stats.pending_reviews_count > 0 && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 font-mono">
-                  {stats.pending_reviews_count} Pending
+                  {stats.pending_reviews_count} Awaiting
                 </span>
               )}
             </h2>
             <p className="text-xs text-slate-500">
-              Student certificate uploads requiring your faculty review and verification.
+              Review proofs submitted by your assigned mentees to award activity credit.
             </p>
           </div>
 
           <button
             onClick={() => onNavigateTab('mentor-reviews')}
-            className="text-xs font-semibold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+            className="text-xs font-semibold text-purple-700 hover:text-purple-900 cursor-pointer"
           >
-            <span>Open Verification Queue</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            Full Queue View →
           </button>
         </div>
 
         {pending_submissions.length === 0 ? (
-          <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-1.5">
-            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-            <p className="font-bold text-xs text-slate-700">
-              All student submissions have been reviewed!
-            </p>
-            <p className="text-xs text-slate-400">
-              New activity certificate uploads from your assigned students will appear here.
+          <div className="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-1">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+            <p className="font-bold text-sm text-slate-800">All caught up!</p>
+            <p className="text-xs text-slate-500">
+              No pending certificate proofs awaiting your review.
             </p>
           </div>
         ) : (
@@ -242,8 +171,8 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="py-2.5 px-3">Student</th>
-                  <th className="py-2.5 px-3">Activity Title</th>
-                  <th className="py-2.5 px-3">Date Completed</th>
+                  <th className="py-2.5 px-3">Activity & Category</th>
+                  <th className="py-2.5 px-3">Date</th>
                   <th className="py-2.5 px-3 text-right">Points</th>
                   <th className="py-2.5 px-3 text-center">Action</th>
                 </tr>
@@ -251,41 +180,38 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {pending_submissions.map((sub) => (
                   <tr key={sub.id} className="hover:bg-purple-50/20 transition">
-                    <td className="py-2.5 px-3">
-                      <div className="font-bold text-slate-900 text-xs">
-                        {sub.student_name}
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-mono">
-                        {sub.student_roll_no}
+                    <td className="py-3 px-3">
+                      <div className="font-bold text-slate-900 text-xs">{sub.student_name}</div>
+                      <div className="text-[11px] text-slate-500 font-mono">{sub.student_roll_no} • Sem {sub.student_semester || 6}</div>
+                    </td>
+
+                    <td className="py-3 px-3">
+                      <div className="font-semibold text-slate-900 text-xs">{sub.activity_title}</div>
+                      <div className="text-[11px] text-slate-500">
+                        {getCategoryPlainName(sub.category_id, sub.category_name)}
                       </div>
                     </td>
 
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-slate-900 text-xs">
-                        {sub.activity_title}
-                      </div>
-                    </td>
-
-                    <td className="py-2.5 px-3 text-slate-600 font-mono text-[11px]">
+                    <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
                       {sub.completion_date}
                     </td>
 
-                    <td className="py-2.5 px-3 text-right">
+                    <td className="py-3 px-3 text-right">
                       <span className="font-bold font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-xs">
                         +{sub.base_points || 20} pts
                       </span>
                     </td>
 
-                    <td className="py-2.5 px-3 text-center">
+                    <td className="py-3 px-3 text-center">
                       <button
                         onClick={() => {
                           setSelectedSubmission(sub);
                           setIsViewerOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white shadow-2xs transition cursor-pointer"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Review</span>
+                        <span>Review Proof</span>
                       </button>
                     </td>
                   </tr>
@@ -296,6 +222,113 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
         )}
       </div>
 
+      {/* 3. Assigned Mentees Progress Roster */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Users className="w-4 h-4 text-slate-700" />
+              <span>Assigned Mentees ({filteredMentees.length} Students)</span>
+            </h2>
+            <p className="text-xs text-slate-500">
+              Overview of 200 activity points progress per mentee.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative w-full sm:w-60">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search mentee name or USN..."
+                value={searchMenteeQuery}
+                onChange={(e) => setSearchMenteeQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-purple-500 bg-slate-50 focus:bg-white transition"
+              />
+            </div>
+
+            <button
+              onClick={() => onNavigateTab('mentor-mentees')}
+              className="text-xs font-semibold text-purple-700 hover:text-purple-900 shrink-0 cursor-pointer"
+            >
+              Detailed Roster →
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
+              <tr>
+                <th className="py-2.5 px-3">Student Name</th>
+                <th className="py-2.5 px-3">USN</th>
+                <th className="py-2.5 px-2 text-center">Sem</th>
+                <th className="py-2.5 px-3">Progress towards 200 Pts</th>
+                <th className="py-2.5 px-3 text-right">Approved Pts</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredMentees.slice(0, 8).map((m) => {
+                const approvedPts = m.approved_points || 0;
+                const pct = Math.min(100, Math.round((approvedPts / 200) * 100));
+                const isCleared = approvedPts >= 200;
+
+                return (
+                  <tr key={m.id} className="hover:bg-slate-50/70 transition">
+                    <td className="py-2.5 px-3 font-bold text-slate-900">
+                      {m.name}
+                    </td>
+
+                    <td className="py-2.5 px-3 font-mono text-slate-600">
+                      {m.roll_no || 'N/A'}
+                    </td>
+
+                    <td className="py-2.5 px-2 text-center text-slate-600">
+                      {m.semester || 6}
+                    </td>
+
+                    <td className="py-2.5 px-3 w-48">
+                      <div className="space-y-1">
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              isCleared ? 'bg-emerald-500' : approvedPts >= 100 ? 'bg-indigo-500' : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${Math.max(4, pct)}%` }}
+                          />
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">{pct}% completed</div>
+                      </div>
+                    </td>
+
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                      {approvedPts} <span className="text-[10px] font-normal text-slate-400">/ 200</span>
+                    </td>
+
+                    <td className="py-2.5 px-3 text-center">
+                      {isCleared ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          Cleared
+                        </span>
+                      ) : approvedPts >= 100 ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                          On Track
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                          Action Needed
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* PDF / Evidence Review Modal */}
       <PDFViewerModal
         isOpen={isViewerOpen}
@@ -304,6 +337,7 @@ export const MentorDashboard: React.FC<MentorDashboardProps> = ({
           setSelectedSubmission(null);
         }}
         submission={selectedSubmission}
+        submissionsList={pending_submissions}
         canReview={true}
         onReview={handleReview}
       />

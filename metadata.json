@@ -1,6 +1,6 @@
 {
-  "name": "Student Activity Points & Mentorship Portal",
-  "description": "Enterprise-grade academic and activity points tracking system with HOD centralized schema engine, mentor verification, and student evidence portal.",
+  "name": "Creditz Student Activity & Mentorship Portal",
+  "description": "Autonomous Student Activity Points, Academic Mentorship & Degree Clearance Portal (AICTE 200-Point System).",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

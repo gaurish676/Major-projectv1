@@ -18,6 +18,12 @@ export const StudentEvents: React.FC<StudentEventsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (initialTab) {
+      setActiveSubTab(initialTab);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
     const loadEvents = async () => {
       try {
         setIsLoading(true);

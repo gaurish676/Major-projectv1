@@ -1,5 +1,5 @@
 {
-  "name": "major-project-prototype-v3",
+  "name": "creditz-portal",
   "private": true,
   "version": "3.0.0",
   "type": "module",
@@ -9,7 +9,10 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.cjs",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "clear-db": "tsx server/db/clear.ts",
+    "seed": "tsx server/db/seed.ts",
+    "import:students": "tsx server/services/importFinalYearStudents.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -21,14 +24,16 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.5",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "multer": "^2.2.0",
+    "qrcode": "^1.5.4",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^6.2.3",
-    "better-sqlite3": "^12.11.1"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
@@ -39,10 +44,10 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
     "@types/node": "^22.14.0",
+    "@types/qrcode": "^1.5.6",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
-    "@types/better-sqlite3": "^9.6.0"
+    "typescript": "~5.8.2"
   }
 }

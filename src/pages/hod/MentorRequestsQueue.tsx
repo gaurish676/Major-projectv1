@@ -233,8 +233,8 @@ export const MentorRequestsQueue: React.FC = () => {
       {/* HOD Review Decision Modal */}
       {selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-          <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto">
-            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+          <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[90vh]">
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
               <h3 className="font-bold text-white text-sm sm:text-base">
                 {actionType === 'approve' ? 'Approve & Incorporate Schema Rule' : 'Reject Mentor Request'}
               </h3>
@@ -246,7 +246,7 @@ export const MentorRequestsQueue: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleConfirmDecision} className="p-4 space-y-3">
+            <form onSubmit={handleConfirmDecision} className="p-4 space-y-3 overflow-y-auto flex-1">
               <div className="p-2.5 rounded bg-slate-50 border border-slate-100 text-xs">
                 <div className="font-bold text-slate-900 text-xs sm:text-sm">{selectedRequest.activity_name}</div>
                 <div className="text-slate-500 text-[10px] mt-0.5">

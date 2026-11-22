@@ -7,7 +7,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'hod' | 'mentor' | 'student';
+  role: 'hod' | 'mentor' | 'student' | 'dean';
   department_id: string;
   mentor_id?: string;
   roll_no?: string;
@@ -26,7 +26,9 @@ export function generateToken(user: AuthUser): string {
       email: user.email,
       role: user.role,
       department_id: user.department_id,
-      semester: user.semester,
+      mentor_id: user.mentor_id || null,
+      roll_no: user.roll_no || null,
+      semester: user.semester || null,
     },
     JWT_SECRET,
     { expiresIn: '7d' }
@@ -34,13 +36,19 @@ export function generateToken(user: AuthUser): string {
 }
 
 export function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  let token = '';
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query.token && typeof req.query.token === 'string') {
+    token = req.query.token;
+  }
+
+  if (!token) {
     res.status(401).json({ error: 'Authorization header missing or invalid format' });
     return;
   }
 
-  const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
     req.user = decoded;
@@ -50,14 +58,17 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
   }
 }
 
-export function requireRole(allowedRoles: Array<'hod' | 'mentor' | 'student'>) {
+export function requireRole(allowedRoles: Array<'hod' | 'mentor' | 'student' | 'dean'>) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ error: 'Unauthenticated' });
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    // Dean possesses super-administrative privileges over HOD routes
+    const hasRole = allowedRoles.includes(req.user.role) || (req.user.role === 'dean' && allowedRoles.includes('hod'));
+
+    if (!hasRole) {
       res.status(403).json({
         error: `Forbidden: Requires role in [${allowedRoles.join(', ')}], current role is '${req.user.role}'`,
       });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { SubjectMark, MarksSummary, MarksResponse } from '../../types';
 import { apiRequest } from '../../lib/api';
 import {
@@ -21,6 +22,11 @@ import {
   AlertTriangle,
   RotateCcw,
   SlidersHorizontal,
+  ChevronDown,
+  ChevronUp,
+  Briefcase,
+  Building,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface BatchSubjectRow {
@@ -38,12 +44,120 @@ interface BatchSubjectRow {
 }
 
 export const UpdateMarks: React.FC = () => {
+  const { user, refreshUser } = useAuth();
   const [semester, setSemester] = useState<number>(6);
   const [marks, setMarks] = useState<SubjectMark[]>([]);
   const [summary, setSummary] = useState<MarksSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Prior Academics State (10th & 12th / Diploma)
+  const [tenthPercentage, setTenthPercentage] = useState<string>(
+    user?.tenth_percentage != null ? String(user.tenth_percentage) : ''
+  );
+  const [tenthBoard, setTenthBoard] = useState<string>(user?.tenth_board || 'CBSE');
+  const [tenthYear, setTenthYear] = useState<string>(
+    user?.tenth_year ? String(user.tenth_year) : '2020'
+  );
+  const [twelfthPercentage, setTwelfthPercentage] = useState<string>(
+    user?.twelfth_percentage != null ? String(user.twelfth_percentage) : ''
+  );
+  const [twelfthBoard, setTwelfthBoard] = useState<string>(user?.twelfth_board || 'Karnataka State PUC');
+  const [twelfthYear, setTwelfthYear] = useState<string>(
+    user?.twelfth_year ? String(user.twelfth_year) : '2022'
+  );
+  const [diplomaOrPu, setDiplomaOrPu] = useState<'puc' | 'diploma'>((user?.diploma_or_pu as any) || 'puc');
+  const [isSavingPrior, setIsSavingPrior] = useState<boolean>(false);
+  const [priorSuccessMsg, setPriorSuccessMsg] = useState<string | null>(null);
+  const [priorErrorMsg, setPriorErrorMsg] = useState<string | null>(null);
+  const [isPriorExpanded, setIsPriorExpanded] = useState<boolean>(false);
+
+  // Fetch and sync prior academics on mount and when user context updates
+  useEffect(() => {
+    const loadPriorAcademics = async () => {
+      try {
+        const data = await apiRequest('/api/student/prior-academics');
+        if (data) {
+          if (data.tenth_percentage != null) setTenthPercentage(String(data.tenth_percentage));
+          if (data.tenth_board) setTenthBoard(data.tenth_board);
+          if (data.tenth_year) setTenthYear(String(data.tenth_year));
+          if (data.twelfth_percentage != null) setTwelfthPercentage(String(data.twelfth_percentage));
+          if (data.twelfth_board) setTwelfthBoard(data.twelfth_board);
+          if (data.twelfth_year) setTwelfthYear(String(data.twelfth_year));
+          if (data.diploma_or_pu) setDiplomaOrPu(data.diploma_or_pu);
+          if (data.tenth_percentage == null || data.twelfth_percentage == null) {
+            setIsPriorExpanded(true);
+          }
+        }
+      } catch {
+        // Fallback to user object
+      }
+    };
+
+    loadPriorAcademics();
+  }, []);
+
+  // Sync state when user context updates
+  useEffect(() => {
+    if (user) {
+      if (user.tenth_percentage != null) setTenthPercentage(String(user.tenth_percentage));
+      if (user.tenth_board) setTenthBoard(user.tenth_board);
+      if (user.tenth_year) setTenthYear(String(user.tenth_year));
+      if (user.twelfth_percentage != null) setTwelfthPercentage(String(user.twelfth_percentage));
+      if (user.twelfth_board) setTwelfthBoard(user.twelfth_board);
+      if (user.twelfth_year) setTwelfthYear(String(user.twelfth_year));
+      if (user.diploma_or_pu) setDiplomaOrPu(user.diploma_or_pu as any);
+      if (user.tenth_percentage == null || user.twelfth_percentage == null) {
+        setIsPriorExpanded(true);
+      }
+    }
+  }, [user]);
+
+  const handleSavePriorAcademics = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setPriorErrorMsg(null);
+    setPriorSuccessMsg(null);
+
+    const tPct = parseFloat(tenthPercentage);
+    const twPct = parseFloat(twelfthPercentage);
+
+    if (isNaN(tPct) || tPct < 0 || tPct > 100) {
+      setPriorErrorMsg('Please enter a valid 10th percentage between 0 and 100');
+      return;
+    }
+    if (isNaN(twPct) || twPct < 0 || twPct > 100) {
+      setPriorErrorMsg('Please enter a valid 12th/Diploma percentage between 0 and 100');
+      return;
+    }
+
+    try {
+      setIsSavingPrior(true);
+      await apiRequest('/api/student/prior-academics', {
+        method: 'PUT',
+        body: JSON.stringify({
+          tenth_percentage: tPct,
+          tenth_board: tenthBoard.trim(),
+          tenth_year: tenthYear ? parseInt(tenthYear, 10) : 2020,
+          twelfth_percentage: twPct,
+          twelfth_board: twelfthBoard.trim(),
+          twelfth_year: twelfthYear ? parseInt(twelfthYear, 10) : 2022,
+          diploma_or_pu: diplomaOrPu,
+        }),
+      });
+
+      setPriorSuccessMsg('10th & 12th prior academic records saved successfully! Campus placement criteria updated.');
+      setIsPriorExpanded(false);
+      if (refreshUser) {
+        await refreshUser();
+      }
+      setTimeout(() => setPriorSuccessMsg(null), 4000);
+    } catch (err: any) {
+      setPriorErrorMsg(err.message || 'Failed to save prior academics');
+    } finally {
+      setIsSavingPrior(false);
+    }
+  };
 
   // Edit-All Mode state (allows editing all subjects on the screen at once)
   const [isEditAllMode, setIsEditAllMode] = useState<boolean>(false);
@@ -418,7 +532,10 @@ export const UpdateMarks: React.FC = () => {
               Update Subject Marks
             </h1>
             <p className="text-xs text-slate-400">
-              Semester marks ledger, CIE task scores, and SGPA calculation
+              Semester marks ledger, CIE task scores, and SGPA calculation •{' '}
+              <span className="text-sky-300 font-semibold">
+                Monitored by Faculty Mentor: {user?.mentor_name ? `Prof. ${user.mentor_name}` : 'Assigned Mentor'}
+              </span>
             </p>
           </div>
         </div>
@@ -528,6 +645,279 @@ export const UpdateMarks: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Pre-University & Secondary Schooling Records (10th & 12th / Diploma) */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        {/* Banner Header */}
+        <div
+          onClick={() => setIsPriorExpanded(!isPriorExpanded)}
+          className="px-4 py-3 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between cursor-pointer select-none transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
+              <Briefcase className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold text-white">
+                  Pre-University & Secondary Schooling Records (10th & 12th / Diploma)
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Campus Placements
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Required by campus recruiters (Amazon, Google, Microsoft, Cisco, TCS, Infosys) for corporate eligibility verification
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {user?.tenth_percentage != null && user?.twelfth_percentage != null ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>10th: {user.tenth_percentage}% • {user.diploma_or_pu === 'diploma' ? 'Diploma' : '12th'}: {user.twelfth_percentage}%</span>
+                </span>
+              </div>
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                <span>Action Required</span>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPriorExpanded(!isPriorExpanded);
+              }}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              title={isPriorExpanded ? 'Collapse Form' : 'Expand Form'}
+            >
+              {isPriorExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Prior Academics Feedback Messages */}
+        {priorSuccessMsg && (
+          <div className="p-3 mx-4 mt-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{priorSuccessMsg}</span>
+          </div>
+        )}
+        {priorErrorMsg && (
+          <div className="p-3 mx-4 mt-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{priorErrorMsg}</span>
+          </div>
+        )}
+
+        {/* Form Body (collapsible) */}
+        {isPriorExpanded && (
+          <form onSubmit={handleSavePriorAcademics} className="p-4 sm:p-5 space-y-4 bg-slate-50/50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 10th Standard Column */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-md bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center">
+                      10
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900">
+                      Secondary Schooling (Class 10th / SSLC)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-medium">Standard Cutoff: ≥60-70%</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Examination Board
+                    </label>
+                    <select
+                      value={tenthBoard}
+                      onChange={(e) => setTenthBoard(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="CBSE">CBSE (Central Board)</option>
+                      <option value="ICSE">ICSE</option>
+                      <option value="Karnataka State Board">Karnataka KSEEB</option>
+                      <option value="Maharashtra State Board">Maharashtra State Board</option>
+                      <option value="Other State Board">Other State Board</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Passing Year
+                    </label>
+                    <input
+                      type="number"
+                      value={tenthYear}
+                      onChange={(e) => setTenthYear(e.target.value)}
+                      placeholder="2020"
+                      min={2015}
+                      max={2030}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700">
+                      10th Aggregate Percentage (%)
+                    </label>
+                    <span className="text-[10px] text-slate-400">If CGPA: Multiply by 9.5</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={tenthPercentage}
+                      onChange={(e) => setTenthPercentage(e.target.value)}
+                      placeholder="e.g. 91.5"
+                      required
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-bold font-mono bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-8"
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 12th / Diploma Column */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">
+                      12
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900">
+                      Pre-University (Class 12th / Diploma)
+                    </h3>
+                  </div>
+                  {/* Toggle PUC vs Diploma */}
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-md text-[10px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setDiplomaOrPu('puc')}
+                      className={`px-2 py-0.5 rounded cursor-pointer ${
+                        diplomaOrPu === 'puc' ? 'bg-white text-indigo-700 shadow-2xs font-bold' : 'text-slate-600'
+                      }`}
+                    >
+                      12th / PUC
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiplomaOrPu('diploma')}
+                      className={`px-2 py-0.5 rounded cursor-pointer ${
+                        diplomaOrPu === 'diploma' ? 'bg-white text-indigo-700 shadow-2xs font-bold' : 'text-slate-600'
+                      }`}
+                    >
+                      Polytechnic Diploma
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      {diplomaOrPu === 'diploma' ? 'Technical Board' : 'Board / Council'}
+                    </label>
+                    <select
+                      value={twelfthBoard}
+                      onChange={(e) => setTwelfthBoard(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      {diplomaOrPu === 'diploma' ? (
+                        <>
+                          <option value="DTE Karnataka">DTE Karnataka (Diploma)</option>
+                          <option value="MSBTE">MSBTE (Maharashtra)</option>
+                          <option value="BTE Other">Other Technical Board</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Karnataka State PUC">Karnataka State PU Board</option>
+                          <option value="CBSE">CBSE (Class XII)</option>
+                          <option value="ISC">ISC (Council for ISC)</option>
+                          <option value="State Higher Secondary">Other State Board</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Passing Year
+                    </label>
+                    <input
+                      type="number"
+                      value={twelfthYear}
+                      onChange={(e) => setTwelfthYear(e.target.value)}
+                      placeholder="2022"
+                      min={2015}
+                      max={2030}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700">
+                      {diplomaOrPu === 'diploma' ? 'Diploma Final Percentage (%)' : '12th (PCM/PCMC) Percentage (%)'}
+                    </label>
+                    <span className="text-[10px] text-slate-400">Standard Cutoff: ≥60-70%</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={twelfthPercentage}
+                      onChange={(e) => setTwelfthPercentage(e.target.value)}
+                      placeholder="e.g. 88.0"
+                      required
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-bold font-mono bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-8"
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Placement Eligibility Benchmark Preview */}
+            <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span className="text-slate-600">
+                  Corporate Cutoff Benchmark: <strong>TCS & Infosys (60%)</strong> • <strong>Cisco (65%)</strong> • <strong>Amazon & Microsoft (70%)</strong> • <strong>Google (75%)</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <button
+                  type="submit"
+                  disabled={isSavingPrior}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-60"
+                >
+                  {isSavingPrior ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  <span>Save Prior Academics</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+      </div>
 
       {/* Summary KPI Cards */}
       {displayedSummary && (
@@ -1351,8 +1741,8 @@ export const UpdateMarks: React.FC = () => {
       {/* DELETE ALL CONFIRMATION MODAL (Red theme)                                 */}
       {/* ========================================================================= */}
       {isDeleteAllModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150 my-auto">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5" />
@@ -1408,8 +1798,8 @@ export const UpdateMarks: React.FC = () => {
       {/* SINGLE DELETE CONFIRMATION MODAL                                          */}
       {/* ========================================================================= */}
       {singleDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150 my-auto">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                 <Trash2 className="w-4 h-4" />

@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { queryAll, queryOne } from '../db/database';
 import { generateToken, authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { authLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -22,6 +24,14 @@ router.get('/personas', async (req, res) => {
         u.bio,
         u.designation,
         u.office_location,
+        u.mentor_id,
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name
@@ -30,9 +40,10 @@ router.get('/personas', async (req, res) => {
       LEFT JOIN users m ON u.mentor_id = m.id
       ORDER BY 
         CASE u.role 
-          WHEN 'hod' THEN 1 
-          WHEN 'mentor' THEN 2 
-          WHEN 'student' THEN 3 
+          WHEN 'dean' THEN 1
+          WHEN 'hod' THEN 2 
+          WHEN 'mentor' THEN 3 
+          WHEN 'student' THEN 4 
         END,
         u.name ASC
     `);
@@ -64,6 +75,13 @@ router.post('/switch-persona', async (req, res) => {
         u.roll_no, 
         u.avatar,
         u.mentor_id,
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name
@@ -94,8 +112,8 @@ router.post('/switch-persona', async (req, res) => {
   }
 });
 
-// Standard Login
-router.post('/login', async (req, res) => {
+// Standard Login with rate limiting
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email) {
@@ -107,10 +125,30 @@ router.post('/login', async (req, res) => {
 
     // Map common demo aliases to seeded accounts
     let lookupEmail = cleanInput;
-    if (cleanInput.includes('rahul') || cleanInput === 'student') {
+    if (cleanInput === 'dean' || cleanInput === 'dean@university.edu' || cleanInput === 'pawan@university.edu' || cleanInput.includes('pawan')) {
+      lookupEmail = 'dean@university.edu';
+    } else if (cleanInput.includes('joylin') || cleanInput === 'coordinator') {
+      lookupEmail = 'joylin@university.edu';
+    } else if (cleanInput.includes('rahul') || cleanInput === 'student') {
       lookupEmail = 'rahul@university.edu';
+    } else if (cleanInput.includes('savitha')) {
+      lookupEmail = 'savitha@university.edu';
+    } else if (cleanInput.includes('ashwath')) {
+      lookupEmail = 'sowmya.ashwath@university.edu';
+    } else if (cleanInput === 'sowmya p' || cleanInput === 'sowmya.p' || cleanInput.includes('sowmya.p')) {
+      lookupEmail = 'sowmya.p@university.edu';
+    } else if (cleanInput === 'sowmya s' || cleanInput === 'sowmya.s' || cleanInput.includes('sowmya.s')) {
+      lookupEmail = 'sowmya.s@university.edu';
+    } else if (cleanInput.includes('pradeep') || cleanInput.includes('kanchan')) {
+      lookupEmail = 'pradeep.kanchan@university.edu';
+    } else if (cleanInput.includes('sunil') || cleanInput.includes('aithal')) {
+      lookupEmail = 'sunil.aithal@university.edu';
+    } else if (cleanInput.includes('guru')) {
+      lookupEmail = 'guruprasad@university.edu';
+    } else if (cleanInput.includes('aishwarya')) {
+      lookupEmail = 'aishwarya@university.edu';
     } else if (cleanInput.includes('ramesh') || cleanInput.includes('ravi') || cleanInput === 'mentor') {
-      lookupEmail = 'ravi@university.edu';
+      lookupEmail = 'savitha@university.edu';
     } else if (cleanInput.includes('sharma') || cleanInput.includes('hod')) {
       lookupEmail = 'hod@university.edu';
     }
@@ -128,6 +166,13 @@ router.post('/login', async (req, res) => {
         u.roll_no, 
         u.avatar,
         u.mentor_id,
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name
@@ -139,7 +184,9 @@ router.post('/login', async (req, res) => {
 
     // Fallback to first matching role if demo alias
     if (!user) {
-      if (cleanInput.includes('student')) {
+      if (cleanInput.includes('dean') || cleanInput.includes('pawan')) {
+        user = await queryOne(`SELECT u.*, d.name as department_name, d.code as department_code FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.role = 'dean' LIMIT 1`);
+      } else if (cleanInput.includes('student')) {
         user = await queryOne(`SELECT u.*, d.name as department_name, d.code as department_code FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.role = 'student' LIMIT 1`);
       } else if (cleanInput.includes('mentor')) {
         user = await queryOne(`SELECT u.*, d.name as department_name, d.code as department_code FROM users u LEFT JOIN departments d ON u.department_id = d.id WHERE u.role = 'mentor' LIMIT 1`);
@@ -153,9 +200,23 @@ router.post('/login', async (req, res) => {
       return;
     }
 
-    if (password && user.password_hash && user.password_hash !== password && user.password_hash !== 'password123' && password !== 'password123' && password !== 'demo123') {
-      res.status(401).json({ error: 'Incorrect password entered' });
-      return;
+    if (password && user.password_hash) {
+      let isMatch = false;
+      if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
+        try {
+          isMatch = bcrypt.compareSync(password, user.password_hash);
+        } catch {}
+      } else {
+        isMatch = user.password_hash === password;
+      }
+      // Demo password allowances in development / evaluation environments
+      if (!isMatch && (password === 'password123' || password === 'demo123' || user.password_hash === 'password123')) {
+        isMatch = true;
+      }
+      if (!isMatch) {
+        res.status(401).json({ error: 'Incorrect password entered' });
+        return;
+      }
     }
 
     const token = generateToken({
@@ -164,6 +225,9 @@ router.post('/login', async (req, res) => {
       email: user.email,
       role: user.role,
       department_id: user.department_id,
+      mentor_id: user.mentor_id,
+      roll_no: user.roll_no,
+      semester: user.semester,
     });
 
     const { password_hash, ...userProfile } = user;
@@ -197,6 +261,13 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response)
         u.designation,
         u.office_location,
         u.mentor_id,
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name
@@ -264,6 +335,13 @@ router.put('/profile', authenticate, async (req: AuthenticatedRequest, res: Resp
         u.designation,
         u.office_location,
         u.mentor_id,
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name
@@ -353,6 +431,13 @@ router.post('/register', async (req, res) => {
         u.roll_no, 
         u.avatar,
         u.mentor_id,
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name

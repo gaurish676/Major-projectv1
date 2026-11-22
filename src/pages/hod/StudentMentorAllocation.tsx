@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
+import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
 import { StatusBadge } from '../../components/common/Badge';
 import { PDFViewerModal } from '../../components/common/PDFViewerModal';
+import { MentorMenteesVisualAnalytics } from '../../components/common/MentorMenteesVisualAnalytics';
 import { Submission } from '../../types';
 import {
   Users,
@@ -39,6 +42,8 @@ import {
   MapPin,
   User,
   AlertTriangle,
+  BarChart3,
+  ArrowUpRight,
 } from 'lucide-react';
 
 interface StudentItem {
@@ -88,8 +93,22 @@ interface ReportData {
 }
 
 export const StudentMentorAllocation: React.FC = () => {
+  const { user } = useAuth();
+
   // Navigation sub-tab: 'allocation' | 'mentors' | 'naac-summary' | 'audit-ledger'
-  const [activeSubTab, setActiveSubTab] = useState<'allocation' | 'mentors' | 'naac-summary' | 'audit-ledger'>('allocation');
+  // When viewed by Dean, defaults directly to 'mentors' (Faculty Mentors Directory)
+  const [activeSubTab, setActiveSubTab] = useState<'allocation' | 'mentors' | 'naac-summary' | 'audit-ledger'>(
+    user?.role === 'dean' ? 'mentors' : 'allocation'
+  );
+
+  useEffect(() => {
+    if (user?.role === 'dean') {
+      setActiveSubTab('mentors');
+    }
+  }, [user?.role]);
+
+  // Selected Mentor for Deep Mentee Data Visualization
+  const [selectedMentorForAnalytics, setSelectedMentorForAnalytics] = useState<MentorItem | null>(null);
 
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [mentors, setMentors] = useState<MentorItem[]>([]);
@@ -155,12 +174,13 @@ export const StudentMentorAllocation: React.FC = () => {
   const [batchMentorId, setBatchMentorId] = useState<string>('');
   const [isBatchAssigning, setIsBatchAssigning] = useState(false);
 
-  // CSV Import State
+  // CSV / Excel Import State
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvRawText, setCsvRawText] = useState('');
   const [parsedRows, setParsedRows] = useState<ParsedCSVStudent[]>([]);
   const [isImportingCSV, setIsImportingCSV] = useState(false);
+  const [isSyncingExcel, setIsSyncingExcel] = useState(false);
   const [csvError, setCsvError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -522,67 +542,131 @@ export const StudentMentorAllocation: React.FC = () => {
     );
   };
 
-  // CSV Parsing & Import
-  const parseCSVContent = (content: string) => {
+  // Intelligent Spreadsheet / CSV Matrix Parser
+  const parseMatrixOrCSV = (matrix: any[][]) => {
     setCsvError(null);
+    try {
+      if (!matrix || matrix.length === 0) {
+        setCsvError('Spreadsheet contains no readable rows.');
+        setParsedRows([]);
+        return;
+      }
+
+      // 1. Detect semester from title metadata block (e.g. "SEMESTER : VII", "Final Year 2026-27")
+      let detectedSem = '7';
+      for (let r = 0; r < Math.min(10, matrix.length); r++) {
+        const rowStr = (matrix[r] || []).join(' ').toUpperCase();
+        if (
+          rowStr.includes('SEMESTER : VII') ||
+          rowStr.includes('SEM 7') ||
+          rowStr.includes('7TH SEM') ||
+          rowStr.includes('FINAL YEAR')
+        ) {
+          detectedSem = '7';
+          break;
+        } else if (rowStr.includes('SEMESTER : VI') || rowStr.includes('SEM 6')) {
+          detectedSem = '6';
+          break;
+        }
+      }
+
+      // 2. Discover header row by scanning for USN / Roll / Name
+      let headerIdx = -1;
+      const colMap = { usn: -1, name: -1, email: -1, sem: -1, cgpa: -1, phone: -1 };
+
+      for (let r = 0; r < Math.min(15, matrix.length); r++) {
+        const row = (matrix[r] || []).map((c) => String(c || '').trim().toLowerCase());
+        const usnCol = row.findIndex((c) => c.includes('usn') || c.includes('roll') || c.includes('reg'));
+        const nameCol = row.findIndex((c) => c.includes('name') || c.includes('student'));
+        const emailCol = row.findIndex((c) => c.includes('mail') || c.includes('email'));
+        if (usnCol !== -1 && nameCol !== -1) {
+          headerIdx = r;
+          colMap.usn = usnCol;
+          colMap.name = nameCol;
+          colMap.email = emailCol;
+          colMap.sem = row.findIndex((c) => c.includes('sem'));
+          colMap.cgpa = row.findIndex((c) => c.includes('cgpa') || c.includes('gpa'));
+          colMap.phone = row.findIndex((c) => c.includes('phone') || c.includes('mobile'));
+          break;
+        }
+      }
+
+      // Fallback: check row 0
+      if (headerIdx === -1) {
+        const row0 = (matrix[0] || []).map((c) => String(c || '').trim().toLowerCase());
+        const usnCol = row0.findIndex((c) => c.includes('usn') || c.includes('roll') || c.includes('reg'));
+        const nameCol = row0.findIndex((c) => c.includes('name') || c.includes('student'));
+        if (usnCol !== -1 || nameCol !== -1) {
+          headerIdx = 0;
+          colMap.usn = usnCol !== -1 ? usnCol : 1;
+          colMap.name = nameCol !== -1 ? nameCol : 0;
+          colMap.email = row0.findIndex((c) => c.includes('mail') || c.includes('email'));
+          colMap.sem = row0.findIndex((c) => c.includes('sem'));
+          colMap.cgpa = row0.findIndex((c) => c.includes('cgpa') || c.includes('gpa'));
+          colMap.phone = row0.findIndex((c) => c.includes('phone') || c.includes('mobile'));
+        }
+      }
+
+      if (headerIdx === -1 || colMap.usn === -1 || colMap.name === -1) {
+        setCsvError('Could not identify student columns. Sheet must contain USN and Name columns.');
+        setParsedRows([]);
+        return;
+      }
+
+      const parsed: ParsedCSVStudent[] = [];
+      for (let r = headerIdx + 1; r < matrix.length; r++) {
+        const row = matrix[r] || [];
+        const rawUsn = colMap.usn !== -1 ? String(row[colMap.usn] || '').trim().toUpperCase() : '';
+        const rawName = colMap.name !== -1 ? String(row[colMap.name] || '').trim() : '';
+        if (!rawUsn || !rawName) continue;
+        if (rawUsn.includes('SL.') || rawUsn.includes('USN') || rawName.includes('NAME')) continue;
+
+        const email =
+          colMap.email !== -1 && row[colMap.email]
+            ? String(row[colMap.email]).trim().toLowerCase()
+            : `${rawUsn.toLowerCase()}@nmamit.in`;
+
+        const sem = colMap.sem !== -1 && row[colMap.sem] ? String(row[colMap.sem]).trim() : detectedSem;
+        const cgpa = colMap.cgpa !== -1 && row[colMap.cgpa] ? String(row[colMap.cgpa]).trim() : '8.2';
+        const phone = colMap.phone !== -1 && row[colMap.phone] ? String(row[colMap.phone]).trim() : '';
+
+        // Formats name nicely in Title Case
+        const formattedName = rawName
+          .toLowerCase()
+          .replace(/(?:^|\s|-|\.)\S/g, (m) => m.toUpperCase())
+          .trim();
+
+        parsed.push({
+          name: formattedName,
+          roll_no: rawUsn,
+          email,
+          semester: sem,
+          cgpa,
+          phone,
+        });
+      }
+
+      if (parsed.length === 0) {
+        setCsvError('No valid student entries found in file.');
+      } else {
+        setParsedRows(parsed);
+      }
+    } catch (err: any) {
+      setCsvError('Error parsing file: ' + err.message);
+    }
+  };
+
+  const parseCSVContent = (content: string) => {
     try {
       const lines = content
         .split(/\r?\n/)
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
 
-      if (lines.length <= 1) {
-        setCsvError('CSV must contain a header row and at least one student record.');
-        setParsedRows([]);
-        return;
-      }
-
-      const headers = lines[0].split(',').map((h) => h.replace(/["']/g, '').trim().toLowerCase());
-      
-      const nameIdx = headers.findIndex((h) => h.includes('name'));
-      const rollIdx = headers.findIndex((h) => h.includes('roll') || h.includes('usn') || h.includes('reg'));
-      const emailIdx = headers.findIndex((h) => h.includes('email') || h.includes('mail'));
-      const semIdx = headers.findIndex((h) => h.includes('sem'));
-      const cgpaIdx = headers.findIndex((h) => h.includes('cgpa') || h.includes('gpa'));
-      const phoneIdx = headers.findIndex((h) => h.includes('phone') || h.includes('mobile'));
-
-      if (nameIdx === -1 && rollIdx === -1 && emailIdx === -1) {
-        setCsvError('Could not identify student columns. Header must include Name, Roll_No, and Email.');
-        setParsedRows([]);
-        return;
-      }
-
-      const parsed: ParsedCSVStudent[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map((c) => c.replace(/^["']|["']$/g, '').trim());
-        if (cols.length === 0 || !cols.some((c) => c.length > 0)) continue;
-
-        const name = nameIdx !== -1 ? cols[nameIdx] : `Student ${i}`;
-        const rollNo = rollIdx !== -1 ? cols[rollIdx] : `STU${Date.now().toString().slice(-4)}${i}`;
-        const email = emailIdx !== -1 && cols[emailIdx] ? cols[emailIdx] : `${rollNo.toLowerCase()}@college.edu`;
-        const sem = semIdx !== -1 && cols[semIdx] ? cols[semIdx] : '6';
-        const cgpa = cgpaIdx !== -1 && cols[cgpaIdx] ? cols[cgpaIdx] : '8.2';
-        const phone = phoneIdx !== -1 ? cols[phoneIdx] : '';
-
-        if (name || rollNo || email) {
-          parsed.push({
-            name: name || `Student ${rollNo}`,
-            roll_no: rollNo,
-            email,
-            semester: sem,
-            cgpa,
-            phone,
-          });
-        }
-      }
-
-      if (parsed.length === 0) {
-        setCsvError('No valid student entries found in CSV.');
-      } else {
-        setParsedRows(parsed);
-      }
+      const matrix = lines.map((l) => l.split(',').map((c) => c.replace(/^["']|["']$/g, '').trim()));
+      parseMatrixOrCSV(matrix);
     } catch (err: any) {
-      setCsvError('Error parsing CSV file. Please verify comma separation.');
+      setCsvError('Error parsing CSV content: ' + err.message);
     }
   };
 
@@ -590,13 +674,59 @@ export const StudentMentorAllocation: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setCsvFile(file);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      setCsvRawText(text);
-      parseCSVContent(text);
-    };
-    reader.readAsText(file);
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const buffer = event.target?.result as ArrayBuffer;
+          const wb = XLSX.read(buffer, { type: 'array' });
+          const sheetName = wb.SheetNames[0];
+          const sheet = wb.Sheets[sheetName];
+          const matrix = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+          parseMatrixOrCSV(matrix);
+        } catch (err: any) {
+          setCsvError('Failed to read Excel workbook: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setCsvRawText(text);
+        parseCSVContent(text);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleSyncServerExcel = async () => {
+    try {
+      setIsSyncingExcel(true);
+      const res = await apiRequest<{
+        success: boolean;
+        totalParsed: number;
+        createdCount: number;
+        updatedCount: number;
+        allocatedMentorsCount: number;
+        message: string;
+      }>('/api/hod/sync-final-year-file', {
+        method: 'POST',
+      });
+
+      showToast(
+        'success',
+        res.message || `Successfully synced ${res.totalParsed} final-year students from server Excel list!`
+      );
+      await loadAllData();
+    } catch (err: any) {
+      showToast('error', err.message || 'Failed to sync final-year Excel list.');
+    } finally {
+      setIsSyncingExcel(false);
+      setShowImportDropdown(false);
+    }
   };
 
   const handleImportSubmit = async () => {
@@ -719,7 +849,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
         '"Computer Science and Engineering"',
         `"${m.designation || 'Faculty Mentor'}"`,
         menteeCount,
-        '15 Students',
+        '4-5 Students',
       ];
     });
 
@@ -911,7 +1041,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
           {/* Secondary / Utility Group */}
           <div className="flex items-center gap-2">
-            {/* Import CSV Dropdown */}
+            {/* Import CSV / Excel Dropdown */}
             <div className="relative" ref={importDropdownRef}>
               <button
                 id="btn-import-csv-menu"
@@ -927,12 +1057,12 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 }`}
               >
                 <Upload className="w-3.5 h-3.5 text-slate-600" />
-                <span>Import CSV</span>
+                <span>Import Excel / CSV</span>
                 <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showImportDropdown ? 'rotate-180' : ''}`} />
               </button>
 
               {showImportDropdown && (
-                <div className="absolute right-0 sm:left-0 sm:right-auto mt-1.5 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 sm:left-0 sm:right-auto mt-1.5 w-64 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
                   <button
                     type="button"
                     onClick={() => {
@@ -946,8 +1076,24 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                   >
                     <Upload className="w-4 h-4 text-indigo-600 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-800">Upload Student CSV</div>
-                      <div className="text-[10px] text-slate-400">Bulk ingest student roster</div>
+                      <div className="font-semibold text-slate-800">Upload Excel / CSV</div>
+                      <div className="text-[10px] text-slate-400">Import .xlsx, .xls, or .csv roster</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSyncServerExcel}
+                    disabled={isSyncingExcel}
+                    className="w-full px-3 py-2 text-left text-xs font-medium text-indigo-700 hover:bg-indigo-50 flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    {isSyncingExcel ? (
+                      <Loader2 className="w-4 h-4 text-indigo-600 animate-spin shrink-0" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    )}
+                    <div>
+                      <div className="font-semibold text-indigo-900">Sync Final Year 2026-27 XLS</div>
+                      <div className="text-[10px] text-indigo-600/80">313 students from server file</div>
                     </div>
                   </button>
                   <div className="my-1 border-t border-slate-100" />
@@ -1083,7 +1229,10 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
       <div className="flex items-center gap-2 border-b border-slate-200/90 pb-2 overflow-x-auto">
         <button
           type="button"
-          onClick={() => setActiveSubTab('allocation')}
+          onClick={() => {
+            setActiveSubTab('allocation');
+            setSelectedMentorForAnalytics(null);
+          }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeSubTab === 'allocation'
               ? 'bg-slate-900 text-white shadow-xs'
@@ -1099,7 +1248,10 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('mentors')}
+          onClick={() => {
+            setActiveSubTab('mentors');
+            setSelectedMentorForAnalytics(null);
+          }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeSubTab === 'mentors'
               ? 'bg-[#172554] text-white shadow-xs'
@@ -1115,7 +1267,10 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('naac-summary')}
+          onClick={() => {
+            setActiveSubTab('naac-summary');
+            setSelectedMentorForAnalytics(null);
+          }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeSubTab === 'naac-summary'
               ? 'bg-slate-900 text-white shadow-xs'
@@ -1131,7 +1286,10 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('audit-ledger')}
+          onClick={() => {
+            setActiveSubTab('audit-ledger');
+            setSelectedMentorForAnalytics(null);
+          }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
             activeSubTab === 'audit-ledger'
               ? 'bg-slate-900 text-white shadow-xs'
@@ -1191,7 +1349,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
               {mentors.map((m) => {
                 const menteeCount = students.filter((s) => s.mentor_id === m.id).length;
                 const isSelected = selectedMentorFilter === m.id;
-                const isHeavyLoad = menteeCount >= 10;
+                const isHeavyLoad = menteeCount >= 5;
 
                 return (
                   <div
@@ -1265,14 +1423,14 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                     >
                       <div className="flex justify-between text-[10px] text-slate-500">
                         <span>Advisory Load</span>
-                        <span className="font-medium">{Math.min(100, Math.round((menteeCount / 12) * 100))}%</span>
+                        <span className="font-medium">{Math.min(100, Math.round((menteeCount / 5) * 100))}%</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             isHeavyLoad ? 'bg-amber-500' : 'bg-indigo-600'
                           }`}
-                          style={{ width: `${Math.min(100, (menteeCount / 12) * 100)}%` }}
+                          style={{ width: `${Math.min(100, (menteeCount / 5) * 100)}%` }}
                         />
                       </div>
                     </div>
@@ -1513,10 +1671,21 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
                           <td className="py-2.5 px-3.5">
                             {isAllocated ? (
-                              <span className="font-semibold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200 text-[11px] inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const targetMentor = mentors.find((m) => m.id === s.mentor_id);
+                                  if (targetMentor) {
+                                    setSelectedMentorForAnalytics(targetMentor);
+                                    setActiveSubTab('mentors');
+                                  }
+                                }}
+                                className="font-semibold text-indigo-900 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-200 text-[11px] inline-flex items-center gap-1 transition cursor-pointer"
+                                title={`Click to view mentee data visualization for ${s.mentor_name}`}
+                              >
                                 <UserCheck className="w-3 h-3 text-indigo-600" />
-                                <span>{s.mentor_name || 'Assigned'}</span>
-                              </span>
+                                <span className="hover:underline">{s.mentor_name || 'Assigned'}</span>
+                              </button>
                             ) : (
                               <span className="font-semibold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 text-[11px] inline-flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3 text-amber-600" />
@@ -1582,8 +1751,16 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
         </div>
       )}
 
-      {/* VIEW 2: FACULTY MENTORS DIRECTORY & WORKLOAD */}
+      {/* VIEW 2: FACULTY MENTORS DIRECTORY & WORKLOAD / MENTEE VISUAL ANALYTICS */}
       {activeSubTab === 'mentors' && (
+        selectedMentorForAnalytics ? (
+          <MentorMenteesVisualAnalytics
+            mentor={selectedMentorForAnalytics}
+            mentees={students.filter((s) => s.mentor_id === selectedMentorForAnalytics.id)}
+            allSubmissions={reportData?.submissions || []}
+            onBack={() => setSelectedMentorForAnalytics(null)}
+          />
+        ) : (
         <div className="space-y-4">
           {/* Mentors Header & Stats */}
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
@@ -1676,7 +1853,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
               .map((m) => {
                 const assignedMentees = students.filter((s) => s.mentor_id === m.id);
                 const menteeCount = assignedMentees.length;
-                const isHeavyLoad = menteeCount >= 10;
+                const isHeavyLoad = menteeCount >= 5;
 
                 return (
                   <div
@@ -1691,8 +1868,13 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                             {m.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <h3 className="font-bold text-slate-900 text-sm truncate" title={m.name}>
-                              {m.name}
+                            <h3
+                              onClick={() => setSelectedMentorForAnalytics(m)}
+                              className="font-bold text-slate-900 text-sm truncate hover:text-indigo-600 hover:underline cursor-pointer transition flex items-center gap-1 group/mname"
+                              title={`Click to view data visualization and mentees for ${m.name}`}
+                            >
+                              <span>{m.name}</span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-indigo-400 opacity-60 group-hover/mname:opacity-100 group-hover/mname:text-indigo-600 transition" />
                             </h3>
                             <span className="inline-block text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 mt-0.5">
                               {m.designation || 'Faculty Mentor'}
@@ -1746,7 +1928,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-500 font-medium">Assigned Mentees</span>
                         <span className="font-bold font-mono text-indigo-900">
-                          {menteeCount} / 12 Capacity
+                          {menteeCount} / 5 Capacity
                         </span>
                       </div>
 
@@ -1755,20 +1937,18 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                           className={`h-full rounded-full transition-all duration-500 ${
                             isHeavyLoad ? 'bg-amber-500' : 'bg-indigo-600'
                           }`}
-                          style={{ width: `${Math.min(100, (menteeCount / 12) * 100)}%` }}
+                          style={{ width: `${Math.min(100, (menteeCount / 5) * 100)}%` }}
                         />
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedMentorFilter(m.id);
-                          setActiveSubTab('allocation');
-                        }}
-                        className="w-full py-1.5 text-center text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                        onClick={() => setSelectedMentorForAnalytics(m)}
+                        className="w-full py-2 text-center text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs hover:scale-[1.01] active:scale-[0.98]"
+                        title={`Click to view data visualization and mentee records for ${m.name}`}
                       >
-                        <Users className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>View Assigned Students ({menteeCount})</span>
+                        <BarChart3 className="w-3.5 h-3.5 text-indigo-200" />
+                        <span>View Mentees & Data Visualization ({menteeCount})</span>
                       </button>
                     </div>
                   </div>
@@ -1776,6 +1956,7 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
               })}
           </div>
         </div>
+        )
       )}
 
       {/* VIEW 2: NAAC / NBA ACCREDITATION SUMMARY */}
@@ -2049,19 +2230,19 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
         </div>
       )}
 
-      {/* 4. CSV Upload Modal */}
+      {/* 4. CSV / Excel Upload Modal */}
       {showCSVModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden my-auto">
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
                   <FileSpreadsheet className="w-5 h-5" />
                 </span>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Import Students via CSV</h3>
+                  <h3 className="font-bold text-slate-900 text-base">Import Students via Excel / CSV</h3>
                   <p className="text-xs text-slate-500">
-                    Upload your class roster to display students and allocate them to mentors.
+                    Upload your class roster (.xlsx, .xls, or .csv) to display students and allocate them to mentors.
                   </p>
                 </div>
               </div>
@@ -2082,16 +2263,16 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept=".csv,text/csv,text/plain"
+                  accept=".csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
                 <Upload className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
                 <p className="font-bold text-slate-800 text-xs">
-                  {csvFile ? csvFile.name : 'Click to select or drag and drop your CSV file'}
+                  {csvFile ? csvFile.name : 'Click to select or drag and drop your Excel (.xlsx, .xls) or CSV file'}
                 </p>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Required columns: <strong>name, roll_no, email</strong> (optional: semester, cgpa, phone)
+                  Supports college rosters with headers like <strong>SL. NO., USN, NAME, E-mail ID</strong> or standard CSV.
                 </p>
               </div>
 
@@ -2200,8 +2381,8 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
       {/* 5. Auto-Allocation Modal */}
       {showAutoAllocateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto">
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-amber-100 text-amber-700">
@@ -2352,8 +2533,8 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
       {/* 6. Add/Edit Faculty Mentor Modal */}
       {showMentorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto">
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-indigo-50/50">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
@@ -2481,8 +2662,8 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
       {/* 7. Add/Edit Mentee Student Modal */}
       {showStudentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto">
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-indigo-50/50">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
@@ -2647,8 +2828,8 @@ Sneha Kulkarni,1MS21CS006,sneha.cs21@msrit.edu,6,9.30,+919876543215`;
 
       {/* 8. Delete Confirmation Modal */}
       {showDeleteConfirmModal && deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-rose-200 w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-rose-200 w-full max-w-md overflow-hidden my-auto">
             <div className="p-4 sm:p-5 border-b border-rose-100 bg-rose-50/60 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5" />

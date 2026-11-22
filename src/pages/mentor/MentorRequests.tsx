@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { SchemaRequest } from '../../types';
 import { apiRequest } from '../../lib/api';
 import { StatusBadge } from '../../components/common/Badge';
-import { SchemaRequestModal } from '../../components/common/SchemaRequestModal';
 import {
   GitPullRequest,
   PlusCircle,
@@ -16,14 +15,12 @@ import {
 
 interface MentorRequestsProps {
   onOpenModal: () => void;
-  isModalOpen: boolean;
-  onCloseModal: () => void;
+  isModalOpen?: boolean;
+  onCloseModal?: () => void;
 }
 
 export const MentorRequests: React.FC<MentorRequestsProps> = ({
   onOpenModal,
-  isModalOpen,
-  onCloseModal,
 }) => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<SchemaRequest[]>([]);
@@ -43,6 +40,16 @@ export const MentorRequests: React.FC<MentorRequestsProps> = ({
 
   useEffect(() => {
     loadRequests();
+    const handleCreatedEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<SchemaRequest>;
+      if (customEvent.detail) {
+        setRequests((prev) => [customEvent.detail, ...prev]);
+      } else {
+        loadRequests();
+      }
+    };
+    window.addEventListener('schema-request-created', handleCreatedEvent);
+    return () => window.removeEventListener('schema-request-created', handleCreatedEvent);
   }, [user]);
 
   const handleCreated = (newReq: SchemaRequest) => {
@@ -143,12 +150,6 @@ export const MentorRequests: React.FC<MentorRequestsProps> = ({
           ))
         )}
       </div>
-
-      <SchemaRequestModal
-        isOpen={isModalOpen}
-        onClose={onCloseModal}
-        onSuccess={handleCreated}
-      />
     </div>
   );
 };

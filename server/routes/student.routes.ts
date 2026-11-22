@@ -1,8 +1,9 @@
 import { Router, Response } from 'express';
-import { queryAll, queryOne } from '../db/database';
+import { queryAll, queryOne, executeRun } from '../db/database';
 import { authenticate, requireRole, AuthenticatedRequest } from '../middleware/auth';
 import { calculateStudentPoints } from '../services/pointsCalculator';
 import { generateRandomStudentMarks } from '../services/curriculumSubjects';
+import { aiAdvisorLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -22,6 +23,13 @@ router.get('/dashboard', authenticate, requireRole(['student']), async (req: Aut
         u.semester, 
         u.roll_no, 
         u.avatar, 
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name,
@@ -106,7 +114,7 @@ router.get('/dashboard', authenticate, requireRole(['student']), async (req: Aut
 router.get('/credit-report', authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
     let studentId = req.user!.id;
-    if ((req.user!.role === 'mentor' || req.user!.role === 'hod') && req.query.student_id) {
+    if ((req.user!.role === 'mentor' || req.user!.role === 'hod' || req.user!.role === 'dean') && req.query.student_id) {
       studentId = req.query.student_id as string;
     }
 
@@ -121,6 +129,13 @@ router.get('/credit-report', authenticate, async (req: AuthenticatedRequest, res
         u.semester, 
         u.roll_no, 
         u.avatar, 
+        u.tenth_percentage,
+        u.tenth_board,
+        u.tenth_year,
+        u.twelfth_percentage,
+        u.twelfth_board,
+        u.twelfth_year,
+        u.diploma_or_pu,
         d.name as department_name,
         d.code as department_code,
         m.name as mentor_name,
@@ -404,6 +419,11 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
       has_lab = existing.has_lab,
       lab_marks = existing.lab_marks,
       lab_max = existing.lab_max,
+      mse1_marks = existing.mse1_marks,
+      mse1_max = existing.mse1_max,
+      mse2_marks = existing.mse2_marks,
+      mse2_max = existing.mse2_max,
+      mse_marks,
     } = req.body;
 
     const theory = Number(theory_marks);
@@ -414,13 +434,23 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
     const lab = isLab ? Number(lab_marks) : 0;
     const labM = isLab ? Number(lab_max) : 0;
 
+    const m1M = Number(mse1_max) || Number(existing.mse1_max) || 30;
+    const m2M = Number(mse2_max) || Number(existing.mse2_max) || 30;
+    const rawM1 = mse1_marks !== undefined ? Number(mse1_marks) : (mse_marks !== undefined ? Number(mse_marks) : (existing.mse1_marks !== null && existing.mse1_marks !== undefined ? Number(existing.mse1_marks) : 0));
+    const rawM2 = mse2_marks !== undefined ? Number(mse2_marks) : (existing.mse2_marks !== null && existing.mse2_marks !== undefined ? Number(existing.mse2_marks) : 0);
+    const m1 = Math.max(0, Math.min(m1M, isNaN(rawM1) ? 0 : rawM1));
+    const m2 = Math.max(0, Math.min(m2M, isNaN(rawM2) ? 0 : rawM2));
+
+    // Check if MSE marks < 12 (out of 30, i.e. < 40%). If poor, set is_poor_performance = 1.
+    const hasPoorMse = (m1 < 12) || (m2 > 0 && m2 < 12) || (mse_marks !== undefined && Number(mse_marks) < 12);
+    const isPoor = hasPoorMse ? 1 : 0;
+
     const totalScored = theory + task + lab;
     const totalMax = theoryM + taskM + labM;
     const percentage = totalMax > 0 ? (totalScored / totalMax) * 100 : 0;
     const { grade, grade_points } = calculateGradeAndPoints(percentage);
 
     const now = new Date().toISOString();
-    const { executeRun } = await import('../db/database');
     await executeRun(`
       UPDATE student_marks SET
         semester = ?,
@@ -434,6 +464,11 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
         has_lab = ?,
         lab_marks = ?,
         lab_max = ?,
+        mse1_marks = ?,
+        mse1_max = ?,
+        mse2_marks = ?,
+        mse2_max = ?,
+        is_poor_performance = ?,
         grade = ?,
         grade_points = ?,
         updated_at = ?
@@ -450,12 +485,44 @@ router.put('/marks/:id', authenticate, requireRole(['student']), async (req: Aut
       isLab ? 1 : 0,
       lab,
       labM,
+      m1,
+      m1M,
+      m2,
+      m2M,
+      isPoor,
       grade,
       grade_points,
       now,
       markId,
       studentId,
     ]);
+
+    // Query student for assigned mentor to create academic alert notification if poor MSE performance
+    const student = await queryOne<{ id: string; name: string; roll_no: string; mentor_id: string }>(`
+      SELECT id, name, roll_no, mentor_id FROM users WHERE id = ?
+    `, [studentId]);
+
+    if (isPoor === 1 && student?.mentor_id) {
+      const notifId = `notif_alert_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const mseMarks = (m1 < 12 && m2 > 0 && m2 < 12) ? Math.min(m1, m2) : (m1 < 12 ? m1 : m2);
+      const notifTitle = 'Poor MSE Performance Alert: ' + student.name;
+      const notifMessage = 'Mentee ' + student.name + ' (' + (student.roll_no || 'N/A') + ') scored below 40% in ' + subject_name.trim() + ' (MSE: ' + mseMarks + '/30). Please conduct academic counseling.';
+
+      await executeRun(`
+        INSERT INTO notifications (
+          id, sender_id, sender_name, sender_role, recipient_id, recipient_role, category,
+          title, message, is_read, created_at
+        ) VALUES (?, ?, ?, 'system', ?, 'mentor', 'academic_alert', ?, ?, 0, ?)
+      `, [
+        notifId,
+        student.id,
+        student.name,
+        student.mentor_id,
+        notifTitle,
+        notifMessage,
+        now,
+      ]);
+    }
 
     const updated = await queryOne(`SELECT * FROM student_marks WHERE id = ?`, [markId]);
     res.json(updated);
@@ -686,7 +753,10 @@ router.get('/knowledge-graph', authenticate, requireRole(['student', 'mentor', '
     const kg = await buildKnowledgeGraph();
 
     const nodesArray = Array.from(kg.nodes.values());
-    const studentId = req.query.student_id ? (req.query.student_id as string) : req.user!.id;
+    let studentId = req.user!.id;
+    if (req.query.student_id && (req.user!.role === 'mentor' || req.user!.role === 'hod' || req.user!.role === 'dean')) {
+      studentId = req.query.student_id as string;
+    }
     const evidence = await getStudentKnowledgeContext(studentId);
 
     res.json({
@@ -698,6 +768,305 @@ router.get('/knowledge-graph', authenticate, requireRole(['student', 'mentor', '
   } catch (err: any) {
     console.error('Knowledge Graph endpoint error:', err);
     res.status(500).json({ error: err.message || 'Failed to retrieve Knowledge Graph' });
+  }
+});
+
+// POST /api/student/ai-advisor - GraphRAG-powered academic & activity credit advisor
+router.post('/ai-advisor', aiAdvisorLimiter, authenticate, requireRole(['student', 'mentor', 'hod']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { getStudentKnowledgeContext } = await import('../services/knowledgeGraph');
+    const { GoogleGenAI } = await import('@google/genai');
+
+    let studentId = req.user!.id;
+    if (req.body.student_id && (req.user!.role === 'mentor' || req.user!.role === 'hod' || req.user!.role === 'dean')) {
+      studentId = req.body.student_id;
+    }
+    const query = (req.body.query || 'What activities should I prioritize this semester to meet degree requirements?').trim();
+
+    const evidence = await getStudentKnowledgeContext(studentId);
+
+    let advicePayload: {
+      summary: string;
+      target_plan: string;
+      category_strategy: string[];
+      recommended_activities: Array<{
+        id: string;
+        title: string;
+        category_name: string;
+        base_points: number;
+        source: 'catalog' | 'event';
+        venue_or_criteria?: string;
+      }>;
+      semester_guidance: string;
+    } | null = null;
+    let modelUsed = 'graph-rag-heuristic-engine';
+
+    let ai: any = null;
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        ai = new GoogleGenAI();
+      } catch {}
+    }
+
+    if (ai) {
+      try {
+        const preferredModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+        let targetModel = preferredModel;
+
+        const systemInstruction = `You are the Creditz AI Academic & Credit Advisor, an expert university counselor grounded strictly in the student's institutional Knowledge Graph and AICTE credit guidelines.
+CRITICAL GROUNDING DIRECTIVES:
+1. Ground every recommendation strictly in the verified graph evidence:
+   - Student: ${evidence.student_name} (Semester ${evidence.current_semester})
+   - Current Points: ${evidence.current_points} / ${evidence.target_points} (${evidence.progress_percentage}% completed, milestone tier: ${evidence.milestone_tier}).
+   - Remaining Points to graduate: ${evidence.remaining_points}.
+   - Current Semester Headroom: ${evidence.semester_headroom} points remaining before reaching the 30-pts/semester ceiling.
+2. NEVER recommend activities in categories that are already CAPPED (headroom = 0).
+3. Recommend activities from the provided eligible activities list or events that match uncapped domains.
+4. Output must be strictly valid JSON conforming exactly to the requested schema.`;
+
+        const userPrompt = `Student Query: "${query}"
+
+Verified Institutional Graph Context:
+${JSON.stringify({
+  student_name: evidence.student_name,
+  current_points: evidence.current_points,
+  target_points: evidence.target_points,
+  remaining_points: evidence.remaining_points,
+  current_semester: evidence.current_semester,
+  semester_headroom: evidence.semester_headroom,
+  milestone_tier: evidence.milestone_tier,
+  uncapped_categories: evidence.category_headroom.filter((c) => c.headroom > 0).map((c) => ({
+    name: c.category_name,
+    earned: c.earned,
+    cap: c.cap,
+    headroom: c.headroom,
+  })),
+  capped_categories: evidence.category_headroom.filter((c) => c.headroom <= 0).map((c) => c.category_name),
+  eligible_activities_sample: evidence.eligible_activities_list.slice(0, 8),
+  skills_developed: evidence.skills_developed,
+  skills_recommended: evidence.skills_recommended,
+}, null, 2)}
+
+Provide structured, grounded advice in the following JSON schema:
+{
+  "summary": string,
+  "target_plan": string,
+  "category_strategy": string[],
+  "recommended_activities": [
+    {
+      "id": string,
+      "title": string,
+      "category_name": string,
+      "base_points": number,
+      "source": "catalog" | "event",
+      "venue_or_criteria": string
+    }
+  ],
+  "semester_guidance": string
+}`;
+
+        let response;
+        try {
+          response = await ai.models.generateContent({
+            model: targetModel,
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json',
+            },
+          });
+        } catch (mErr: any) {
+          if (targetModel !== 'gemini-1.5-flash') {
+            console.warn(`[aiAdvisor] Fallback from ${targetModel} to gemini-1.5-flash:`, mErr.message);
+            targetModel = 'gemini-1.5-flash';
+            response = await ai.models.generateContent({
+              model: targetModel,
+              contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+              config: {
+                systemInstruction,
+                responseMimeType: 'application/json',
+              },
+            });
+          } else {
+            throw mErr;
+          }
+        }
+
+        const respText = response.text;
+        if (respText) {
+          advicePayload = JSON.parse(respText.trim());
+          modelUsed = targetModel;
+        }
+      } catch (aiErr: any) {
+        console.warn('[aiAdvisor] Gemini invocation note, using deterministic GraphRAG engine:', aiErr.message);
+      }
+    }
+
+    // Deterministic GraphRAG Engine Fallback (Grounded in Verified Knowledge Context)
+    if (!advicePayload) {
+      const uncapped = evidence.category_headroom.filter((c) => c.headroom > 0).sort((a, b) => b.headroom - a.headroom);
+      const topRecs = evidence.eligible_activities_list.slice(0, 4);
+
+      const strategyList = uncapped.slice(0, 3).map(
+        (c) => `Prioritize ${c.category_name}: You have ${c.headroom} points remaining before reaching the ${c.cap}-point ceiling (${c.earned}/${c.cap} earned).`
+      );
+
+      const semGuidance = evidence.semester_headroom > 0
+        ? `You have ${evidence.semester_headroom} points of headroom remaining in Semester ${evidence.current_semester} before hitting the AICTE 30-point semester cap. Target 1 or 2 high-value activities right now.`
+        : `You have reached the 30-point ceiling for Semester ${evidence.current_semester}! Any additional activities submitted now should be allocated to Semester ${evidence.current_semester + 1}.`;
+
+      advicePayload = {
+        summary: `You are currently in ${evidence.milestone_tier} tier with ${evidence.current_points} out of ${evidence.target_points} points (${evidence.progress_percentage}% degree clearance). You need ${evidence.remaining_points} more points to satisfy autonomous graduation criteria.`,
+        target_plan: `Complete ${topRecs.length} activities across your highest-headroom categories (${uncapped.slice(0, 2).map((c) => c.category_name).join(', ')}) to advance toward the next milestone.`,
+        category_strategy: strategyList,
+        recommended_activities: topRecs.map((r) => ({
+          id: r.id,
+          title: r.title,
+          category_name: r.category_name,
+          base_points: r.base_points,
+          source: r.source,
+          venue_or_criteria: r.venue_or_criteria || 'Department approved criteria',
+        })),
+        semester_guidance: semGuidance,
+      };
+      modelUsed = 'graph-rag-deterministic-engine';
+    }
+
+    // Log the advice session
+    const logId = `log_${Date.now()}`;
+    await executeRun(`
+      INSERT INTO activity_logs (id, user_id, action, details, created_at)
+      VALUES (?, ?, 'AI_ADVISOR_CONSULTATION', ?, ?)
+    `, [
+      logId,
+      studentId,
+      `Student consulted AI Advisor with query: "${query.substring(0, 80)}" (Model: ${modelUsed})`,
+      new Date().toISOString(),
+    ]);
+
+    const result = {
+      student_id: studentId,
+      query,
+      graph_evidence: evidence,
+      advice: advicePayload,
+      is_graph_rag: true,
+      generated_at: new Date().toISOString(),
+      model_used: modelUsed,
+    };
+
+    res.json(result);
+  } catch (err: any) {
+    console.error('AI Advisor error:', err);
+    res.status(500).json({ error: err.message || 'Failed to generate AI advice' });
+  }
+});
+
+// GET /api/student/prior-academics - Get 10th & 12th/Diploma academic records
+router.get('/prior-academics', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.user!.id;
+    const records = await queryOne(`
+      SELECT 
+        id, name, roll_no, email,
+        tenth_percentage, tenth_board, tenth_year,
+        twelfth_percentage, twelfth_board, twelfth_year,
+        diploma_or_pu
+      FROM users
+      WHERE id = ?
+    `, [studentId]);
+
+    if (!records) {
+      res.status(404).json({ error: 'Student record not found' });
+      return;
+    }
+
+    res.json(records);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/student/prior-academics - Update 10th & 12th/Diploma academic records for placement eligibility
+router.put('/prior-academics', authenticate, requireRole(['student']), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.user!.id;
+    const {
+      tenth_percentage,
+      tenth_board,
+      tenth_year,
+      twelfth_percentage,
+      twelfth_board,
+      twelfth_year,
+      diploma_or_pu = 'puc',
+    } = req.body;
+
+    const parsedTenth = tenth_percentage !== undefined && tenth_percentage !== null && tenth_percentage !== ''
+      ? parseFloat(tenth_percentage)
+      : null;
+    const parsedTwelfth = twelfth_percentage !== undefined && twelfth_percentage !== null && twelfth_percentage !== ''
+      ? parseFloat(twelfth_percentage)
+      : null;
+
+    if (parsedTenth !== null && (isNaN(parsedTenth) || parsedTenth < 0 || parsedTenth > 100)) {
+      res.status(400).json({ error: '10th percentage must be a valid number between 0 and 100' });
+      return;
+    }
+
+    if (parsedTwelfth !== null && (isNaN(parsedTwelfth) || parsedTwelfth < 0 || parsedTwelfth > 100)) {
+      res.status(400).json({ error: '12th/Diploma percentage must be a valid number between 0 and 100' });
+      return;
+    }
+
+    await executeRun(`
+      UPDATE users SET
+        tenth_percentage = ?,
+        tenth_board = ?,
+        tenth_year = ?,
+        twelfth_percentage = ?,
+        twelfth_board = ?,
+        twelfth_year = ?,
+        diploma_or_pu = ?
+      WHERE id = ?
+    `, [
+      parsedTenth,
+      tenth_board ? String(tenth_board).trim() : null,
+      tenth_year ? parseInt(String(tenth_year), 10) : null,
+      parsedTwelfth,
+      twelfth_board ? String(twelfth_board).trim() : null,
+      twelfth_year ? parseInt(String(twelfth_year), 10) : null,
+      diploma_or_pu ? String(diploma_or_pu).toLowerCase() : 'puc',
+      studentId,
+    ]);
+
+    // Record activity log
+    const logId = `log_${Date.now()}`;
+    await executeRun(`
+      INSERT INTO activity_logs (id, user_id, action, details, created_at)
+      VALUES (?, ?, 'UPDATE_PRIOR_ACADEMICS', ?, ?)
+    `, [
+      logId,
+      studentId,
+      `Student updated prior academic credentials: 10th (${parsedTenth || 'N/A'}%), 12th/Diploma (${parsedTwelfth || 'N/A'}%)`,
+      new Date().toISOString(),
+    ]);
+
+    const updated = await queryOne(`
+      SELECT 
+        id, name, roll_no, email,
+        tenth_percentage, tenth_board, tenth_year,
+        twelfth_percentage, twelfth_board, twelfth_year,
+        diploma_or_pu
+      FROM users
+      WHERE id = ?
+    `, [studentId]);
+
+    res.json({
+      success: true,
+      message: 'Prior academic credentials (10th & 12th) updated successfully',
+      data: updated,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

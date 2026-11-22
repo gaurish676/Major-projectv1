@@ -1,60 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoadingProvider } from './context/LoadingContext';
+import { SplashScreen } from './components/tasknest/SplashScreen';
+import { MainDashboard } from './components/tasknest/MainDashboard';
 import { Login } from './pages/auth/Login';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
+import { TopLoadingBar } from './components/common/TopLoadingBar';
+import { DashboardSkeleton } from './components/common/SkeletonLoaders';
 import { SubmitActivityModal } from './components/common/SubmitActivityModal';
 import { SchemaRequestModal } from './components/common/SchemaRequestModal';
+import { LMSFooter } from './components/common/LMSFooter';
 
-// Student Pages
-import { StudentDashboard } from './pages/student/StudentDashboard';
-import { SubmissionHistory } from './pages/student/SubmissionHistory';
-import { ExploreSchema } from './pages/student/ExploreSchema';
-import { StudentEvents } from './pages/student/StudentEvents';
-import { UpdateMarks } from './pages/student/UpdateMarks';
-import { StudentVisualAnalytics } from './components/common/StudentVisualAnalytics';
+// Code-Split Dynamic Route Pages for Legacy Creditz System
+const StudentDashboard = React.lazy(() => import('./pages/student/StudentDashboard').then((m) => ({ default: m.StudentDashboard })));
+const SubmissionHistory = React.lazy(() => import('./pages/student/SubmissionHistory').then((m) => ({ default: m.SubmissionHistory })));
+const ExploreSchema = React.lazy(() => import('./pages/student/ExploreSchema').then((m) => ({ default: m.ExploreSchema })));
+const StudentEvents = React.lazy(() => import('./pages/student/StudentEvents').then((m) => ({ default: m.StudentEvents })));
+const UpdateMarks = React.lazy(() => import('./pages/student/UpdateMarks').then((m) => ({ default: m.UpdateMarks })));
+const StudentVisualAnalytics = React.lazy(() => import('./components/common/StudentVisualAnalytics').then((m) => ({ default: m.StudentVisualAnalytics })));
 
-// Mentor Pages
-import { MentorDashboard } from './pages/mentor/MentorDashboard';
-import { MenteeList } from './pages/mentor/MenteeList';
-import { ReviewSubmissions } from './pages/mentor/ReviewSubmissions';
-import { MentorRequests } from './pages/mentor/MentorRequests';
-import { MentorStudentMarks } from './pages/mentor/MentorStudentMarks';
+const MentorDashboard = React.lazy(() => import('./pages/mentor/MentorDashboard').then((m) => ({ default: m.MentorDashboard })));
+const MenteeList = React.lazy(() => import('./pages/mentor/MenteeList').then((m) => ({ default: m.MenteeList })));
+const ReviewSubmissions = React.lazy(() => import('./pages/mentor/ReviewSubmissions').then((m) => ({ default: m.ReviewSubmissions })));
+const MentorRequests = React.lazy(() => import('./pages/mentor/MentorRequests').then((m) => ({ default: m.MentorRequests })));
+const MentorStudentMarks = React.lazy(() => import('./pages/mentor/MentorStudentMarks').then((m) => ({ default: m.MentorStudentMarks })));
+const MentorPlacementEligibility = React.lazy(() => import('./pages/mentor/MentorPlacementEligibility').then((m) => ({ default: m.MentorPlacementEligibility })));
 
-// HOD Pages
-import { HODDashboard } from './pages/hod/HODDashboard';
-import { SchemaManager } from './pages/hod/SchemaManager';
-import { MentorRequestsQueue } from './pages/hod/MentorRequestsQueue';
-import { StudentMentorAllocation } from './pages/hod/StudentMentorAllocation';
+const HODDashboard = React.lazy(() => import('./pages/hod/HODDashboard').then((m) => ({ default: m.HODDashboard })));
+const SchemaManager = React.lazy(() => import('./pages/hod/SchemaManager').then((m) => ({ default: m.SchemaManager })));
+const MentorRequestsQueue = React.lazy(() => import('./pages/hod/MentorRequestsQueue').then((m) => ({ default: m.MentorRequestsQueue })));
+const StudentMentorAllocation = React.lazy(() => import('./pages/hod/StudentMentorAllocation').then((m) => ({ default: m.StudentMentorAllocation })));
+const CoordinatorMasterSheet = React.lazy(() => import('./pages/hod/CoordinatorMasterSheet').then((m) => ({ default: m.CoordinatorMasterSheet })));
 
-// Common Pages
-import { ProfilePage } from './pages/common/ProfilePage';
+const DeanDashboard = React.lazy(() => import('./pages/dean/DeanDashboard').then((m) => ({ default: m.DeanDashboard })));
+const ProfilePage = React.lazy(() => import('./pages/common/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const PublicVerificationPage = React.lazy(() => import('./pages/public/PublicVerificationPage').then((m) => ({ default: m.PublicVerificationPage })));
 
-const MainLayout: React.FC = () => {
+const PageLoadingFallback: React.FC = () => <DashboardSkeleton />;
+
+const CreditzPortal: React.FC = () => {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('');
-  const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isSchemaRequestModalOpen, setIsSchemaRequestModalOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-
   const handleToggleSidebar = () => {
-    setIsDesktopSidebarOpen((prev) => !prev);
-    setIsMobileSidebarOpen((prev) => !prev);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsMobileSidebarOpen((prev) => !prev);
+    } else {
+      setIsDesktopSidebarOpen((prev) => !prev);
+    }
   };
 
-  // Set default tab on login / persona switch based on role
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'hod') {
-      setActiveTab('hod-dashboard');
-    } else if (user.role === 'mentor') {
-      setActiveTab('mentor-dashboard');
-    } else {
-      setActiveTab('student-dashboard');
-    }
+    if (user.role === 'dean') setActiveTab('dean-dashboard');
+    else if (user.role === 'hod') setActiveTab('hod-dashboard');
+    else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
+    else setActiveTab('student-dashboard');
   }, [user?.role, user?.id]);
 
   if (isLoading) {
@@ -74,21 +80,22 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased overflow-x-hidden">
-      {/* Top Navbar with 1-Click Persona Switcher */}
+      <TopLoadingBar />
       <Navbar
         onToggleSidebar={handleToggleSidebar}
         onNavigateProfile={() => setActiveTab('profile')}
         onNavigateHome={() => {
-          if (user.role === 'student') setActiveTab('student-dashboard');
+          if (user.role === 'dean') setActiveTab('dean-dashboard');
+          else if (user.role === 'student') setActiveTab('student-dashboard');
           else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
           else setActiveTab('hod-dashboard');
         }}
+        onNavigateTab={setActiveTab}
       />
 
       <div className="flex-1 flex max-w-[1536px] w-full mx-auto">
-        {/* Desktop Sidebar */}
         {isDesktopSidebarOpen && (
-          <div className="hidden lg:block transition-all shrink-0 sticky top-14 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto z-20">
+          <div className="hidden lg:block transition-all shrink-0 sticky top-24 self-start max-h-[calc(100vh-6rem)] overflow-y-auto z-20">
             <Sidebar
               activeTab={activeTab}
               onSelectTab={setActiveTab}
@@ -99,7 +106,6 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Mobile Drawer Sidebar */}
         {isMobileSidebarOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
             <div
@@ -127,130 +133,118 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Main Content Area - Native vertical scroll without nested trap */}
         <main className="flex-1 p-3 sm:p-4 lg:p-5 min-w-0 overflow-x-hidden">
-          {/* Universal Profile & Developer Console Views */}
-          {activeTab === 'profile' && (
-            <ProfilePage
-              onBack={() => {
-                if (user.role === 'hod') setActiveTab('hod-dashboard');
-                else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
-                else setActiveTab('student-dashboard');
-              }}
-            />
-          )}
-
-          {/* Student Views - Data Visualization removed per requirement */}
-          {user.role === 'student' && activeTab !== 'profile' && (
-            <>
-              {(activeTab === 'student-dashboard' || activeTab === 'home') && (
+          <Suspense fallback={<PageLoadingFallback />}>
+            <div key={activeTab} className="animate-view-fade">
+              {activeTab === 'profile' && (
+                <ProfilePage
+                  onBack={() => {
+                    if (user.role === 'dean') setActiveTab('dean-dashboard');
+                    else if (user.role === 'hod') setActiveTab('hod-dashboard');
+                    else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
+                    else setActiveTab('student-dashboard');
+                  }}
+                />
+              )}
+              {activeTab === 'student-dashboard' && (
                 <StudentDashboard
                   onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
                   onNavigateTab={setActiveTab}
                 />
               )}
-              {activeTab === 'student-marks' && <UpdateMarks />}
-              {activeTab === 'student-submissions' && (
-                <SubmissionHistory
-                  onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-                />
+              {activeTab === 'submission-history' && <SubmissionHistory />}
+              {activeTab === 'explore-schema' && (
+                <ExploreSchema onOpenSubmitModal={() => setIsSubmitModalOpen(true)} />
               )}
-              {activeTab === 'student-clubs' && <StudentEvents onNavigateTab={setActiveTab} initialTab="clubs" />}
-              {activeTab === 'student-schema' && <ExploreSchema />}
-              {activeTab === 'student-events' && <StudentEvents onNavigateTab={setActiveTab} initialTab="events" />}
-            </>
-          )}
-
-          {/* Mentor Views - Visual Analytics exclusive to Mentor */}
-          {user.role === 'mentor' && activeTab !== 'profile' && (
-            <>
-              {(activeTab === 'mentor-dashboard' || activeTab === 'home') && (
-                <MentorDashboard
-                  onOpenSchemaRequestModal={() => setIsSchemaRequestModalOpen(true)}
-                  onNavigateTab={setActiveTab}
-                />
+              {activeTab === 'student-events' && <StudentEvents />}
+              {activeTab === 'update-marks' && <UpdateMarks />}
+              {activeTab === 'student-analytics' && <StudentVisualAnalytics />}
+              {activeTab === 'mentor-dashboard' && (
+                <MentorDashboard onNavigateTab={setActiveTab} />
               )}
-              {activeTab === 'student-analytics' && (
-                <StudentVisualAnalytics
-                  studentId={viewingStudentId || undefined}
-                  onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-                  onBack={() => setActiveTab('mentor-mentees')}
-                />
+              {activeTab === 'mentee-list' && (
+                <MenteeList onSelectMentee={() => setActiveTab('mentor-dashboard')} />
               )}
-              {activeTab === 'mentor-mentees' && (
-                <MenteeList
-                  onViewStudentAnalytics={(sid) => {
-                    setViewingStudentId(sid);
-                    setActiveTab('student-analytics');
-                  }}
-                />
-              )}
-              {(activeTab === 'mentor-reviews' || activeTab === 'mentor-evaluations') && <ReviewSubmissions />}
-              {activeTab === 'mentor-marks' && <MentorStudentMarks />}
-              {activeTab === 'mentor-requests' && (
-                <MentorRequests
-                  onOpenModal={() => setIsSchemaRequestModalOpen(true)}
-                  isModalOpen={isSchemaRequestModalOpen}
-                  onCloseModal={() => setIsSchemaRequestModalOpen(false)}
-                />
-              )}
-              {(activeTab === 'mentor-schema' || activeTab === 'student-schema') && <ExploreSchema />}
-              {activeTab === 'student-events' && <StudentEvents onNavigateTab={setActiveTab} initialTab="events" />}
-              {activeTab === 'student-clubs' && <StudentEvents onNavigateTab={setActiveTab} initialTab="clubs" />}
-            </>
-          )}
-
-          {/* HOD Views */}
-          {user.role === 'hod' && activeTab !== 'profile' && (
-            <>
-              {(activeTab === 'hod-dashboard' || activeTab === 'home') && (
-                <HODDashboard onNavigateTab={setActiveTab} />
-              )}
-              {activeTab === 'student-analytics' && (
-                <StudentVisualAnalytics
-                  studentId={viewingStudentId || undefined}
-                  onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-                />
-              )}
-              {(activeTab === 'hod-schemas' || activeTab === 'hod-schema') && <SchemaManager />}
-              {activeTab === 'hod-requests' && <MentorRequestsQueue />}
-              {activeTab === 'student-events' && <StudentEvents onNavigateTab={setActiveTab} initialTab="events" />}
-              {activeTab === 'student-clubs' && <StudentEvents onNavigateTab={setActiveTab} initialTab="clubs" />}
-              {(activeTab === 'hod-allocation' || activeTab === 'hod-allocations' || activeTab === 'hod-reports') && (
-                <StudentMentorAllocation />
-              )}
-            </>
-          )}
+              {activeTab === 'review-submissions' && <ReviewSubmissions />}
+              {activeTab === 'mentor-requests' && <MentorRequests />}
+              {activeTab === 'mentor-student-marks' && <MentorStudentMarks />}
+              {activeTab === 'mentor-placement' && <MentorPlacementEligibility />}
+              {activeTab === 'hod-dashboard' && <HODDashboard onNavigateTab={setActiveTab} />}
+              {activeTab === 'schema-manager' && <SchemaManager />}
+              {activeTab === 'mentor-requests-queue' && <MentorRequestsQueue />}
+              {activeTab === 'student-mentor-allocation' && <StudentMentorAllocation />}
+              {activeTab === 'coordinator-master-sheet' && <CoordinatorMasterSheet />}
+              {activeTab === 'dean-dashboard' && <DeanDashboard />}
+            </div>
+          </Suspense>
         </main>
       </div>
 
-      {/* Global Modals */}
-      <SubmitActivityModal
-        isOpen={isSubmitModalOpen}
-        onClose={() => setIsSubmitModalOpen(false)}
-        onSuccess={() => {
-          // If in submissions history, re-fetch happens via state or navigate
-          setActiveTab('student-submissions');
-        }}
-      />
+      <LMSFooter />
 
-      <SchemaRequestModal
-        isOpen={isSchemaRequestModalOpen}
-        onClose={() => setIsSchemaRequestModalOpen(false)}
-        onSuccess={() => {
-          if (user.role === 'mentor') {
-            setActiveTab('mentor-requests');
-          }
-        }}
-      />
+      {isSubmitModalOpen && (
+        <SubmitActivityModal
+          isOpen={isSubmitModalOpen}
+          onClose={() => setIsSubmitModalOpen(false)}
+          onSuccess={() => {}}
+        />
+      )}
+
+      {isSchemaRequestModalOpen && (
+        <SchemaRequestModal
+          isOpen={isSchemaRequestModalOpen}
+          onClose={() => setIsSchemaRequestModalOpen(false)}
+          onSuccess={() => {}}
+        />
+      )}
     </div>
   );
 };
 
 export const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Check URL pathname for direct verification or optional sub-route
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isVerifyRoute = pathname.startsWith('/verify/');
+  const verifyCredentialId = isVerifyRoute ? pathname.replace(/^\/verify\//, '').trim() : '';
+  const isTaskNestRoute = pathname.startsWith('/tasknest');
+
+  if (isVerifyRoute && verifyCredentialId) {
+    return (
+      <AuthProvider>
+        <LoadingProvider>
+          <Suspense fallback={<PageLoadingFallback />}>
+            <PublicVerificationPage
+              credentialId={verifyCredentialId}
+              onNavigateHome={() => {
+                window.location.href = '/';
+              }}
+            />
+          </Suspense>
+        </LoadingProvider>
+      </AuthProvider>
+    );
+  }
+
+  if (isTaskNestRoute) {
+    return (
+      <>
+        {showSplash ? (
+          <SplashScreen onLoaded={() => setShowSplash(false)} />
+        ) : (
+          <MainDashboard />
+        )}
+      </>
+    );
+  }
+
+  // Primary Default App: Creditz Student Activity Points & Mentorship Portal
   return (
     <AuthProvider>
-      <MainLayout />
+      <LoadingProvider>
+        <CreditzPortal />
+      </LoadingProvider>
     </AuthProvider>
   );
 };

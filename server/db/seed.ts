@@ -1,12 +1,18 @@
-import { getDb, saveDb, queryOne } from './database';
+import { getDb, saveDb, queryOne, queryAll } from './database';
 import fs from 'fs';
 import path from 'path';
 import { generateRandomStudentMarks } from '../services/curriculumSubjects';
 
-export async function seedDatabase() {
+export async function seedDatabase(force: boolean = false) {
+  if (process.env.AUTO_SEED !== 'true' && !force) {
+    console.log('Skipping demo seed (AUTO_SEED is not set). Database is in clean state for custom data.');
+    return;
+  }
+
   const existingUser = await queryOne('SELECT id FROM users LIMIT 1');
   if (existingUser) {
-    console.log('Database already seeded. Skipping initial seeding.');
+    console.log('Database already initialized. Running incremental upgrade seeds...');
+    await ensureAdvancedSeeds();
     return;
   }
 
@@ -285,6 +291,295 @@ export async function seedDatabase() {
     }
   }
 
+  await ensureAdvancedSeeds();
+
   saveDb();
   console.log('Database seeded successfully with all roles, schemas, submissions, events, and student marks!');
+}
+
+export async function ensureAdvancedSeeds() {
+  const db = await getDb();
+  const defaultHash = '$2a$10$wEepR0.77XwG5cKzB0jL9uvr7fJ1pWl0gQxV4iVf6Fz6xGv.UaYcy';
+
+  // 1. Ensure Dr. Pawan Kumar (Dean of Academics & Autonomous Affairs) exists
+  const existingDean = await queryOne("SELECT id FROM users WHERE email = 'pawan@university.edu' OR id = 'usr_dean_1'");
+  if (!existingDean) {
+    await db.exec(`
+      INSERT OR REPLACE INTO users (
+        id, name, email, password_hash, role, department_id, mentor_id,
+        cgpa, semester, roll_no, avatar, phone, bio, designation, office_location
+      ) VALUES (
+        'usr_dean_1', 'Dr. Pawan Kumar', 'pawan@university.edu', '${defaultHash}', 'dean', 'dept_cse', NULL,
+        NULL, NULL, 'EMP-DEAN-001', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
+        '+91 98450 11223', 'Dean of Academic Affairs, autonomous curriculum coordinator & university evaluation chair.',
+        'Dean (Academic Affairs & Autonomous Curriculum)', 'Administrative Block, Chamber 001'
+      );
+    `);
+  }
+
+  // 2. Ensure Prof. Joylin Mendonca (Department Activity & NBA/NAAC Coordinator) exists
+  const existingJoylin = await queryOne("SELECT id FROM users WHERE email = 'joylin@university.edu' OR id = 'usr_coordinator_1'");
+  if (!existingJoylin) {
+    await db.exec(`
+      INSERT OR REPLACE INTO users (
+        id, name, email, password_hash, role, department_id, mentor_id,
+        cgpa, semester, roll_no, avatar, phone, bio, designation, office_location
+      ) VALUES (
+        'usr_coordinator_1', 'Prof. Joylin Mendonca', 'joylin@university.edu', '${defaultHash}', 'mentor', 'dept_cse', NULL,
+        NULL, NULL, 'EMP-CSE-012', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+        '+91 98451 44556', 'Senior Assistant Professor, Department Activity Points Head & Master Accreditation Coordinator.',
+        'Activity Points & Accreditation Coordinator', 'Faculty Wing C, Room 302'
+      );
+    `);
+  }
+
+  // 3. Ensure Campus Placement Drives criteria exist
+  const existingDrives = await queryOne("SELECT COUNT(*) as count FROM placement_drives");
+  if (!existingDrives || existingDrives.count === 0) {
+    await db.exec(`
+      INSERT INTO placement_drives (id, company_name, role_title, min_cgpa, min_activity_points, max_backlogs, min_tenth_percentage, min_twelfth_percentage, package_lpa, drive_date, category, is_active) VALUES
+      ('drv_1', 'Google India', 'Software Development Engineer - I', 8.5, 80, 0, 75.0, 75.0, 34.0, '2025-08-15', 'Tier-1 Product', 1),
+      ('drv_2', 'Microsoft IDC', 'Software Engineer (Azure Core & Cloud)', 8.0, 75, 0, 70.0, 70.0, 28.5, '2025-08-28', 'Tier-1 Product', 1),
+      ('drv_3', 'Amazon AWS', 'Cloud Systems Support Engineer', 7.5, 70, 0, 70.0, 70.0, 22.0, '2025-09-05', 'Tier-1 Cloud', 1),
+      ('drv_4', 'Cisco Systems', 'Network Software Engineer', 7.2, 60, 1, 65.0, 65.0, 18.0, '2025-09-20', 'Core Systems', 1),
+      ('drv_5', 'TCS Digital', 'Systems Specialist & AI Engineer', 6.5, 50, 1, 60.0, 60.0, 9.0, '2025-10-10', 'Enterprise Tech', 1),
+      ('drv_6', 'Infosys Springboard', 'Specialist Programmer (Power Programmer)', 6.5, 50, 1, 60.0, 60.0, 9.5, '2025-10-15', 'Enterprise Tech', 1);
+    `);
+  }
+
+  // 4. Ensure 1st Year Induction Rules and Hours requirements in activity_schema
+  const existingInduction = await queryOne("SELECT id FROM activity_schema WHERE id = 'sch_induct_1'");
+  if (!existingInduction) {
+    await db.exec(`
+      INSERT OR REPLACE INTO activity_schema (id, category_id, activity_name, base_points, criteria, version, is_active, hours_required, points_per_hour, applicable_year, created_at) VALUES
+      ('sch_induct_1', 'cat_vol', '1st Year AICTE Student Induction Program (SIP 3-Week)', 25, 'Mandatory for 1st Year. Full attendance in 3-week induction module, creative arts, and social exposure.', 1, 1, 60, 0.42, 'year_1', '2024-01-15T09:00:00Z'),
+      ('sch_induct_2', 'cat_work', '1st Year Universal Human Values (UHV) & Ethics Foundation', 20, 'Mandatory 1st Year course. Peer interaction diary and reflective essay on human values.', 1, 1, 40, 0.50, 'year_1', '2024-01-15T09:00:00Z'),
+      ('sch_induct_3', 'cat_sports', '1st Year Physical Fitness & Creative Cultural Exploration', 15, 'Participation in 1st year yoga/sports session and creative arts exhibition.', 1, 1, 30, 0.50, 'year_1', '2024-01-15T09:00:00Z');
+    `);
+  }
+
+  // Update existing schemas with realistic hours required and year mapping
+  await db.exec(`
+    UPDATE activity_schema SET hours_required = 45, points_per_hour = 0.67, applicable_year = 'years_2_4' WHERE id = 'sch_cert_1';
+    UPDATE activity_schema SET hours_required = 30, points_per_hour = 0.67, applicable_year = 'years_2_4' WHERE id = 'sch_cert_2';
+    UPDATE activity_schema SET hours_required = 50, points_per_hour = 0.50, applicable_year = 'years_2_4' WHERE id = 'sch_cert_3';
+    UPDATE activity_schema SET hours_required = 40, points_per_hour = 1.00, applicable_year = 'years_2_4' WHERE id = 'sch_comp_1';
+    UPDATE activity_schema SET hours_required = 30, points_per_hour = 0.67, applicable_year = 'years_2_4' WHERE id = 'sch_comp_2';
+    UPDATE activity_schema SET hours_required = 160, points_per_hour = 0.19, applicable_year = 'years_2_4' WHERE id = 'sch_intern_1';
+    UPDATE activity_schema SET hours_required = 80, points_per_hour = 0.25, applicable_year = 'years_2_4' WHERE id = 'sch_intern_2';
+    UPDATE activity_schema SET hours_required = 40, points_per_hour = 0.38, applicable_year = 'years_2_4' WHERE id = 'sch_work_1';
+    UPDATE activity_schema SET hours_required = 60, points_per_hour = 0.42, applicable_year = 'years_2_4' WHERE id = 'sch_vol_1';
+    UPDATE activity_schema SET hours_required = 40, points_per_hour = 0.75, applicable_year = 'years_2_4' WHERE id = 'sch_sports_1';
+  `);
+
+  // 5. Update submissions with hours_spent, credential_hash, and qr_code_data
+  const allSubmissions = await queryAll<{ id: string; student_id: string; activity_title: string; base_points: number }>(`
+    SELECT s.id, s.student_id, s.activity_title, COALESCE(sch.base_points, 20) as base_points
+    FROM submissions s
+    LEFT JOIN activity_schema sch ON s.schema_id = sch.id
+  `);
+
+  for (const sub of allSubmissions) {
+    const credHash = `CRD-2025-${sub.id.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(-8)}`;
+    const qrData = `https://creditz.university.edu/verify/${credHash}`;
+    const hours = Math.round(Number(sub.base_points) * 2.2);
+
+    const checklist = JSON.stringify({
+      student_identity_verified: true,
+      accredited_issuer_verified: true,
+      minimum_hours_satisfied: true,
+      original_seal_and_signature: true,
+      verified_timestamp: new Date().toISOString()
+    });
+
+    await db.exec(`
+      UPDATE submissions
+      SET 
+        hours_spent = COALESCE(NULLIF(hours_spent, 0), ${hours}),
+        credential_hash = COALESCE(credential_hash, '${credHash}'),
+        qr_code_data = COALESCE(qr_code_data, '${qrData}'),
+        verification_status = COALESCE(verification_status, 'verified'),
+        verification_checklist = COALESCE(verification_checklist, '${checklist}')
+      WHERE id = '${sub.id}';
+    `);
+  }
+
+  // 6. Update student_marks with realistic MSE-1 and MSE-2 marks
+  const allMarks = await queryAll<{ id: string; student_id: string; theory_marks: number; subject_code: string; subject_name: string }>(`
+    SELECT id, student_id, theory_marks, subject_code, subject_name FROM student_marks WHERE mse1_marks = 0 OR mse1_marks IS NULL
+  `);
+
+  for (const m of allMarks) {
+    // Theory is out of 100, proportion into 30
+    const baseMse = Math.round((Number(m.theory_marks) / 100) * 30);
+    const mse1 = Math.max(5, Math.min(30, baseMse + Math.floor(Math.random() * 5) - 2));
+    const mse2 = Math.max(5, Math.min(30, baseMse + Math.floor(Math.random() * 5) - 2));
+    
+    // Check if poor performance (< 40% of 30 is < 12 marks)
+    const isPoor = (mse1 < 12 || mse2 < 12) ? 1 : 0;
+
+    await db.exec(`
+      UPDATE student_marks 
+      SET mse1_marks = ${mse1}, mse1_max = 30, mse2_marks = ${mse2}, mse2_max = 30, is_poor_performance = ${isPoor}
+      WHERE id = '${m.id}';
+    `);
+  }
+
+  // Explicitly ensure Rohan Gupta (usr_std_3) has poor performance in Automata Theory / Transform Calculus
+  await db.exec(`
+    UPDATE student_marks 
+    SET mse1_marks = 9, mse2_marks = 10, is_poor_performance = 1
+    WHERE student_id = 'usr_std_3' AND (subject_code = '21CS54' OR subject_code = '21CS31');
+  `);
+
+  // Ensure Vikram Rao (usr_std_7) has poor performance in Microcontrollers
+  await db.exec(`
+    UPDATE student_marks 
+    SET mse1_marks = 8, mse2_marks = 11, is_poor_performance = 1
+    WHERE student_id = 'usr_std_7' AND subject_code = '21CS43';
+  `);
+
+  // 7. Seed sample counseling log for poor MSE performance
+  const existingCounseling = await queryOne("SELECT id FROM counseling_logs LIMIT 1");
+  if (!existingCounseling) {
+    await db.exec(`
+      INSERT INTO counseling_logs (
+        id, mentor_id, student_id, subject_code, subject_name,
+        mse_marks, mse_max, reason, counseling_notes, action_plan, status,
+        student_acknowledged, created_at
+      ) VALUES (
+        'csl_seed_1', 'usr_mentor_1', 'usr_std_3', '21CS54', 'Automata Theory and Computability',
+        9.0, 30.0, 'Low MSE-1 Score (<40%) in Mathematical Computability',
+        'Scholar struggled with Non-Deterministic Finite Automata proofs and pumping lemma questions during MSE-1. Needs concept reinforcement.',
+        '1. Attend Tuesday 4 PM remedial problem-solving tutorial in Cabin 204. 2. Solve 5 textbook reduction problems by next Monday. 3. Retest planned next Friday.',
+        'open', 0, '2025-01-22T10:15:00Z'
+      );
+    `);
+  }
+
+  // 8. Seed Dean / Coordinator notifications if missing
+  const deanNotif = await queryOne("SELECT id FROM notifications WHERE sender_id = 'usr_dean_1' LIMIT 1");
+  if (!deanNotif) {
+    await db.exec(`
+      INSERT INTO notifications (id, sender_id, sender_name, sender_role, recipient_id, recipient_role, category, title, message, meeting_time, meeting_venue, is_read, created_at) VALUES
+      ('notif_dean_1', 'usr_dean_1', 'Dr. Pawan Kumar', 'dean', NULL, 'mentor', 'meeting', 'Dean Circular: Direct Logisys ERP University Upload Deadline', 'All Department Mentors and HODs: Please ensure all 200 Activity Points clearances and MSE remedial documentation are exported to Logisys format before the upcoming semester grade audit.', 'Monday, 11:00 AM', 'Dean Boardroom (Main Administrative Tower)', 0, '2025-01-22T08:00:00Z'),
+      ('notif_coordinator_1', 'usr_coordinator_1', 'Prof. Joylin Mendonca', 'mentor', NULL, 'mentor', 'meeting', 'Activity Points Master Google Sheet Sync Notice', 'Faculty Mentors: The NAAC / NBA Activity Points master ledger has been synchronized. Please review mentee clearances and placement cutoff requirements.', 'Thursday, 2:30 PM', 'CSE Accreditation Center (Lab 302)', 0, '2025-01-22T08:30:00Z');
+    `);
+  }
+
+  // 9. Ensure all requested faculty mentors (Dr. Savitha, Prof. Sowmya Ashwath, Sowmya P, Sowmya S, Dr. Pradeep Kanchan, Dr. Sunil Aithal, etc.)
+  // and rebalance students so that every mentor gets strictly up to 4-5 mentees!
+  const facultyMentors = [
+    { id: 'usr_mentor_savitha', name: 'Dr. Savitha', email: 'savitha@university.edu', designation: 'Associate Professor, CSE' },
+    { id: 'usr_mentor_sowmya_ashwath', name: 'Prof. Sowmya Ashwath', email: 'sowmya.ashwath@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_sowmya_p', name: 'Prof. Sowmya P', email: 'sowmya.p@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_sowmya_s', name: 'Prof. Sowmya S', email: 'sowmya.s@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_pradeep_kanchan', name: 'Dr. Pradeep Kanchan', email: 'pradeep.kanchan@university.edu', designation: 'Associate Professor, CSE' },
+    { id: 'usr_mentor_sunil_aithal', name: 'Dr. Sunil Aithal', email: 'sunil.aithal@university.edu', designation: 'Associate Professor, CSE' },
+    { id: 'usr_mentor_guru', name: 'Dr. Guru Prasad', email: 'guruprasad@university.edu', designation: 'Associate Professor, CSE' },
+    { id: 'usr_mentor_aishwarya', name: 'Prof. Aishwarya', email: 'aishwarya@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_pawan', name: 'Prof. Pawan Kumar', email: 'pawan.faculty@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_sannidhan', name: 'Dr. Sannidhan M. S.', email: 'sannidhan@university.edu', designation: 'Professor & Mentor, CSE' },
+    { id: 'usr_coordinator_1', name: 'Prof. Joylin Mendonca', email: 'joylin@university.edu', designation: 'Assistant Professor & Coordinator, CSE' },
+    { id: 'usr_mentor_1', name: 'Prof. Ravi Kumar', email: 'ravi@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_2', name: 'Prof. Anita Desai', email: 'anita@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_radhakrishna', name: 'Prof. Radhakrishna Rao', email: 'radhakrishna@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_shashank', name: 'Prof. Shashank Shetty', email: 'shashank.shetty@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_chinmayee', name: 'Prof. Chinmayee K.', email: 'chinmayee@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_sandeep', name: 'Prof. Sandeep Kumar', email: 'sandeep.kumar@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_mamatha', name: 'Prof. Mamatha Balipa', email: 'mamatha.balipa@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_karthik', name: 'Prof. Karthik Pai', email: 'karthik.pai@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_divya', name: 'Prof. Divya Rani', email: 'divya.rani@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_puneeth', name: 'Prof. Puneeth R. P.', email: 'puneeth.rp@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_venugopala', name: 'Prof. Venugopala Rao', email: 'venugopala@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_deepa', name: 'Prof. Deepa Shenoy', email: 'deepa.shenoy@university.edu', designation: 'Assistant Professor, CSE' },
+    { id: 'usr_mentor_bhargavi', name: 'Prof. Bhargavi Rao', email: 'bhargavi.rao@university.edu', designation: 'Assistant Professor, CSE' },
+  ];
+
+  // Remove obsolete generic record if present
+  await db.exec("DELETE FROM users WHERE id = 'usr_mentor_sowmya';");
+
+  for (const m of facultyMentors) {
+    const existing = await queryOne('SELECT id FROM users WHERE id = ?', [m.id]);
+    if (!existing) {
+      await db.exec(`
+        INSERT OR REPLACE INTO users (
+          id, name, email, password_hash, role, department_id, mentor_id,
+          cgpa, semester, roll_no, avatar, phone, bio, designation, office_location
+        ) VALUES (
+          '${m.id}', '${m.name}', '${m.email}', '${defaultHash}', 'mentor', 'dept_cse', NULL,
+          NULL, NULL, 'EMP-CSE-${m.id.slice(-6).toUpperCase().replace(/[^A-Z0-9]/g, '')}',
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+          '+91 9845${Math.floor(100000 + Math.random() * 900000)}',
+          'Faculty Mentor, Department of Computer Science & Engineering.',
+          '${m.designation}', 'Faculty Wing B, Cabin 204'
+        );
+      `);
+    } else {
+      await db.exec(`
+        UPDATE users SET 
+          name = '${m.name}', 
+          email = '${m.email}', 
+          role = 'mentor',
+          designation = '${m.designation}'
+        WHERE id = '${m.id}';
+      `);
+    }
+  }
+
+  // Rebalance students across all faculty mentors so each mentor has strictly 4-5 mentees (never > 5)
+  const allStudents = await queryAll<{ id: string; roll_no: string; name: string }>(`
+    SELECT id, roll_no, name FROM users 
+    WHERE role = 'student'
+    ORDER BY 
+      CASE 
+        WHEN id = 'usr_std_gaurish' THEN 1
+        WHEN id = 'usr_std_sampath' THEN 2
+        WHEN id = 'usr_std_sharan' THEN 3
+        WHEN id = 'usr_std_ronak' THEN 4
+        ELSE 5
+      END,
+      roll_no ASC, name ASC
+  `);
+
+  if (allStudents.length > 0 && facultyMentors.length > 0) {
+    const totalStudents = allStudents.length;
+    const numMentors = facultyMentors.length;
+    const remainder = totalStudents % numMentors;
+    const mentorQuotas = facultyMentors.map((_, idx) => Math.floor(totalStudents / numMentors) + (idx < remainder ? 1 : 0));
+    const mentorCounts = new Array(numMentors).fill(0);
+
+    for (const student of allStudents) {
+      let targetMentorIdx = 0;
+      let minCount = Infinity;
+      for (let m = 0; m < numMentors; m++) {
+        if (mentorCounts[m] < mentorQuotas[m] && mentorCounts[m] < minCount) {
+          minCount = mentorCounts[m];
+          targetMentorIdx = m;
+        }
+      }
+      mentorCounts[targetMentorIdx]++;
+      const assignedMentor = facultyMentors[targetMentorIdx];
+      await db.exec(`UPDATE users SET mentor_id = '${assignedMentor.id}' WHERE id = '${student.id}';`);
+    }
+
+    // Align reviewed_by in submissions to student's mentor
+    await db.exec(`
+      UPDATE submissions
+      SET reviewed_by = (SELECT mentor_id FROM users WHERE users.id = submissions.student_id)
+      WHERE student_id IN (SELECT id FROM users WHERE mentor_id IS NOT NULL) AND status = 'approved';
+    `);
+  }
+}
+
+if (process.argv[1] && process.argv[1].endsWith('seed.ts')) {
+  seedDatabase(true)
+    .then(() => {
+      console.log('Seed completed successfully.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Seed failed:', err);
+      process.exit(1);
+    });
 }

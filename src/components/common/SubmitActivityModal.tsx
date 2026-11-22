@@ -20,9 +20,11 @@ import {
   Folder,
   Layers,
   Info,
+  Clock,
+  ShieldAlert,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Submission, AIAuditResult } from '../../types';
+import { Submission, AIAuditResult, DuplicateInfo } from '../../types';
 import { apiRequest } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { CATEGORIES, getCategoryPlainName, getCategoryEmoji } from '../../lib/categories';
@@ -44,6 +46,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('cat_cert');
+  const [hoursSpent, setHoursSpent] = useState<number>(40);
   const [expectedPoints, setExpectedPoints] = useState(25);
   const [semester, setSemester] = useState<number>(user?.semester || 6);
   const [isDetailsEditable, setIsDetailsEditable] = useState(false);
@@ -63,8 +66,58 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [uploadedFileSize, setUploadedFileSize] = useState<number | null>(null);
+  const [uploadedFileHash, setUploadedFileHash] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<DuplicateInfo | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Annual Certificate Policy State (Strict AICTE / VTU 1-per-year limitation for any certificate kind)
+  const [annualPolicyNotice, setAnnualPolicyNotice] = useState<{
+    hasPolicyRestriction: boolean;
+    eligible: boolean;
+    message: string;
+    targetYear: number;
+  } | null>(null);
+
+  // Check Annual Certificate Policy whenever eventName, categoryId, semester, or eventDate changes
+  useEffect(() => {
+    if (!eventName.trim() || eventName.trim().length < 3) {
+      setAnnualPolicyNotice(null);
+      return;
+    }
+
+    const checkPolicy = async () => {
+      try {
+        const res = await apiRequest<{
+          eligible: boolean;
+          target_year: number;
+          message: string;
+          existing_submission?: any;
+        }>(`/api/submissions/check-annual-eligibility?activity_title=${encodeURIComponent(eventName.trim())}&semester=${semester}&date=${eventDate}`);
+
+        if (!res.eligible) {
+          setAnnualPolicyNotice({
+            hasPolicyRestriction: true,
+            eligible: false,
+            message: res.message,
+            targetYear: res.target_year,
+          });
+        } else {
+          setAnnualPolicyNotice({
+            hasPolicyRestriction: false,
+            eligible: true,
+            message: `Eligible for Year ${res.target_year} (1 claim permitted per academic year).`,
+            targetYear: res.target_year,
+          });
+        }
+      } catch {
+        setAnnualPolicyNotice(null);
+      }
+    };
+
+    const timer = setTimeout(checkPolicy, 300);
+    return () => clearTimeout(timer);
+  }, [eventName, categoryId, semester, eventDate]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +128,8 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
     setErrorMessage(null);
     setAiAuditPreview(null);
     setUploadedFileUrl(null);
+    setUploadedFileHash(null);
+    setDuplicateWarning(null);
 
     // Create local image preview if image
     if (selectedFile.type.startsWith('image/') || selectedFile.name.endsWith('.svg')) {
@@ -86,10 +141,17 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
     // Automatically trigger upload & Gemini Vision parsing
     setIsAiScanning(true);
     try {
-      // 1. Upload file
+      // 1. Upload file and compute SHA-256 binary hash
       const formData = new FormData();
       formData.append('file', selectedFile);
-      const uploadRes = await apiRequest<{ file_url: string; file_name: string; file_size: number }>(
+      const uploadRes = await apiRequest<{
+        file_url: string;
+        file_name: string;
+        file_size: number;
+        file_hash?: string;
+        is_duplicate?: boolean;
+        duplicate_info?: DuplicateInfo | null;
+      }>(
         '/api/submissions/upload',
         {
           method: 'POST',
@@ -100,14 +162,27 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
       setUploadedFileUrl(uploadRes.file_url);
       setUploadedFileName(uploadRes.file_name);
       setUploadedFileSize(uploadRes.file_size);
+      if (uploadRes.file_hash) {
+        setUploadedFileHash(uploadRes.file_hash);
+      }
 
-      // 2. Call Gemini AI Multimodal Vision
+      // If binary hash matches an existing submission, immediately flag duplicate
+      if (uploadRes.is_duplicate && uploadRes.duplicate_info) {
+        setDuplicateWarning(uploadRes.duplicate_info);
+      }
+
+      // 2. Call Gemini AI Multimodal Vision for semantic parsing
       const audit = await apiRequest<AIAuditResult>('/api/submissions/ai-audit-file', {
         method: 'POST',
         body: JSON.stringify({ file_url: uploadRes.file_url }),
       });
 
       setAiAuditPreview(audit);
+
+      // Check if semantic audit uncovered credential reuse
+      if (audit.duplicate_credential_info) {
+        setDuplicateWarning(audit.duplicate_credential_info);
+      }
 
       // Auto-fill form fields
       if (audit.certificate_title) {
@@ -160,6 +235,16 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
+    if (duplicateWarning) {
+      setErrorMessage(duplicateWarning.message);
+      return;
+    }
+
+    if (annualPolicyNotice && !annualPolicyNotice.eligible) {
+      setErrorMessage(annualPolicyNotice.message);
+      return;
+    }
+
     if (!file && !uploadedFileUrl) {
       setErrorMessage('Please snap a photo or drop your certificate first.');
       return;
@@ -180,9 +265,11 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
         body: JSON.stringify({
           activity_title: eventName.trim(),
           category_id: categoryId,
+          hours_spent: Number(hoursSpent),
           file_url: finalFileUrl,
           file_name: finalFileName,
           file_size: finalFileSize,
+          file_hash: uploadedFileHash,
           completion_date: eventDate,
           semester: Number(semester) || (user?.semester || 1),
           ai_audit_results: aiAuditPreview,
@@ -196,6 +283,11 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
         origin: { y: 0.6 },
       });
 
+      // Dispatch global submission event for live dashboard synchronization
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('submission-created', { detail: newSubmission }));
+      }
+
       onSuccess(newSubmission);
       onClose();
 
@@ -205,6 +297,8 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
       setFilePreviewUrl(null);
       setAiAuditPreview(null);
       setUploadedFileUrl(null);
+      setUploadedFileHash(null);
+      setDuplicateWarning(null);
       setIsDetailsEditable(false);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to submit activity certificate');
@@ -213,21 +307,21 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   const currentCategory = CATEGORIES[categoryId] || CATEGORIES.cat_cert;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto"
-        >
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[90vh]"
+          >
           {/* Header */}
-          <div className="px-5 py-4 bg-gradient-to-r from-[#0B1329] via-[#0F1E4A] to-[#0B1329] text-white flex items-center justify-between border-b border-slate-800/80">
+          <div className="px-5 py-4 bg-gradient-to-r from-[#0B1329] via-[#0F1E4A] to-[#0B1329] text-white flex items-center justify-between border-b border-slate-800/80 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-sky-300">
                 <Sparkles className="w-4 h-4 text-amber-300" />
@@ -242,6 +336,12 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                 <p className="text-xs text-slate-300">
                   Drop certificate or snap photo — Gemini AI reads & fills everything in 1 second
                 </p>
+                <div className="flex items-center gap-1.5 pt-1 text-[11px] text-emerald-300 font-medium">
+                  <span>Reviewing Mentor:</span>
+                  <span className="font-bold text-white bg-emerald-800/60 px-2 py-0.2 rounded border border-emerald-500/40">
+                    {user?.mentor_name ? `Prof. ${user.mentor_name}` : 'Assigned Faculty Mentor'}
+                  </span>
+                </div>
               </div>
             </div>
             <button
@@ -252,7 +352,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
             {errorMessage && (
               <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -349,6 +449,45 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
             {/* STEP 2: AI AUTO-FILLED DETAILS CARD (Looks correct?) */}
             {file && !isAiScanning && (
               <div className="space-y-3">
+                {/* Real-time Duplicate Certificate Alert Banner */}
+                {duplicateWarning && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-rose-500/10 border-2 border-rose-400 text-rose-950 space-y-2 shadow-xs animate-in fade-in slide-in-from-top duration-300">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-xl bg-rose-600 text-white shrink-0 mt-0.5 shadow-sm">
+                        <ShieldAlert className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-rose-900 text-sm">
+                            {duplicateWarning.type === 'collusion'
+                              ? 'Academic Integrity Alert: Duplicate Document'
+                              : duplicateWarning.type === 'credential_id'
+                              ? 'Duplicate Credential ID Detected'
+                              : 'Duplicate Certificate Already Submitted'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-mono text-[10px] font-bold uppercase shrink-0">
+                            BLOCKED
+                          </span>
+                        </div>
+                        <p className="mt-1 text-rose-800 leading-relaxed font-medium">
+                          {duplicateWarning.message}
+                        </p>
+                        {duplicateWarning.activity_title && (
+                          <div className="mt-2 pt-2 border-t border-rose-200/80 text-[11px] text-rose-700 flex flex-wrap gap-x-4 gap-y-1">
+                            <span><strong>Activity:</strong> {duplicateWarning.activity_title}</span>
+                            {duplicateWarning.submitted_at && (
+                              <span><strong>Submitted On:</strong> {new Date(duplicateWarning.submitted_at).toLocaleDateString()}</span>
+                            )}
+                            {duplicateWarning.status && (
+                              <span><strong>Status:</strong> {duplicateWarning.status.toUpperCase()}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Visual AI Banner */}
                 <div className="bg-gradient-to-r from-emerald-500/10 via-indigo-500/10 to-emerald-500/10 border border-emerald-300 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -440,6 +579,58 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                       )}
                     </div>
 
+                    {/* Activity Hours / Duration (Aishu - Activity points per hour requirement) */}
+                    <div className="space-y-1 sm:col-span-2 bg-blue-50/70 p-3 rounded-xl border border-blue-200/80">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-blue-950 uppercase tracking-wider flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Activity Duration / Hours Spent</span>
+                        </label>
+                        <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-full border border-blue-300/60">
+                          {hoursSpent} Hours = {expectedPoints} Points (~{(expectedPoints / Math.max(1, hoursSpent)).toFixed(2)} pts/hr)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="number"
+                          min={1}
+                          max={500}
+                          value={hoursSpent}
+                          onChange={(e) => {
+                            const val = Math.max(1, Number(e.target.value));
+                            setHoursSpent(val);
+                            // Standard institutional formula: ~0.50 pts per hour (40 hrs = 20 pts, 80 hrs = 40 pts)
+                            const calculated = Math.min(50, Math.max(5, Math.round(val * 0.5)));
+                            setExpectedPoints(calculated);
+                          }}
+                          className="w-full px-3 py-1.5 rounded-lg border border-blue-300 bg-white text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                          placeholder="e.g. 40 hours for NSS / 80 hours for Internship"
+                        />
+                        <div className="shrink-0 flex gap-1">
+                          {[20, 40, 80].map((quickHr) => (
+                            <button
+                              key={quickHr}
+                              type="button"
+                              onClick={() => {
+                                setHoursSpent(quickHr);
+                                setExpectedPoints(Math.round(quickHr * 0.5));
+                              }}
+                              className={`px-2 py-1 text-[10px] font-semibold rounded-md border transition cursor-pointer ${
+                                hoursSpent === quickHr
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                              }`}
+                            >
+                              {quickHr}h
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-blue-800 leading-tight">
+                        ⚡ AICTE / VTU Regulation: NSS/Social=40h (20 pts), Internship=80h (40 pts), Workshops=20h (10 pts).
+                      </p>
+                    </div>
+
                     {/* Semester Attribution */}
                     <div className="space-y-1 sm:col-span-2">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
@@ -468,6 +659,24 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                         ))}
                       </div>
                     </div>
+
+                    {/* Annual Certificate Limit Policy Notice (Enforced for all certificate kinds) */}
+                    {annualPolicyNotice && !annualPolicyNotice.eligible && (
+                      <div className="sm:col-span-2 p-3 rounded-xl border text-xs flex items-start gap-2.5 transition bg-rose-50 border-rose-300 text-rose-900">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <span>Annual Certificate Policy (Max 1 per Academic Year)</span>
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-rose-600 text-white uppercase tracking-wider">
+                              Limit Reached for Year {annualPolicyNotice.targetYear}
+                            </span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed">
+                            {annualPolicyNotice.message}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Expected Points Preview */}
                     <div className="sm:col-span-2 flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950">
@@ -500,6 +709,9 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                         setFile(null);
                         setFilePreviewUrl(null);
                         setAiAuditPreview(null);
+                        setUploadedFileUrl(null);
+                        setUploadedFileHash(null);
+                        setDuplicateWarning(null);
                       }}
                       className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 shrink-0 cursor-pointer"
                     >
@@ -508,21 +720,39 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
                   </div>
                 </div>
 
-                {/* Single Big Green Submit Button */}
+                {/* Submit / Blocked Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 px-4 rounded-xl text-sm font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition transform active:scale-[0.99] cursor-pointer"
+                  disabled={isSubmitting || !!duplicateWarning || (annualPolicyNotice !== null && !annualPolicyNotice.eligible)}
+                  className={`w-full py-3.5 px-4 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 transition transform active:scale-[0.99] cursor-pointer ${
+                    duplicateWarning || (annualPolicyNotice && !annualPolicyNotice.eligible)
+                      ? 'bg-rose-600/90 text-white cursor-not-allowed hover:bg-rose-600 shadow-md shadow-rose-600/20'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30'
+                  }`}
                 >
                   {isSubmitting ? (
                     <>
                       <RotateCw className="w-4 h-4 animate-spin" />
                       <span>Submitting to Mentor...</span>
                     </>
+                  ) : duplicateWarning ? (
+                    <>
+                      <ShieldAlert className="w-5 h-5" />
+                      <span>
+                        {duplicateWarning.type === 'collusion'
+                          ? 'Submission Blocked (Collusion Detected)'
+                          : 'Submission Blocked (Duplicate Certificate)'}
+                      </span>
+                    </>
+                  ) : (annualPolicyNotice && !annualPolicyNotice.eligible) ? (
+                    <>
+                      <ShieldAlert className="w-5 h-5" />
+                      <span>Submission Blocked: Certificate Kind Already Claimed for Year {annualPolicyNotice.targetYear}</span>
+                    </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-5 h-5" />
-                      <span>Submit for Verification</span>
+                      <span>Submit to Mentor for Verification</span>
                     </>
                   )}
                 </button>
@@ -531,6 +761,7 @@ export const SubmitActivityModal: React.FC<SubmitActivityModalProps> = ({
           </form>
         </motion.div>
       </div>
-    </AnimatePresence>
-  );
+    )}
+  </AnimatePresence>
+);
 };

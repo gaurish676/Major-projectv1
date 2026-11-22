@@ -328,8 +328,8 @@ export const SchemaManager: React.FC = () => {
       {/* Add / Edit Schema Rule Modal */}
       {isRuleModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-          <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto">
-            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+          <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[90vh]">
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-indigo-400" />
                 <h3 className="font-bold text-white text-sm sm:text-base">
@@ -344,7 +344,7 @@ export const SchemaManager: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveRule} className="p-4 space-y-3">
+            <form onSubmit={handleSaveRule} className="p-4 space-y-3 overflow-y-auto flex-1">
               {formError && (
                 <div className="p-2.5 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />

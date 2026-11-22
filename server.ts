@@ -1,9 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { seedDatabase } from './server/db/seed';
+import { queryOne } from './server/db/database';
+import { aiAuditQueue } from './server/workers/aiAuditWorker';
 
 import authRoutes from './server/routes/auth.routes';
 import schemaRoutes from './server/routes/schema.routes';
@@ -13,22 +16,35 @@ import mentorRoutes from './server/routes/mentor.routes';
 import hodRoutes from './server/routes/hod.routes';
 import eventRoutes from './server/routes/event.routes';
 import notificationRoutes from './server/routes/notification.routes';
+import logisysRoutes from './server/routes/logisys.routes';
+import joylinRoutes from './server/routes/joylin.routes';
+import placementRoutes from './server/routes/placement.routes';
+import counselingRoutes from './server/routes/counseling.routes';
+import deanRoutes from './server/routes/dean.routes';
+import verificationRoutes from './server/routes/verification.routes';
+import rulebookRoutes from './server/routes/rulebook.routes';
+import evidenceRoutes from './server/routes/evidence.routes';
+import taskRoutes from './server/routes/task.routes';
+import { initTaskTable } from './server/db/taskDb';
+import { authenticate } from './server/middleware/auth';
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Initialize DB and Seeds
   await seedDatabase();
+  await aiAuditQueue.recoverPendingJobs();
+  initTaskTable();
 
   // Middleware
   app.use(cors());
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-  // Static uploads serving for uploaded PDF / certificate images
+  // Protected static uploads serving: requires valid JWT token via Authorization header or ?token= query parameter
   const uploadsDir = path.join(process.cwd(), 'uploads');
-  app.use('/uploads', express.static(uploadsDir, {
+  app.use('/uploads', authenticate, express.static(uploadsDir, {
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('.svg')) {
         res.setHeader('Content-Type', 'image/svg+xml');
@@ -45,6 +61,7 @@ async function startServer() {
 
   // REST API Routes
   app.use('/api/auth', authRoutes);
+  app.use('/api/evidence', evidenceRoutes);
   app.use('/api/schema', schemaRoutes);
   app.use('/api/submissions', submissionRoutes);
   app.use('/api/student', studentRoutes);
@@ -52,6 +69,14 @@ async function startServer() {
   app.use('/api/hod', hodRoutes);
   app.use('/api/events', eventRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/logisys', logisysRoutes);
+  app.use('/api/joylin', joylinRoutes);
+  app.use('/api/placement', placementRoutes);
+  app.use('/api/counseling', counselingRoutes);
+  app.use('/api/dean', deanRoutes);
+  app.use('/api/verify', verificationRoutes);
+  app.use('/api/rulebook', rulebookRoutes);
+  app.use('/api/tasks', taskRoutes);
   
   // Development: Vite Middleware / Production: Static Files
   if (process.env.NODE_ENV !== 'production') {

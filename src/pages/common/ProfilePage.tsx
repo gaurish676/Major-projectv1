@@ -44,6 +44,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         ? 'Computer Science Undergraduate focused on Cloud Computing, Full-Stack Architecture, and competitive hackathons.'
         : user?.role === 'mentor'
         ? 'Senior Faculty guiding undergraduate scholars in core technical domains and activity points certification.'
+        : user?.role === 'dean'
+        ? 'Dean of Academic Affairs overseeing autonomous accreditation, curriculum regulations, and university graduation clearance.'
         : 'Department Head leading academic operations, NBA/NAAC accreditation compliance, and curriculum.')
   );
   const [designation, setDesignation] = useState(
@@ -52,6 +54,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         ? 'B.Tech CSE Scholar'
         : user?.role === 'mentor'
         ? 'Associate Professor'
+        : user?.role === 'dean'
+        ? 'Dean of Academic Affairs'
         : 'Professor & Head of Department')
   );
   const [officeLocation, setOfficeLocation] = useState(
@@ -60,6 +64,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
         ? 'Academic Block 3, Room CSE-6A'
         : user?.role === 'mentor'
         ? 'Faculty Wing B, Cabin 204'
+        : user?.role === 'dean'
+        ? 'Administrative Block, Dean Executive Suite 101'
         : 'Administration Suite, Room 101')
   );
   const [avatar, setAvatar] = useState(
@@ -309,7 +315,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   <RoleBadge role={user.role} />
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium truncate">
-                  {designation || (user.role === 'hod' ? 'Head of Department' : user.role === 'mentor' ? 'Faculty Mentor' : 'B.Tech CSE Scholar')}
+                  {designation || (user.role === 'dean' ? 'Dean of Academic Affairs' : user.role === 'hod' ? 'Head of Department' : user.role === 'mentor' ? 'Faculty Mentor' : 'B.Tech CSE Scholar')}
                 </p>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-slate-600">
                   {user.roll_no && (
@@ -346,6 +352,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                   <div className="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4" />
                     <span>Faculty Mentor</span>
+                  </div>
+                </div>
+              ) : user.role === 'dean' ? (
+                <div className="text-center sm:text-right">
+                  <div className="text-[10px] uppercase font-bold text-slate-400">Role</div>
+                  <div className="text-xs font-bold text-purple-700 flex items-center gap-1.5">
+                    <GraduationCap className="w-4 h-4" />
+                    <span>Dean of Academic Affairs</span>
                   </div>
                 </div>
               ) : (
@@ -564,6 +578,36 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack }) => {
                           Semester {user.semester || 6} • CGPA {user.cgpa || 8.25}
                         </div>
                         <div className="text-[11px] text-slate-500 font-medium mt-0.5">B.Tech Computer Science</div>
+                      </div>
+                    </div>
+
+                    {/* Class 10th Prior Academic Record */}
+                    <div className="p-3.5 rounded-xl border border-slate-200/90 flex items-start gap-3.5 bg-white min-w-0 shadow-2xs">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Briefcase className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">Class 10th (Secondary)</div>
+                        <div className="text-xs sm:text-sm font-semibold text-slate-900 truncate mt-0.5">
+                          {user.tenth_percentage != null ? `${user.tenth_percentage}% (${user.tenth_board || 'CBSE'} - ${user.tenth_year || '2020'})` : 'Not Submitted'}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium mt-0.5">Campus Placement Eligibility</div>
+                      </div>
+                    </div>
+
+                    {/* Class 12th / Diploma Prior Academic Record */}
+                    <div className="p-3.5 rounded-xl border border-slate-200/90 flex items-start gap-3.5 bg-white min-w-0 shadow-2xs">
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">
+                          {user.diploma_or_pu === 'diploma' ? 'Polytechnic Diploma' : 'Class 12th / PUC'}
+                        </div>
+                        <div className="text-xs sm:text-sm font-semibold text-slate-900 truncate mt-0.5">
+                          {user.twelfth_percentage != null ? `${user.twelfth_percentage}% (${user.twelfth_board || 'State Board'} - ${user.twelfth_year || '2022'})` : 'Not Submitted'}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium mt-0.5">Campus Placement Eligibility</div>
                       </div>
                     </div>
                   </>

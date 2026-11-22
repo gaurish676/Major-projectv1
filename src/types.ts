@@ -1,4 +1,4 @@
-export type UserRole = 'hod' | 'mentor' | 'student';
+export type UserRole = 'hod' | 'mentor' | 'student' | 'dean';
 
 export interface User {
   id: string;
@@ -18,6 +18,13 @@ export interface User {
   bio?: string | null;
   designation?: string | null;
   office_location?: string | null;
+  tenth_percentage?: number | null;
+  tenth_board?: string | null;
+  tenth_year?: number | null;
+  twelfth_percentage?: number | null;
+  twelfth_board?: string | null;
+  twelfth_year?: number | null;
+  diploma_or_pu?: 'puc' | 'diploma' | string | null;
   total_points?: number;
   approved_count?: number;
   pending_count?: number;
@@ -83,6 +90,10 @@ export interface SchemaRule {
   criteria: string;
   version: number;
   is_active: number | boolean;
+  hours_required?: number;
+  points_per_hour?: number;
+  applicable_year?: 'year_1' | 'years_2_4' | 'all' | string;
+  max_per_year?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -106,6 +117,18 @@ export interface SchemaRequest {
   created_at: string;
 }
 
+export interface DuplicateInfo {
+  type: 'self' | 'collusion' | 'credential_id';
+  original_submission_id?: string;
+  activity_title?: string;
+  submitted_at?: string;
+  status?: string;
+  student_name?: string;
+  student_roll_no?: string;
+  certificate_id?: string;
+  message: string;
+}
+
 export interface AIAuditResult {
   student_name?: string;
   certificate_title?: string;
@@ -120,6 +143,7 @@ export interface AIAuditResult {
   authenticity_notes?: string;
   audit_summary?: string;
   anomalies_detected?: string[];
+  duplicate_credential_info?: DuplicateInfo;
   audited_at?: string;
   model_used?: string;
 }
@@ -147,10 +171,16 @@ export interface Submission {
   file_url: string;
   file_name: string;
   file_size: number;
+  file_hash?: string;
   status: SubmissionStatus;
   points_awarded: number;
   semester?: number;
   base_points?: number;
+  hours_spent?: number;
+  credential_hash?: string;
+  qr_code_data?: string;
+  verification_status?: 'verified' | 'suspicious' | 'pending';
+  verification_checklist?: string | Record<string, boolean>;
   mentor_feedback?: string | null;
   ai_audit_results?: string | AIAuditResult | null;
   completion_date: string;
@@ -185,6 +215,11 @@ export interface SubjectMark {
   theory_max: number;
   task_marks: number;
   task_max: number;
+  mse1_marks?: number;
+  mse1_max?: number;
+  mse2_marks?: number;
+  mse2_max?: number;
+  is_poor_performance?: number | boolean;
   has_lab: boolean | number;
   lab_marks: number;
   lab_max: number;
@@ -322,6 +357,11 @@ export interface StudentMark {
   theory_max: number;
   task_marks: number;
   task_max: number;
+  mse1_marks?: number;
+  mse1_max?: number;
+  mse2_marks?: number;
+  mse2_max?: number;
+  is_poor_performance?: number | boolean;
   has_lab: boolean | number;
   lab_marks: number;
   lab_max: number;
@@ -466,5 +506,181 @@ export interface GraphRAGAdvisorResponse {
   generated_at: string;
   model_used: string;
 }
+
+export interface PlacementDrive {
+  id: string;
+  company_name: string;
+  role_title: string;
+  min_cgpa: number;
+  min_activity_points: number;
+  max_backlogs: number;
+  min_tenth_percentage?: number;
+  min_twelfth_percentage?: number;
+  package_lpa: number;
+  drive_date: string;
+  category: string;
+  is_active: number;
+}
+
+export interface MenteePlacementEligibility {
+  student_id: string;
+  student_name: string;
+  student_roll_no: string;
+  cgpa: number;
+  approved_points: number;
+  semester: number;
+  tenth_percentage?: number | null;
+  tenth_board?: string | null;
+  tenth_year?: number | null;
+  twelfth_percentage?: number | null;
+  twelfth_board?: string | null;
+  twelfth_year?: number | null;
+  diploma_or_pu?: string | null;
+  active_backlogs?: number;
+  company_status: Array<{
+    company_id: string;
+    company_name: string;
+    role_title: string;
+    package_lpa: number;
+    min_cgpa?: number;
+    min_activity_points?: number;
+    min_tenth_percentage?: number;
+    min_twelfth_percentage?: number;
+    max_backlogs?: number;
+    is_eligible: boolean;
+    cgpa_eligible: boolean;
+    points_eligible: boolean;
+    backlogs_eligible?: boolean;
+    tenth_eligible?: boolean;
+    twelfth_eligible?: boolean;
+    has_prior_marks?: boolean;
+    active_backlogs?: number;
+    missing_points: number;
+    missing_cgpa: number;
+    missing_tenth?: number;
+    missing_twelfth?: number;
+    status_label: 'Eligible' | 'Short of Points' | 'Short of CGPA' | 'Short of 10th/12th' | 'Critical Deficit' | 'Backlog Ineligible' | 'Missing 10th/12th Marks';
+  }>;
+}
+
+export interface CounselingLog {
+  id: string;
+  mentor_id: string;
+  mentor_name?: string;
+  student_id: string;
+  student_name?: string;
+  student_roll_no?: string;
+  subject_code?: string;
+  subject_name?: string;
+  mse_marks?: number;
+  mse_max?: number;
+  reason: string;
+  counseling_notes: string;
+  action_plan: string;
+  status: 'open' | 'in_progress' | 'resolved';
+  student_acknowledged: number;
+  created_at: string;
+}
+
+export interface LogisysExportRow {
+  sl_no: number;
+  college_code: string;
+  degree_code: string;
+  batch_year: string;
+  semester: number;
+  student_usn: string;
+  student_name: string;
+  activity_subject_code: string;
+  activity_points_earned: number;
+  max_points: number;
+  grade: string;
+  clearance_status: 'CLEARED' | 'PENDING' | 'AT_RISK';
+  logisys_upload_ready: boolean;
+  remarks?: string;
+}
+
+export interface JoylinMasterSheetRow {
+  sl_no: number;
+  roll_no: string;
+  student_name: string;
+  semester: number;
+  cgpa: number;
+  mentor_name: string;
+  cat_cert: number;
+  cat_comp: number;
+  cat_intern: number;
+  cat_work: number;
+  cat_vol: number;
+  cat_sports: number;
+  raw_total: number;
+  capped_total: number;
+  target_points: number;
+  clearance_status: 'Degree Clearance Eligible' | 'In Progress' | 'Action Required';
+  logisys_code: string;
+}
+
+export interface DeanDepartmentMetric {
+  department_id: string;
+  department_name: string;
+  department_code: string;
+  student_count: number;
+  avg_points: number;
+  cleared_count: number;
+  at_risk_count: number;
+  clearance_rate: number;
+  pending_reviews: number;
+}
+
+export interface DeanYearStat {
+  year: number;
+  label: string;
+  count: number;
+  avg_points: number;
+  cleared: number;
+}
+
+export interface DeanMentorCompliance {
+  id: string;
+  name: string;
+  email: string;
+  department_id: string;
+  dept_code: string;
+  mentees_count: number;
+  pending_queue: number;
+  approved_count: number;
+}
+
+export interface DeanDashboardData {
+  dean: {
+    name: string;
+    title: string;
+    institution: string;
+  };
+  institute_kpis: {
+    total_enrolled_scholars: number;
+    avg_points_per_student: number;
+    total_cleared_degree: number;
+    overall_clearance_rate: number;
+    total_at_risk_scholars?: number;
+    placement_ready_scholars: number;
+    placement_readiness_pct: number;
+    active_placement_drives: number;
+  };
+  department_comparison: DeanDepartmentMetric[];
+  year_progression: DeanYearStat[];
+  faculty_mentor_compliance: DeanMentorCompliance[];
+  placement_drives: PlacementDrive[];
+  recent_logs: Array<{
+    id: string;
+    user_id: string;
+    user_name?: string;
+    user_role?: string;
+    action: string;
+    details: string;
+    created_at: string;
+  }>;
+  remedial_counseling_logs?: CounselingLog[];
+}
+
 
 

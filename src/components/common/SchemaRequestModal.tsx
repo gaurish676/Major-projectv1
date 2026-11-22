@@ -58,6 +58,9 @@ export const SchemaRequestModal: React.FC<SchemaRequestModalProps> = ({
         }),
       });
 
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('schema-request-created', { detail: created }));
+      }
       onSuccess(created);
       onClose();
       setActivityName('');
@@ -70,19 +73,18 @@ export const SchemaRequestModal: React.FC<SchemaRequestModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto"
-        >
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[90vh]"
+          >
           {/* Header */}
-          <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+          <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-400">
                 <GitPullRequest className="w-4 h-4" />
@@ -104,7 +106,7 @@ export const SchemaRequestModal: React.FC<SchemaRequestModalProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto flex-1">
             {errorMessage && (
               <div className="p-2 rounded bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-start gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
@@ -194,6 +196,7 @@ export const SchemaRequestModal: React.FC<SchemaRequestModalProps> = ({
           </form>
         </motion.div>
       </div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };

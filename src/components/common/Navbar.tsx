@@ -1,170 +1,530 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { RoleBadge } from './Badge';
 import { NotificationPopover } from './NotificationPopover';
+import { SyncStatusBadge } from './SyncStatusBadge';
+import { NitteLogo } from './NitteLogo';
 import {
-  GraduationCap,
+  Menu,
   ChevronDown,
   LogOut,
-  Menu,
   User as UserIcon,
+  Bell,
+  MessageSquare,
+  Sparkles,
+  ExternalLink,
+  GraduationCap,
+  Calendar,
+  FileText,
   Sliders,
+  CheckCircle2,
+  FolderOpen,
+  Award,
+  Layers,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
   onNavigateProfile?: () => void;
   onNavigateHome?: () => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateProfile, onNavigateHome }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onToggleSidebar,
+  onNavigateProfile,
+  onNavigateHome,
+  onNavigateTab,
+}) => {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [linksDropdownOpen, setLinksDropdownOpen] = useState(false);
+  const [matlabDropdownOpen, setMatlabDropdownOpen] = useState(false);
+  const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const linksDropdownRef = useRef<HTMLDivElement>(null);
+  const matlabDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        setDropdownOpen(false);
+      }
+      if (linksDropdownRef.current && !linksDropdownRef.current.contains(target)) {
+        setLinksDropdownOpen(false);
+      }
+      if (matlabDropdownRef.current && !matlabDropdownRef.current.contains(target)) {
+        setMatlabDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDropdownOpen(false);
+        setLinksDropdownOpen(false);
+        setMatlabDropdownOpen(false);
+        setIsMessagesDrawerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#172554] text-white border-b border-blue-900/60 shadow-md">
-      {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-14 flex items-center justify-between">
-        {/* Left: Clearly Visible 3-Lines (Hamburger) Button + Brand */}
-        <div className="flex items-center gap-3">
-          {/* Top-Left: Clearly visible 3-lines Menu Button */}
-          <button
-            onClick={onToggleSidebar}
-            className="flex items-center justify-center p-2 rounded-xl bg-blue-900/60 hover:bg-blue-900 text-white border border-blue-800/80 shadow-xs transition cursor-pointer group shrink-0 min-h-[40px] min-w-[40px]"
-            title="Open Menu & Profile Sidebar"
-            aria-label="Open Navigation & Profile Menu"
-          >
-            {/* 3 crisp, clearly visible horizontal lines */}
-            <div className="flex flex-col justify-center items-center gap-1 w-5 h-4.5">
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-300 group-hover:w-5.5" />
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-300 group-hover:w-5.5" />
-              <span className="w-5 h-0.5 bg-white rounded-full transition-all group-hover:bg-indigo-300 group-hover:w-5.5" />
-            </div>
-          </button>
-
-          <div
-            onClick={onNavigateHome}
-            className="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 transition group"
-            title="Go to Home Dashboard"
-          >
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-600/30 transition">
-              <GraduationCap className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 leading-none">
-                <span className="font-bold text-white tracking-tight text-sm sm:text-base truncate">
-                  Creditz
-                </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 shrink-0">
-                  200-PT
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-blue-200/70 font-medium truncate mt-0.5">
-                Department of Computer Science & Engineering
-              </p>
-            </div>
-          </div>
+    <header className="sticky top-0 z-40 w-full select-none shadow-xs print:hidden">
+      {/* Tier 1: LMS Top Header Strip (#8eb86e) matching LMS screenshots */}
+      <div className="bg-[#8eb86e] text-white text-xs px-3 sm:px-6 h-10 flex items-center justify-between border-b border-[#7cb05e]">
+        {/* Left: LMS Sub-Title / Breadcrumb indicator */}
+        <div className="flex items-center gap-2">
+          <span className="hidden md:inline font-semibold tracking-wide text-white/95">
+            NMAM Institute of Technology
+          </span>
+          <span className="hidden md:inline text-white/60">|</span>
+          <span className="font-bold text-white tracking-tight flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            Creditz Activity Portal
+          </span>
+          <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white border border-white/30 hidden sm:inline-block">
+            AICTE 100/200 Pts
+          </span>
         </div>
 
-        {/* Right: Active Role & User Controls (without duplicate profile photo) */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Right: LMS Header Controls (Bell, Messages, Initials Badge, Edit Mode) */}
+        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+          {/* Latency / Sync Indicator */}
+          <SyncStatusBadge />
+
           {user && (
             <>
-              {/* Real-time Notification & Meeting Message Space via Bell Icon */}
-              <NotificationPopover />
+              {/* Notification Popover (Bell) */}
+              <div title="Notifications">
+                <NotificationPopover />
+              </div>
 
-              {/* User Identity Pill & Dropdown */}
-              <div className="relative">
+              {/* Message Drawer Toggle */}
+              <button
+                onClick={() => setIsMessagesDrawerOpen((prev) => !prev)}
+                title="Academic Messaging & Notices"
+                className="p-1.5 rounded-lg hover:bg-white/20 text-white transition cursor-pointer relative"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-300 rounded-full ring-1 ring-[#8eb86e]" />
+              </button>
+
+              {/* User Avatar Badge with Initials (matching LMS screenshot NG) */}
+              <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-blue-900/60 hover:bg-blue-900/90 border border-blue-800/80 transition cursor-pointer"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  className="flex items-center gap-1.5 py-1 px-1.5 rounded-lg hover:bg-white/20 transition cursor-pointer"
+                  title="User Profile & Account"
                 >
-                  <div className="w-6 h-6 rounded-md bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 flex items-center justify-center font-bold text-xs">
-                    {user.name.charAt(0)}
+                  <div className="w-7 h-7 rounded-full bg-white text-[#5c873f] font-extrabold flex items-center justify-center text-xs shadow-xs">
+                    {getInitials(user.name)}
                   </div>
-                  <div className="hidden sm:block text-left">
-                    <div className="text-xs font-semibold text-white truncate max-w-[130px] leading-tight">
-                      {user.name}
-                    </div>
-                    <div className="text-[10px] text-blue-200/80 capitalize font-medium leading-none mt-0.5">
-                      {user.role === 'hod' ? 'Head of Department' : user.role === 'mentor' ? 'Faculty Mentor' : 'Student'}
-                    </div>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-blue-200" />
+                  <span className="hidden sm:inline font-bold text-xs max-w-[120px] truncate text-white">
+                    {user.name}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-white/90" />
                 </button>
 
+                {/* Dropdown Menu (Styled exactly like LMS profile dropdown in Screenshot 09-07-31.png) */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-800 z-50 p-2 space-y-2">
-                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                          {user.name.charAt(0)}
-                        </div>
-                        <div className="overflow-hidden">
-                          <div className="font-bold text-xs text-slate-900 truncate">{user.name}</div>
-                          <div className="text-[11px] text-slate-500 truncate">{user.email}</div>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60">
-                        <span className="text-slate-500 font-medium">Role</span>
+                  <div className="absolute right-0 mt-1.5 w-60 bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-800 z-50 py-1 text-xs">
+                    <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50 rounded-t-xl">
+                      <div className="font-bold text-slate-900 truncate">{user.name}</div>
+                      <div className="text-[11px] text-slate-500 truncate">{user.email}</div>
+                      <div className="mt-1 flex items-center justify-between">
                         <RoleBadge role={user.role} />
+                        {user.roll_no && (
+                          <span className="font-mono text-[10px] text-slate-500 font-semibold">
+                            {user.roll_no}
+                          </span>
+                        )}
                       </div>
-                      {user.roll_no && (
-                        <div className="mt-1 flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500 font-medium">Roll No</span>
-                          <span className="font-mono font-bold text-slate-700">{user.roll_no}</span>
-                        </div>
-                      )}
-                      {user.semester && (
-                        <div className="mt-1 flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500 font-medium">Semester</span>
-                          <span className="font-semibold text-slate-700">Sem {user.semester}</span>
-                        </div>
-                      )}
                     </div>
 
-                    {onNavigateProfile && (
-                      <button
-                        onClick={() => {
-                          onNavigateProfile();
-                          setDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 transition font-semibold cursor-pointer"
-                      >
-                        <UserIcon className="w-4 h-4" />
-                        <span>View & Edit Profile</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        onNavigateProfile?.();
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      <UserIcon className="w-4 h-4 text-slate-400" />
+                      <span>Profile</span>
+                    </button>
 
+                    <button
+                      onClick={() => {
+                        if (user.role === 'student') onNavigateTab?.('student-marks');
+                        else if (user.role === 'mentor') onNavigateTab?.('mentor-marks');
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      <Award className="w-4 h-4 text-slate-400" />
+                      <span>Grades & Academic Marks</span>
+                    </button>
 
+                    <button
+                      onClick={() => {
+                        onNavigateTab?.('student-events');
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      <Calendar className="w-4 h-4 text-slate-400" />
+                      <span>Events Calendar</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (user.role === 'student') onNavigateTab?.('student-submissions');
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      <FolderOpen className="w-4 h-4 text-slate-400" />
+                      <span>Submissions Ledger</span>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100" />
 
                     <button
                       onClick={() => {
                         logout();
                         setDropdownOpen(false);
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition font-semibold cursor-pointer"
+                      className="w-full text-left px-3.5 py-2 hover:bg-red-50 flex items-center gap-2.5 text-red-600 font-semibold transition cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
+                      <span>Log out</span>
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Direct Sign Out Button */}
+              {/* Quick Sign Out button */}
               <button
                 onClick={logout}
-                title="Sign Out"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-100 hover:text-white bg-blue-900/60 hover:bg-blue-900 border border-blue-800/80 transition cursor-pointer"
+                title="Log out from LMS"
+                className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-black/15 hover:bg-black/25 text-white transition cursor-pointer ml-1"
               >
-                <LogOut className="w-3.5 h-3.5 text-blue-200" />
-                <span>Sign Out</span>
+                <LogOut className="w-3 h-3" />
+                <span>Log out</span>
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Tier 2: LMS Main Navbar (White background with NITTE Logo and Navigation links) */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="w-full max-w-[1536px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          {/* Left: Hamburger + NITTE Logo */}
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            {/* Hamburger Button to Toggle Creditz Sidebar */}
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition cursor-pointer shrink-0"
+              title="Toggle Sidebar Navigation"
+              aria-label="Toggle Sidebar Navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Official NITTE NMAMIT Logo */}
+            <NitteLogo onClick={onNavigateHome} />
+          </div>
+
+          {/* Right: LMS Navigation Menu ("Home", "Dashboard", "My courses", "Links", "MATLAB") */}
+          <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium text-slate-700">
+            {/* Home link */}
+            <button
+              onClick={onNavigateHome}
+              className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer hidden md:inline-block"
+            >
+              Home
+            </button>
+
+            {/* Dashboard link */}
+            <button
+              onClick={onNavigateHome}
+              className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer hidden sm:inline-block"
+            >
+              Dashboard
+            </button>
+
+            {/* Activity Credits (Creditz) - Active Module Indicator */}
+            <button
+              onClick={onNavigateHome}
+              className="px-2.5 py-1.5 rounded-md font-bold text-[#5c873f] bg-[#8eb86e]/15 border-b-2 border-[#8eb86e] transition cursor-pointer flex items-center gap-1.5"
+            >
+              <GraduationCap className="w-4 h-4 text-[#8eb86e]" />
+              <span>Activity Credits</span>
+            </button>
+
+            {/* "Links" Dropdown (matching Screenshot 09-07-17.png) */}
+            <div className="relative" ref={linksDropdownRef}>
+              <button
+                onClick={() => setLinksDropdownOpen((prev) => !prev)}
+                className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer flex items-center gap-1"
+              >
+                <span>Links</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {linksDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-800 z-50 py-2 max-h-[85vh] overflow-y-auto">
+                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Institutional Services
+                  </div>
+
+                  {/* Highlighted Creditz Feature Entry */}
+                  <button
+                    onClick={() => {
+                      onNavigateHome?.();
+                      setLinksDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 bg-[#8eb86e]/10 hover:bg-[#8eb86e]/20 text-[#436b28] font-bold flex items-center justify-between transition cursor-pointer border-l-3 border-[#8eb86e]"
+                  >
+                    <span className="flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-[#8eb86e]" />
+                      <span>Creditz (Activity Points)</span>
+                    </span>
+                    <span className="text-[10px] bg-[#8eb86e] text-white px-1.5 py-0.5 rounded font-bold">
+                      Active
+                    </span>
+                  </button>
+
+                  <a
+                    href="https://mail.google.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition"
+                  >
+                    <span>Email</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      if (user?.role === 'mentor') onNavigateTab?.('mentor-placement');
+                      setLinksDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-700 transition cursor-pointer"
+                  >
+                    Placement
+                  </button>
+
+                  <a
+                    href="https://nmamit.nitte.edu.in"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition"
+                  >
+                    <span>HR Office</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      onNavigateTab?.('student-events');
+                      setLinksDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-700 transition cursor-pointer"
+                  >
+                    Event Management System
+                  </button>
+
+                  <a
+                    href="https://nmamit.nitte.edu.in/library.php"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition"
+                  >
+                    <span>KOHA-Central Library</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+
+                  <div className="my-1.5 border-t border-slate-100" />
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Academic Software & Video
+                  </div>
+
+                  <a
+                    href="https://nptel.ac.in"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition text-xs"
+                  >
+                    <span>NPTEL</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+
+                  <a
+                    href="https://nmamit.nitte.edu.in"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition text-xs"
+                  >
+                    <span>GATE Lecture Videos & Study Materials</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+
+                  <a
+                    href="https://nmamit.nitte.edu.in"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition text-xs"
+                  >
+                    <span>Linux & Windows Software</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* "MATLAB" Dropdown (matching Screenshot 09-07-24.png) */}
+            <div className="relative" ref={matlabDropdownRef}>
+              <button
+                onClick={() => setMatlabDropdownOpen((prev) => !prev)}
+                className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer flex items-center gap-1"
+              >
+                <span>MATLAB</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {matlabDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 text-slate-800 z-50 py-2 text-xs">
+                  <a
+                    href="https://matlab.mathworks.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition"
+                  >
+                    <span>MATLAB Portal</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+                  <a
+                    href="https://matlab.mathworks.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 block text-slate-700 transition"
+                  >
+                    How to create MATLAB Account for key
+                  </a>
+                  <a
+                    href="https://matlab.mathworks.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 block text-slate-700 transition"
+                  >
+                    MATLAB Online
+                  </a>
+                  <a
+                    href="https://matlab.mathworks.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 block text-slate-700 transition"
+                  >
+                    MATLAB Online Training(Student)
+                  </a>
+                  <a
+                    href="https://matlab.mathworks.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 hover:bg-slate-50 block text-slate-700 transition"
+                  >
+                    Teaching with MATLAB
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Rightmost Green Toggle Icon (matching Screenshot 09-06-20.png) */}
+            <button
+              onClick={onToggleSidebar}
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md bg-[#8eb86e] hover:bg-[#7eb462] text-white shadow-xs transition cursor-pointer ml-1"
+              title="Toggle Sidebar"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Slide-out Academic Messages Drawer (matching Screenshot 09-07-43.png) */}
+      {isMessagesDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs transition-opacity"
+            onClick={() => setIsMessagesDrawerOpen(false)}
+          />
+          <div className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl z-10 flex flex-col">
+            <div className="p-3.5 bg-[#8eb86e] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                <span className="font-bold text-sm">Academic Messages</span>
+              </div>
+              <button
+                onClick={() => setIsMessagesDrawerOpen(false)}
+                className="p-1 rounded-md hover:bg-white/20 text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 flex-1 overflow-y-auto space-y-2 text-xs">
+              <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+                <div className="font-bold text-orange-900">Faculty Mentor Counseling</div>
+                <p className="text-orange-800 text-[11px] mt-0.5">
+                  Ensure all Semester 6 certificates are uploaded before Mid-Semester exam evaluations.
+                </p>
+                <span className="text-[10px] text-orange-600 block mt-1">Today, 09:30 AM</span>
+              </div>
+
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="font-bold text-slate-800">Department Notice</div>
+                <p className="text-slate-600 text-[11px] mt-0.5">
+                  Hackathon activity points cap is 60 points. Verify your project submission certificates.
+                </p>
+                <span className="text-[10px] text-slate-400 block mt-1">Yesterday</span>
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-slate-200 bg-slate-50 text-center">
+              <button
+                onClick={() => {
+                  onNavigateTab?.('student-events');
+                  setIsMessagesDrawerOpen(false);
+                }}
+                className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
+              >
+                View all department announcements
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

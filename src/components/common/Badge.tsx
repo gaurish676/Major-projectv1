@@ -21,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({
     indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     navy: 'bg-blue-950/10 text-blue-900 border-blue-900/20',
     blue: 'bg-blue-50 text-blue-700 border-blue-200',
-    purple: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    purple: 'bg-purple-50 text-purple-700 border-purple-200',
     slate: 'bg-slate-100 text-slate-700 border-slate-200',
     bronze: 'bg-amber-100 text-amber-900 border-amber-300',
     gold: 'bg-amber-50 text-amber-800 border-amber-300',
@@ -35,7 +35,7 @@ export const Badge: React.FC<BadgeProps> = ({
     indigo: 'bg-indigo-500',
     navy: 'bg-blue-900',
     blue: 'bg-blue-500',
-    purple: 'bg-indigo-500',
+    purple: 'bg-purple-500',
     slate: 'bg-slate-500',
     bronze: 'bg-amber-700',
     gold: 'bg-amber-500',
@@ -72,6 +72,9 @@ export const StatusBadge: React.FC<{ status: 'approved' | 'pending' | 'rejected'
 
 export const RoleBadge: React.FC<{ role: string; className?: string }> = ({ role, className = '' }) => {
   const norm = role?.toLowerCase();
+  if (norm === 'dean') {
+    return <Badge variant="purple" className={className}>Dean Leadership</Badge>;
+  }
   if (norm === 'hod') {
     return <Badge variant="indigo" className={className}>HOD Oversight</Badge>;
   }

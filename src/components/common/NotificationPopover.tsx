@@ -194,7 +194,7 @@ export const NotificationPopover: React.FC = () => {
 
       {/* Popover Message Space */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 text-slate-800 z-50 overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="fixed inset-x-2 top-14 sm:absolute sm:inset-auto sm:right-0 sm:mt-2 w-auto sm:w-96 max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 text-slate-800 z-50 overflow-hidden flex flex-col max-h-[85vh]">
           {/* Popover Header */}
           <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
             <div className="flex items-center gap-2">
