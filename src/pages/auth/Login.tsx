@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { NitteLogo } from '../../components/common/NitteLogo';
 import { LMSFooter } from '../../components/common/LMSFooter';
+import { PersonaSwitcherModal } from '../../components/common/PersonaSwitcherModal';
 import {
   Shield,
   ArrowRight,
@@ -17,6 +18,8 @@ import {
   Sparkles,
   Info,
   GraduationCap,
+  Briefcase,
+  Users,
 } from 'lucide-react';
 
 export const Login: React.FC = () => {
@@ -46,14 +49,26 @@ export const Login: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDemoRole, setActiveDemoRole] = useState<string | null>(null);
   const [showCookieNotice, setShowCookieNotice] = useState(false);
+  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
+  const [studentSearchInput, setStudentSearchInput] = useState('');
 
   // Dynamic persona lookups
   const primaryStudent = personas.find((p) => p.role === 'student');
   const primaryMentor = personas.find((p) => p.role === 'mentor');
   const primaryHod = personas.find((p) => p.role === 'hod');
   const primaryDean = personas.find((p) => p.role === 'dean');
-  const studentList = personas.filter((p) => p.role === 'student');
-  const mentorList = personas.filter((p) => p.role === 'mentor');
+  const studentList = useMemo(() => personas.filter((p) => p.role === 'student'), [personas]);
+  const mentorList = useMemo(() => personas.filter((p) => p.role === 'mentor'), [personas]);
+
+  const filteredStudents = useMemo(() => {
+    return studentList
+      .filter((s) => {
+        if (!studentSearchInput.trim()) return true;
+        const q = studentSearchInput.toLowerCase().trim();
+        return s.name.toLowerCase().includes(q) || (s.roll_no && s.roll_no.toLowerCase().includes(q));
+      })
+      .slice(0, 60);
+  }, [studentList, studentSearchInput]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,12 +330,23 @@ export const Login: React.FC = () => {
               )}
 
               {/* 1-Click Fast Role Sign-In Helpers */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Instant Demo Credentials</span>
+              <div className="pt-3 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Instant Demo Credentials</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsPersonaModalOpen(true)}
+                    className="text-[11px] font-bold text-[#5c873f] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Browse All ({personas.length})</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
                 </div>
 
+                {/* 4 Primary Demo Roles */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <button
                     type="button"
@@ -336,7 +362,7 @@ export const Login: React.FC = () => {
                     onClick={() => handleQuickDemoLogin('mentor')}
                     className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-left transition font-semibold flex items-center justify-between cursor-pointer"
                   >
-                    <span>Mentor (Dr. Ravi)</span>
+                    <span>Mentor (Prof. Ravi)</span>
                     <ArrowRight className="w-3 h-3 text-slate-400" />
                   </button>
 
@@ -345,7 +371,7 @@ export const Login: React.FC = () => {
                     onClick={() => handleQuickDemoLogin('hod')}
                     className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-left transition font-semibold flex items-center justify-between cursor-pointer"
                   >
-                    <span>HOD (Dr. Jyothi)</span>
+                    <span>HOD (Dr. Sannidhan)</span>
                     <ArrowRight className="w-3 h-3 text-slate-400" />
                   </button>
 
@@ -354,10 +380,96 @@ export const Login: React.FC = () => {
                     onClick={() => handleQuickDemoLogin('dean')}
                     className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 text-left transition font-semibold flex items-center justify-between cursor-pointer"
                   >
-                    <span>Dean of Academics</span>
+                    <span>Dean (Dr. Pawan Kumar)</span>
                     <ArrowRight className="w-3 h-3 text-slate-400" />
                   </button>
                 </div>
+
+                {/* Choose Any Faculty Lecturer / Mentor Dropdown */}
+                <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[11px] text-purple-900 flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Choose Any Lecturer / Mentor ({mentorList.length} Available)</span>
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedMentorId}
+                      onChange={(e) => setSelectedMentorId(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-purple-300 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer truncate"
+                    >
+                      <option value="">-- Select Lecturer / Mentor --</option>
+                      {mentorList.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} {m.roll_no ? `(${m.roll_no})` : ''}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      disabled={!selectedMentorId || isSubmitting}
+                      onClick={() => selectedMentorId && switchPersona(selectedMentorId)}
+                      className="px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition disabled:opacity-40 cursor-pointer shrink-0"
+                    >
+                      Sign In
+                    </button>
+                  </div>
+                </div>
+
+                {/* Choose Any Student with Filter */}
+                <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[11px] text-blue-900 flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Choose Any Student ({studentList.length} Available)</span>
+                    </span>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Filter by USN or Name (e.g. NNM23CS, Ananya, Sharan)..."
+                    value={studentSearchInput}
+                    onChange={(e) => setStudentSearchInput(e.target.value)}
+                    className="w-full px-2.5 py-1 text-xs rounded-lg border border-blue-200 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedStudentId}
+                      onChange={(e) => setSelectedStudentId(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-blue-300 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer truncate"
+                    >
+                      <option value="">-- Select Student --</option>
+                      {filteredStudents.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.roll_no ? `${s.roll_no} - ` : ''}{s.name} (Sem {s.semester || 6})
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      disabled={!selectedStudentId || isSubmitting}
+                      onClick={() => selectedStudentId && switchPersona(selectedStudentId)}
+                      className="px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs transition disabled:opacity-40 cursor-pointer shrink-0"
+                    >
+                      Sign In
+                    </button>
+                  </div>
+                </div>
+
+                {/* Full Persona Directory Modal Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setIsPersonaModalOpen(true)}
+                  className="w-full py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs"
+                >
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <span>Search All 440+ Personas Directory</span>
+                </button>
               </div>
             </form>
           ) : (
@@ -476,6 +588,12 @@ export const Login: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Persona Switcher Modal for All 440+ Personas */}
+      <PersonaSwitcherModal
+        isOpen={isPersonaModalOpen}
+        onClose={() => setIsPersonaModalOpen(false)}
+      />
 
       {/* Official LMS Footer at Bottom */}
       <LMSFooter />

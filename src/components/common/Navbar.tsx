@@ -4,6 +4,7 @@ import { RoleBadge } from './Badge';
 import { NotificationPopover } from './NotificationPopover';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { NitteLogo } from './NitteLogo';
+import { PersonaSwitcherModal } from './PersonaSwitcherModal';
 import {
   Menu,
   ChevronDown,
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [matlabDropdownOpen, setMatlabDropdownOpen] = useState(false);
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [isPersonaSwitcherOpen, setIsPersonaSwitcherOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const linksDropdownRef = useRef<HTMLDivElement>(null);
@@ -205,6 +207,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <FolderOpen className="w-4 h-4 text-slate-400" />
                       <span>Submissions Ledger</span>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100" />
+
+                    <button
+                      onClick={() => {
+                        setIsPersonaSwitcherOpen(true);
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-purple-50 flex items-center gap-2.5 text-purple-700 font-semibold transition cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-purple-600" />
+                      <span>Switch Demo Persona</span>
                     </button>
 
                     <div className="my-1 border-t border-slate-100" />
@@ -566,6 +581,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       )}
+      {/* Instant Demo Persona Switcher Modal */}
+      <PersonaSwitcherModal
+        isOpen={isPersonaSwitcherOpen}
+        onClose={() => setIsPersonaSwitcherOpen(false)}
+        currentUserId={user?.id}
+      />
     </header>
   );
 };

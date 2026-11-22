@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { StudentDashboardStats } from '../../types';
+import { PersonaSwitcherModal } from './PersonaSwitcherModal';
 import {
   X,
   Award,
@@ -17,6 +18,7 @@ import {
   Building2,
   Briefcase,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 
 interface RightBlockDrawerProps {
@@ -37,6 +39,7 @@ export const RightBlockDrawer: React.FC<RightBlockDrawerProps> = ({
   onNavigateTab,
 }) => {
   const { user } = useAuth();
+  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -375,11 +378,29 @@ export const RightBlockDrawer: React.FC<RightBlockDrawerProps> = ({
           )}
         </div>
 
+        {/* Quick Demo Switcher Trigger in Block Drawer */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50">
+          <button
+            onClick={() => setIsPersonaModalOpen(true)}
+            className="w-full py-2 px-3 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs shadow-2xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Switch Demo Persona (440+)</span>
+          </button>
+        </div>
+
         {/* Footer info */}
         <div className="p-3 border-t border-slate-100 bg-slate-50 text-center text-[10px] text-slate-400">
           NMAMIT Moodle Institutional Integration &bull; 2026-27
         </div>
       </aside>
+
+      {/* Persona Switcher Modal from Drawer */}
+      <PersonaSwitcherModal
+        isOpen={isPersonaModalOpen}
+        onClose={() => setIsPersonaModalOpen(false)}
+        currentUserId={user?.id}
+      />
     </>
   );
 };
