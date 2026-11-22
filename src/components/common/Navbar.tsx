@@ -27,22 +27,31 @@ import {
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
+  onToggleRightDrawer?: () => void;
+  isRightDrawerOpen?: boolean;
   onNavigateProfile?: () => void;
   onNavigateHome?: () => void;
   onNavigateTab?: (tab: string) => void;
+  activeTab?: string;
+  onOpenSubmitModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onToggleSidebar,
+  onToggleRightDrawer,
+  isRightDrawerOpen = false,
   onNavigateProfile,
   onNavigateHome,
   onNavigateTab,
+  activeTab = 'student-dashboard',
+  onOpenSubmitModal,
 }) => {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [linksDropdownOpen, setLinksDropdownOpen] = useState(false);
   const [matlabDropdownOpen, setMatlabDropdownOpen] = useState(false);
   const [isMessagesDrawerOpen, setIsMessagesDrawerOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const linksDropdownRef = useRef<HTMLDivElement>(null);
@@ -92,26 +101,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 w-full select-none shadow-xs print:hidden">
       {/* Tier 1: LMS Top Header Strip (#8eb86e) matching LMS screenshots */}
       <div className="bg-[#8eb86e] text-white text-xs px-3 sm:px-6 h-10 flex items-center justify-between border-b border-[#7cb05e]">
-        {/* Left: LMS Sub-Title / Breadcrumb indicator */}
+        {/* Left: Clean space matching LMS screenshot */}
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline font-semibold tracking-wide text-white/95">
-            NMAM Institute of Technology
-          </span>
-          <span className="hidden md:inline text-white/60">|</span>
-          <span className="font-bold text-white tracking-tight flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            Creditz Activity Portal
-          </span>
-          <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white border border-white/30 hidden sm:inline-block">
-            AICTE 100/200 Pts
-          </span>
+          {/* Subtle indicator for faculty/admins only */}
+          {user?.role !== 'student' && (
+            <span className="font-semibold tracking-wide text-white/95 text-xs">
+              NMAMIT Portal &bull; {user?.role?.toUpperCase()}
+            </span>
+          )}
         </div>
 
         {/* Right: LMS Header Controls (Bell, Messages, Initials Badge, Edit Mode) */}
         <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-          {/* Latency / Sync Indicator */}
-          <SyncStatusBadge />
-
           {user && (
             <>
               {/* Notification Popover (Bell) */}
@@ -222,15 +223,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </div>
 
-              {/* Quick Sign Out button */}
-              <button
-                onClick={logout}
-                title="Log out from LMS"
-                className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-black/15 hover:bg-black/25 text-white transition cursor-pointer ml-1"
-              >
-                <LogOut className="w-3 h-3" />
-                <span>Log out</span>
-              </button>
+              {/* LMS Edit Mode Toggle (Matching LMS screenshot exactly!) */}
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-white/95 font-medium ml-1">
+                <span>Edit mode</span>
+                <button
+                  type="button"
+                  onClick={() => setEditMode((prev) => !prev)}
+                  className={`w-9 h-5 flex items-center rounded-full p-0.5 transition cursor-pointer ${
+                    editMode ? 'bg-white justify-end' : 'bg-white/40 justify-start'
+                  }`}
+                  title="Toggle Moodle Edit Mode"
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full shadow-xs transition ${
+                      editMode ? 'bg-[#5c873f]' : 'bg-white'
+                    }`}
+                  />
+                </button>
+              </div>
             </>
           )}
         </div>
@@ -239,17 +249,18 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Tier 2: LMS Main Navbar (White background with NITTE Logo and Navigation links) */}
       <div className="bg-white border-b border-slate-200">
         <div className="w-full max-w-[1536px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          {/* Left: Hamburger + NITTE Logo */}
+          {/* Left: NITTE Logo (Hamburger shown only for faculty/admin) */}
           <div className="flex items-center gap-2.5 sm:gap-4">
-            {/* Hamburger Button to Toggle Creditz Sidebar */}
-            <button
-              onClick={onToggleSidebar}
-              className="p-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition cursor-pointer shrink-0"
-              title="Toggle Sidebar Navigation"
-              aria-label="Toggle Sidebar Navigation"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            {user?.role !== 'student' && (
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition cursor-pointer shrink-0"
+                title="Toggle Sidebar Navigation"
+                aria-label="Toggle Sidebar Navigation"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
 
             {/* Official NITTE NMAMIT Logo */}
             <NitteLogo onClick={onNavigateHome} />
@@ -260,7 +271,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Home link */}
             <button
               onClick={onNavigateHome}
-              className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer hidden md:inline-block"
+              className={`px-2.5 py-1.5 rounded-md transition cursor-pointer hidden md:inline-block ${
+                activeTab === 'home'
+                  ? 'text-[#5c873f] font-bold border-b-2 border-[#8eb86e]'
+                  : 'hover:text-[#8eb86e] hover:bg-slate-50'
+              }`}
             >
               Home
             </button>
@@ -268,18 +283,43 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Dashboard link */}
             <button
               onClick={onNavigateHome}
-              className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer hidden sm:inline-block"
+              className={`px-2.5 py-1.5 rounded-md transition cursor-pointer hidden sm:inline-block ${
+                activeTab === 'student-dashboard'
+                  ? 'text-[#5c873f] font-bold border-b-2 border-[#8eb86e]'
+                  : 'hover:text-[#8eb86e] hover:bg-slate-50'
+              }`}
             >
               Dashboard
             </button>
 
-            {/* Activity Credits (Creditz) - Active Module Indicator */}
+            {/* My courses link */}
             <button
-              onClick={onNavigateHome}
-              className="px-2.5 py-1.5 rounded-md font-bold text-[#5c873f] bg-[#8eb86e]/15 border-b-2 border-[#8eb86e] transition cursor-pointer flex items-center gap-1.5"
+              onClick={() => {
+                onNavigateHome?.();
+                setTimeout(() => {
+                  document.getElementById('my-courses-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer hidden sm:inline-block"
+            >
+              My courses
+            </button>
+
+            {/* Activity Credits (Creditz) - Integrated Feature Indicator */}
+            <button
+              onClick={() => onNavigateTab?.('submission-history')}
+              className={`px-2.5 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'submission-history'
+                  ? 'text-[#5c873f] font-bold bg-[#8eb86e]/15 border-b-2 border-[#8eb86e]'
+                  : 'hover:text-[#8eb86e] hover:bg-slate-50 text-slate-700'
+              }`}
+              title="AICTE Mandatory Activity Credits & Submissions"
             >
               <GraduationCap className="w-4 h-4 text-[#8eb86e]" />
               <span>Activity Credits</span>
+              <span className="hidden xl:inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#8eb86e]/20 text-[#426b27]">
+                AICTE
+              </span>
             </button>
 
             {/* "Links" Dropdown (matching Screenshot 09-07-17.png) */}
@@ -460,14 +500,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Rightmost Green Toggle Icon (matching Screenshot 09-06-20.png) */}
-            <button
-              onClick={onToggleSidebar}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md bg-[#8eb86e] hover:bg-[#7eb462] text-white shadow-xs transition cursor-pointer ml-1"
-              title="Toggle Sidebar"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
+            {/* Rightmost Toggle Button (Matching LMS screenshot orange > button) */}
+            {user?.role === 'student' ? (
+              <button
+                onClick={onToggleRightDrawer}
+                className="flex items-center justify-center w-8 h-8 rounded-md bg-[#ea580c] hover:bg-[#c2410c] text-white shadow-xs transition cursor-pointer ml-1 text-sm font-bold"
+                title="Toggle AICTE Activity Block Drawer"
+                aria-label="Toggle AICTE Activity Block Drawer"
+              >
+                {isRightDrawerOpen ? '✕' : '❯'}
+              </button>
+            ) : (
+              <button
+                onClick={onToggleSidebar}
+                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md bg-[#8eb86e] hover:bg-[#7eb462] text-white shadow-xs transition cursor-pointer ml-1"
+                title="Toggle Sidebar"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            )}
           </nav>
         </div>
       </div>

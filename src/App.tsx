@@ -11,6 +11,7 @@ import { DashboardSkeleton } from './components/common/SkeletonLoaders';
 import { SubmitActivityModal } from './components/common/SubmitActivityModal';
 import { SchemaRequestModal } from './components/common/SchemaRequestModal';
 import { LMSFooter } from './components/common/LMSFooter';
+import { RightBlockDrawer } from './components/common/RightBlockDrawer';
 
 // Code-Split Dynamic Route Pages for Legacy Creditz System
 const StudentDashboard = React.lazy(() => import('./pages/student/StudentDashboard').then((m) => ({ default: m.StudentDashboard })));
@@ -44,8 +45,9 @@ const CreditzPortal: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isSchemaRequestModalOpen, setIsSchemaRequestModalOpen] = useState(false);
-  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false);
 
   const handleToggleSidebar = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -57,10 +59,19 @@ const CreditzPortal: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'dean') setActiveTab('dean-dashboard');
-    else if (user.role === 'hod') setActiveTab('hod-dashboard');
-    else if (user.role === 'mentor') setActiveTab('mentor-dashboard');
-    else setActiveTab('student-dashboard');
+    if (user.role === 'dean') {
+      setActiveTab('dean-dashboard');
+      setIsDesktopSidebarOpen(true);
+    } else if (user.role === 'hod') {
+      setActiveTab('hod-dashboard');
+      setIsDesktopSidebarOpen(true);
+    } else if (user.role === 'mentor') {
+      setActiveTab('mentor-dashboard');
+      setIsDesktopSidebarOpen(true);
+    } else {
+      setActiveTab('student-dashboard');
+      setIsDesktopSidebarOpen(false); // Clean Moodle layout without persistent left sidebar
+    }
   }, [user?.role, user?.id]);
 
   if (isLoading) {
@@ -83,6 +94,9 @@ const CreditzPortal: React.FC = () => {
       <TopLoadingBar />
       <Navbar
         onToggleSidebar={handleToggleSidebar}
+        onToggleRightDrawer={() => setIsRightDrawerOpen((prev) => !prev)}
+        isRightDrawerOpen={isRightDrawerOpen}
+        activeTab={activeTab}
         onNavigateProfile={() => setActiveTab('profile')}
         onNavigateHome={() => {
           if (user.role === 'dean') setActiveTab('dean-dashboard');
@@ -179,6 +193,20 @@ const CreditzPortal: React.FC = () => {
           </Suspense>
         </main>
       </div>
+
+      {user.role === 'student' && (
+        <RightBlockDrawer
+          isOpen={isRightDrawerOpen}
+          onClose={() => setIsRightDrawerOpen(false)}
+          stats={null}
+          onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+          onOpenCreditReport={() => {
+            const btn = document.querySelector('button[title*="official PDF"]') as HTMLButtonElement;
+            btn?.click();
+          }}
+          onNavigateTab={setActiveTab}
+        />
+      )}
 
       <LMSFooter />
 

@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import {
   HelpCircle,
   ChevronUp,
   X,
-  ExternalLink,
-  GraduationCap,
-  ShieldCheck,
-  Award,
-  Phone,
-  Mail,
-  MapPin,
-  BookOpen,
 } from 'lucide-react';
 
 export const LMSFooter: React.FC = () => {
+  const { user } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -35,154 +29,19 @@ export const LMSFooter: React.FC = () => {
 
   return (
     <>
-      <footer className="bg-[#2b2b2b] text-white pt-10 pb-8 mt-12 border-t border-slate-700 select-none print:hidden">
-        <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 pb-8 border-b border-white/10">
-            {/* Column 1: About Us */}
-            <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-bold text-[#f97316] tracking-wide">
-                About Us
-              </h3>
-              <ul className="space-y-2 text-xs sm:text-sm text-slate-300">
-                <li>
-                  <a
-                    href="https://nmamit.nitte.edu.in"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-white hover:underline transition"
-                  >
-                    About NMAMIT
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://nmamit.nitte.edu.in/vision-mission.php"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-white hover:underline transition"
-                  >
-                    Vision, Mission & Core Values
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://nmamit.nitte.edu.in/quality-policy.php"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-white hover:underline transition"
-                  >
-                    Quality Policy
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://nmamit.nitte.edu.in/rules-regulations.php"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-white hover:underline transition"
-                  >
-                    Rules & Regulations
-                  </a>
-                </li>
-                <li>
-                  <span className="text-[#8eb86e] font-semibold flex items-center gap-1.5 mt-1">
-                    <GraduationCap className="w-4 h-4 shrink-0" />
-                    <span>AICTE & VTU Mandatory Activity Points Portal</span>
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 2: Contact Us */}
-            <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-bold text-[#f97316] tracking-wide">
-                Contact Us
-              </h3>
-              <div className="space-y-2.5 text-xs sm:text-sm text-slate-300">
-                <p className="flex items-start gap-2 leading-relaxed">
-                  <MapPin className="w-4 h-4 text-[#8eb86e] shrink-0 mt-0.5" />
-                  <span>
-                    NMAM Institute of Technology, Nitte, Karkala Taluk, Udupi-574110, Karnataka, India.
-                  </span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-[#8eb86e] shrink-0" />
-                  <span>Phone: +91 - 8258 - 281039 / 281263</span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-[#8eb86e] shrink-0" />
-                  <span>E-mail: principal_nmamit@nitte.edu.in</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Column 3: Follow Us & Socials */}
-            <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-bold text-[#f97316] tracking-wide">
-                Follow Us
-              </h3>
-              <p className="text-xs text-slate-300">
-                Connect with NMAM Institute of Technology across official campus channels:
-              </p>
-              <div className="flex items-center gap-3 pt-1">
-                {/* Twitter / X */}
-                <a
-                  href="https://twitter.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Twitter"
-                  className="w-10 h-10 rounded-md bg-[#26a7de] hover:opacity-90 flex items-center justify-center text-white transition shadow-sm font-bold text-sm cursor-pointer"
-                >
-                  𝕏
-                </a>
-
-                {/* YouTube */}
-                <a
-                  href="https://youtube.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="YouTube"
-                  className="w-10 h-10 rounded-md bg-[#cc181e] hover:opacity-90 flex items-center justify-center text-white transition shadow-sm font-bold text-sm cursor-pointer"
-                >
-                  ▶
-                </a>
-
-                {/* Facebook */}
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Facebook"
-                  className="w-10 h-10 rounded-md bg-[#2e639e] hover:opacity-90 flex items-center justify-center text-white transition shadow-sm font-bold text-sm cursor-pointer"
-                >
-                  f
-                </a>
-
-                {/* Instagram */}
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Instagram"
-                  className="w-10 h-10 rounded-md bg-[#c82d8c] hover:opacity-90 flex items-center justify-center text-white transition shadow-sm font-bold text-sm cursor-pointer"
-                >
-                  📷
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Copyright & Accreditation strip */}
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
-            <p>
-              © {new Date().getFullYear()} NMAMIT & NITTE (Deemed to be University). All rights reserved.
-            </p>
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="text-[#8eb86e] font-semibold">Creditz LMS Feature Module</span>
-              <span className="text-slate-600">|</span>
-              <span>AICTE 100/200 Points Compliant</span>
-            </div>
-          </div>
+      {/* Authentic Moodle Light Footer Bar matching LMS screenshots */}
+      <footer className="bg-white border-t border-slate-200/90 py-6 mt-14 text-center text-xs text-slate-500 select-none print:hidden">
+        <div className="max-w-5xl mx-auto px-4 space-y-1.5">
+          <p>
+            You are logged in as{' '}
+            <span className="font-semibold text-slate-700">
+              {user?.name || 'Student'}
+            </span>{' '}
+            ({user?.roll_no || 'NNM23CS078'})
+          </p>
+          <p className="text-[11px] text-slate-400">
+            NMAM Institute of Technology, Nitte (Deemed to be University) &bull; Activity Credit Integration
+          </p>
         </div>
       </footer>
 
@@ -220,7 +79,7 @@ export const LMSFooter: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">
-                    NMAMIT LMS Creditz Portal Guide
+                    NMAMIT LMS Activity Credit Guide
                   </h3>
                   <p className="text-xs text-slate-500">Activity Points & Degree Clearance System</p>
                 </div>
@@ -235,18 +94,18 @@ export const LMSFooter: React.FC = () => {
 
             <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
               <div className="p-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-900">
-                <span className="font-bold">What is Creditz in LMS?</span>
+                <span className="font-bold">What is Activity Credits in LMS?</span>
                 <p className="mt-0.5">
-                  Creditz is the official activity point tracking module integrated into NMAMIT's Learning Management System. Every engineering student must earn mandatory non-academic credits (100 pts for regular / 75 pts for lateral entry) across 8 semesters to earn their B.Tech degree.
+                  This portal is the official activity point tracking module integrated into NMAMIT's Learning Management System. Every engineering student must earn mandatory non-academic credits (100 pts for regular / 75 pts for lateral entry) across 8 semesters to earn their B.Tech degree.
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <span className="font-bold text-slate-900 text-xs">How do I submit proofs?</span>
                 <p>
-                  1. Click <strong>+ Submit Proof</strong> in the sidebar or student dashboard.<br />
+                  1. Click <strong>+ Upload Proof</strong> on your Activity Points course card or right block drawer.<br />
                   2. Upload your certificate (PDF or Image) and select the matching category.<br />
-                  3. Our AI audit will analyze the file authenticity and queue it for your Faculty Mentor's approval.
+                  3. Our system will analyze the certificate and queue it for your Faculty Mentor's approval.
                 </p>
               </div>
 
