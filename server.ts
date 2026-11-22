@@ -25,6 +25,7 @@ import verificationRoutes from './server/routes/verification.routes';
 import rulebookRoutes from './server/routes/rulebook.routes';
 import evidenceRoutes from './server/routes/evidence.routes';
 import taskRoutes from './server/routes/task.routes';
+import academicMessagesRoutes from './server/routes/academic_messages.routes';
 import { initTaskTable } from './server/db/taskDb';
 import { authenticate } from './server/middleware/auth';
 
@@ -77,6 +78,7 @@ async function startServer() {
   app.use('/api/verify', verificationRoutes);
   app.use('/api/rulebook', rulebookRoutes);
   app.use('/api/tasks', taskRoutes);
+  app.use('/api/academic-messages', academicMessagesRoutes);
   
   // Development: Vite Middleware / Production: Static Files
   if (process.env.NODE_ENV !== 'production') {

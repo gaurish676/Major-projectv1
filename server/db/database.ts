@@ -343,6 +343,25 @@ function initSchema(db: Database.Database): void {
       FOREIGN KEY (sender_id) REFERENCES users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS academic_messages (
+      id TEXT PRIMARY KEY,
+      sender_id TEXT NOT NULL,
+      sender_name TEXT NOT NULL,
+      sender_role TEXT NOT NULL,
+      recipient_id TEXT NOT NULL,
+      recipient_name TEXT NOT NULL,
+      recipient_role TEXT NOT NULL,
+      subject TEXT,
+      message TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
+      is_read INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (sender_id) REFERENCES users(id),
+      FOREIGN KEY (recipient_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_acad_msg_parties ON academic_messages(sender_id, recipient_id);
+    CREATE INDEX IF NOT EXISTS idx_acad_msg_recipient ON academic_messages(recipient_id, is_read);
+
     CREATE TABLE IF NOT EXISTS counseling_logs (
       id TEXT PRIMARY KEY,
       mentor_id TEXT NOT NULL,
