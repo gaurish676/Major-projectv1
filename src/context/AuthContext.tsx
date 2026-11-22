@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.warn('Session expired or invalid token:', err);
       localStorage.removeItem('activity_portal_token');
+      localStorage.removeItem('activity_portal_refresh_token');
       setToken(null);
       setUser(null);
     } finally {
@@ -79,11 +80,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
     try {
-      const res = await apiRequest<{ token: string; user: User }>('/api/auth/login', {
+      const res = await apiRequest<{ token: string; refreshToken?: string; user: User }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
       localStorage.setItem('activity_portal_token', res.token);
+      if (res.refreshToken) {
+        localStorage.setItem('activity_portal_refresh_token', res.refreshToken);
+      }
       setToken(res.token);
       setUser(res.user);
     } finally {
@@ -94,11 +98,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (data: { name: string; email: string; password?: string; role: 'student' | 'mentor' | 'hod'; roll_no?: string; semester?: number }) => {
     setIsLoading(true);
     try {
-      const res = await apiRequest<{ token: string; user: User }>('/api/auth/register', {
+      const res = await apiRequest<{ token: string; refreshToken?: string; user: User }>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       });
       localStorage.setItem('activity_portal_token', res.token);
+      if (res.refreshToken) {
+        localStorage.setItem('activity_portal_refresh_token', res.refreshToken);
+      }
       setToken(res.token);
       setUser(res.user);
       await loadPersonas();
@@ -110,11 +117,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const switchPersona = async (userId: string) => {
     setIsLoading(true);
     try {
-      const res = await apiRequest<{ token: string; user: User }>('/api/auth/switch-persona', {
+      const res = await apiRequest<{ token: string; refreshToken?: string; user: User }>('/api/auth/switch-persona', {
         method: 'POST',
         body: JSON.stringify({ userId }),
       });
       localStorage.setItem('activity_portal_token', res.token);
+      if (res.refreshToken) {
+        localStorage.setItem('activity_portal_refresh_token', res.refreshToken);
+      }
       setToken(res.token);
       setUser(res.user);
     } finally {
@@ -123,7 +133,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    const refreshToken = localStorage.getItem('activity_portal_refresh_token');
+    // Non-blocking server blacklist call
+    apiRequest('/api/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }).catch(() => {});
+
     localStorage.removeItem('activity_portal_token');
+    localStorage.removeItem('activity_portal_refresh_token');
     setToken(null);
     setUser(null);
   };

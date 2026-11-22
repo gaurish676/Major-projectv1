@@ -362,6 +362,25 @@ function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_acad_msg_parties ON academic_messages(sender_id, recipient_id);
     CREATE INDEX IF NOT EXISTS idx_acad_msg_recipient ON academic_messages(recipient_id, is_read);
 
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      refresh_token TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      is_revoked INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(refresh_token);
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+
+    CREATE TABLE IF NOT EXISTS token_blacklist (
+      token TEXT PRIMARY KEY,
+      revoked_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_token_blacklist_token ON token_blacklist(token);
+
     CREATE TABLE IF NOT EXISTS counseling_logs (
       id TEXT PRIMARY KEY,
       mentor_id TEXT NOT NULL,

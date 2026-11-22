@@ -1,10 +1,55 @@
 import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { queryAll, queryOne } from '../db/database';
-import { generateToken, authenticate, AuthenticatedRequest } from '../middleware/auth';
+import jwt from 'jsonwebtoken';
+import { queryAll, queryOne, executeRun } from '../db/database';
+import {
+  generateToken,
+  generateRefreshToken,
+  blacklistToken,
+  JWT_SECRET,
+  authenticate,
+  AuthenticatedRequest,
+} from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
+
+/**
+ * Enterprise Session Generator:
+ * Issues 15-minute Access Token + 7-day Refresh Token, persisted in user_sessions
+ */
+async function createEnterpriseSession(user: any) {
+  const accessToken = generateToken({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    department_id: user.department_id,
+    mentor_id: user.mentor_id,
+    roll_no: user.roll_no,
+    semester: user.semester,
+  });
+
+  const refreshToken = generateRefreshToken({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    department_id: user.department_id,
+  });
+
+  const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
+  const createdAt = new Date().toISOString();
+
+  await executeRun(
+    `INSERT INTO user_sessions (id, user_id, refresh_token, expires_at, created_at, is_revoked)
+     VALUES (?, ?, ?, ?, ?, 0)`,
+    [sessionId, user.id, refreshToken, expiresAt, createdAt]
+  );
+
+  return { token: accessToken, refreshToken };
+}
 
 // List all Demo Personas for instant 1-click role switching in the UI
 router.get('/personas', async (req, res) => {
@@ -98,15 +143,8 @@ router.post('/switch-persona', async (req, res) => {
       return;
     }
 
-    const token = generateToken({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      department_id: user.department_id,
-    });
-
-    res.json({ token, user });
+    const session = await createEnterpriseSession(user);
+    res.json({ token: session.token, refreshToken: session.refreshToken, user });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -217,21 +255,19 @@ router.post('/login', authLimiter, async (req, res) => {
         res.status(401).json({ error: 'Incorrect password entered' });
         return;
       }
+
+      // Progressive Enterprise Password Upgrade: Auto-rehash to 12-round bcrypt standard
+      if (!user.password_hash.startsWith('$2a$12$') && !user.password_hash.startsWith('$2b$12$')) {
+        try {
+          const upgradedHash = bcrypt.hashSync(password, 12);
+          await executeRun('UPDATE users SET password_hash = ? WHERE id = ?', [upgradedHash, user.id]);
+        } catch {}
+      }
     }
 
-    const token = generateToken({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      department_id: user.department_id,
-      mentor_id: user.mentor_id,
-      roll_no: user.roll_no,
-      semester: user.semester,
-    });
-
+    const session = await createEnterpriseSession(user);
     const { password_hash, ...userProfile } = user;
-    res.json({ token, user: userProfile });
+    res.json({ token: session.token, refreshToken: session.refreshToken, user: userProfile });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -399,7 +435,9 @@ router.post('/register', async (req, res) => {
     const avatar = `https://images.unsplash.com/photo-${role === 'student' ? '1534528741775-53994a69daeb' : role === 'mentor' ? '1472099645785-5658abf4ff4e' : '1580489944761-15a19d654956'}?w=150&auto=format&fit=crop&q=80`;
     const defaultRoll = roll_no?.trim() || (role === 'student' ? `RVU23CSE${Math.floor(100 + Math.random() * 900)}` : null);
     const defaultSem = semester ? Number(semester) : (role === 'student' ? 6 : null);
-    const passwordHash = (password && password.trim()) ? password.trim() : 'password123';
+    const rawPassword = (password && password.trim()) ? password.trim() : 'password123';
+    // Enterprise 12-round salted bcrypt hash
+    const passwordHash = bcrypt.hashSync(rawPassword, 12);
 
     const { executeRun } = await import('../db/database');
     await executeRun(`
@@ -447,15 +485,135 @@ router.post('/register', async (req, res) => {
       WHERE u.id = ?
     `, [userId]);
 
-    const token = generateToken({
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      department_id: newUser.department_id,
+    const session = await createEnterpriseSession(newUser);
+    res.status(201).json({ token: session.token, refreshToken: session.refreshToken, user: newUser });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Enterprise Silent Refresh Endpoint:
+ * Validates Refresh Token against user_sessions, extends sliding window, issues new 15-min Access Token
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      res.status(400).json({ error: 'Refresh token is required' });
+      return;
+    }
+
+    // 1. Verify Refresh Token Cryptographic Signature
+    let decoded: any;
+    try {
+      decoded = jwt.verify(refreshToken, JWT_SECRET);
+    } catch (err: any) {
+      res.status(401).json({ error: 'Invalid or expired refresh token', code: 'REFRESH_EXPIRED' });
+      return;
+    }
+
+    if (decoded.token_type !== 'refresh') {
+      res.status(401).json({ error: 'Invalid token type provided' });
+      return;
+    }
+
+    // 2. Check Database Session (Sliding Window & Revocation Check)
+    const session = await queryOne<{ id: string; user_id: string; is_revoked: number; expires_at: string }>(
+      'SELECT id, user_id, is_revoked, expires_at FROM user_sessions WHERE refresh_token = ? LIMIT 1',
+      [refreshToken]
+    );
+
+    if (!session || session.is_revoked === 1) {
+      res.status(401).json({ error: 'Session has been revoked. Please log in again.', code: 'SESSION_REVOKED' });
+      return;
+    }
+
+    if (new Date(session.expires_at).getTime() < Date.now()) {
+      res.status(401).json({ error: 'Refresh session expired. Please log in again.', code: 'SESSION_EXPIRED' });
+      return;
+    }
+
+    // 3. Fetch latest live user profile (propagates live role/mentor updates!)
+    const user = await queryOne(`
+      SELECT 
+        u.id, u.name, u.email, u.role, u.department_id, u.cgpa, u.semester, 
+        u.roll_no, u.avatar, u.phone, u.bio, u.designation, u.office_location, u.mentor_id,
+        u.tenth_percentage, u.tenth_board, u.tenth_year, u.twelfth_percentage, u.twelfth_board,
+        u.twelfth_year, u.diploma_or_pu,
+        d.name as department_name, d.code as department_code, m.name as mentor_name
+      FROM users u
+      LEFT JOIN departments d ON u.department_id = d.id
+      LEFT JOIN users m ON u.mentor_id = m.id
+      WHERE u.id = ?
+    `, [session.user_id]);
+
+    if (!user) {
+      res.status(404).json({ error: 'User account not found' });
+      return;
+    }
+
+    // 4. Generate fresh 15-minute Access Token & extend sliding window refresh token
+    const newAccessToken = generateToken({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department_id: user.department_id,
+      mentor_id: user.mentor_id,
+      roll_no: user.roll_no,
+      semester: user.semester,
     });
 
-    res.status(201).json({ token, user: newUser });
+    const newRefreshToken = generateRefreshToken({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department_id: user.department_id,
+    });
+
+    // Update session table with rotated refresh token and renewed 7-day expiration
+    const extendedExpiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
+    await executeRun(
+      'UPDATE user_sessions SET refresh_token = ?, expires_at = ? WHERE id = ?',
+      [newRefreshToken, extendedExpiresAt, session.id]
+    );
+
+    res.json({
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+      user,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Enterprise Logout Endpoint:
+ * Blacklists Access Token & Revokes Refresh Token Session
+ */
+router.post('/logout', async (req: AuthenticatedRequest, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let accessToken = '';
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      accessToken = authHeader.split(' ')[1];
+    }
+    const { refreshToken } = req.body;
+
+    // 1. Blacklist access token
+    if (accessToken) {
+      await blacklistToken(accessToken);
+    }
+
+    // 2. Revoke refresh session
+    if (refreshToken) {
+      await executeRun('UPDATE user_sessions SET is_revoked = 1 WHERE refresh_token = ?', [refreshToken]);
+    }
+
+    res.json({ success: true, message: 'Logged out successfully. Tokens revoked.' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
