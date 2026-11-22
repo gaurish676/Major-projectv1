@@ -40,7 +40,7 @@ export const LMSFooter: React.FC = () => {
             ({user?.roll_no || 'NNM23CS078'})
           </p>
           <p className="text-[11px] text-slate-400">
-            NMAM Institute of Technology, Nitte (Deemed to be University) &bull; Activity Credit Integration
+            NMAM Institute of Technology &bull; Creditz: An Intelligent Co-Curricular Activity Portal
           </p>
         </div>
       </footer>

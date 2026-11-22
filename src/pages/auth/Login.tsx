@@ -197,8 +197,8 @@ export const Login: React.FC = () => {
           <div className="flex flex-col items-center justify-center pb-2 border-b border-slate-100">
             <NitteLogo size="md" className="justify-center" />
             <div className="mt-2 text-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Institutional Academic & Activity Portal
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                NMAMIT Activity Point Management & Evaluation
               </span>
             </div>
           </div>
