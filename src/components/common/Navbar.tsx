@@ -316,17 +316,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               Dashboard
             </button>
 
-            {/* My courses link */}
+            {/* Activity Center / Courses link */}
             <button
               onClick={() => {
                 onNavigateHome?.();
                 setTimeout(() => {
-                  document.getElementById('my-courses-section')?.scrollIntoView({ behavior: 'smooth' });
+                  const el = document.getElementById('activity-center-section') || document.getElementById('my-courses-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
               }}
               className="px-2.5 py-1.5 rounded-md hover:text-[#8eb86e] hover:bg-slate-50 transition cursor-pointer hidden sm:inline-block"
             >
-              My courses
+              Activities
             </button>
 
             {/* Activity Credits (Creditz) - Integrated Feature Indicator */}

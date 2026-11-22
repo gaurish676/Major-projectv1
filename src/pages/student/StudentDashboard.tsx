@@ -19,27 +19,15 @@ import {
   ChevronRight,
   Layers,
   ShieldCheck,
+  Calendar,
+  ExternalLink,
+  FileCheck2,
 } from 'lucide-react';
 
 interface StudentDashboardProps {
   onOpenSubmitModal: () => void;
   onNavigateTab: (tab: string) => void;
 }
-
-// Authentic NMAMIT course listing matching Moodle screenshot lms_homepage.png
-const MOODLE_COURSES = [
-  'Indian Knowledge System',
-  'indian knowledege system',
-  'CS Department News and Activities',
-  'CG-B-2026',
-  'Mobile Application Development Lab(B section)',
-  'Elective CSE 7th Sem 2026-27',
-  'CSE Feedback 2026-2027 Odd Sem',
-  'CSE Feedback 2025-2026 Even Sem',
-  'NOSQL DATABASE-2026-27',
-  'Software Testing (CS3314-1) 2026-27',
-  'Financial Management-2026-27',
-];
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   onOpenSubmitModal,
@@ -54,6 +42,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [creditReportData, setCreditReportData] = useState<StudentCreditReportData | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isAIAdvisorOpen, setIsAIAdvisorOpen] = useState(false);
+  const [activeHubTab, setActiveHubTab] = useState<'opportunities' | 'submissions'>('opportunities');
 
   const handleOpenCreditReport = async () => {
     try {
@@ -95,7 +84,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return <DashboardSkeleton />;
   }
 
-  const { student, recent_submissions = [] } = stats;
+  const { student, recent_submissions = [], upcoming_events = [] } = stats;
   const approvedPoints = stats.total_points || 0;
   const targetPoints = stats.target_points || 200;
   const percentage = Math.min(100, Math.round((approvedPoints / targetPoints) * 100));
@@ -304,60 +293,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         )}
 
-        {/* Pending Submissions / Actions Strip (if any) */}
-        {pendingSubmissions.length > 0 && (
-          <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-amber-900 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-amber-600" />
-                <span>Certificates Awaiting Mentor Evaluation ({pendingSubmissions.length})</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => onNavigateTab('submission-history')}
-                className="text-[11px] font-semibold text-amber-800 hover:underline cursor-pointer"
-              >
-                View in Ledger ➔
-              </button>
-            </div>
-
-            <div className="space-y-1.5">
-              {pendingSubmissions.slice(0, 3).map((item) => (
-                <div
-                  key={item.id}
-                  className="p-2.5 rounded-lg bg-white border border-amber-200/70 flex items-center justify-between gap-2"
-                >
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900 truncate">{item.activity_title}</p>
-                    <p className="text-[10px] text-slate-500 truncate">
-                      {getCategoryPlainName(item.category_id)} &bull; Submitted {new Date(item.submitted_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
-                      Under Review
-                    </span>
-                    {item.file_url && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedSubmission(item);
-                          setIsViewerOpen(true);
-                        }}
-                        className="px-2 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer"
-                        title="View Certificate Proof"
-                      >
-                        <Eye className="w-3 h-3" />
-                        <span>Proof</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Card Footer Quick Actions */}
         <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
@@ -392,104 +327,204 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </section>
 
-      {/* 3. Moodle Card 2: My courses + AICTE Feature Block */}
+      {/* 3. Card 2: Activity Center (Replaces "My courses" with clean Point Opportunities & Evaluation Ledger) */}
       <section
-        id="my-courses-section"
+        id="activity-center-section"
         className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-5 sm:p-6 space-y-4"
       >
-        <h2 className="text-lg font-bold text-[#ea580c]">My courses</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-[#ea580c]">Activity Center</h2>
 
-        {/* Regular Moodle Course Items matching lms_homepage.png */}
-        <div className="space-y-2 text-xs sm:text-sm text-slate-800">
-          {MOODLE_COURSES.map((courseName) => (
-            <div
-              key={courseName}
-              onClick={() => onNavigateTab('update-marks')}
-              className="py-1.5 flex items-center gap-2.5 hover:text-[#5c873f] transition cursor-pointer group"
-              title={`View academic syllabus & marks for ${courseName}`}
+          {/* Clean Segmented Tab Switcher - Low Visual Density */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setActiveHubTab('opportunities')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                activeHubTab === 'opportunities'
+                  ? 'bg-white text-[#436b28] shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              <GraduationCap className="w-4 h-4 text-[#5c873f] shrink-0 group-hover:scale-110 transition" />
-              <span className="font-normal group-hover:underline text-slate-700">
-                {courseName}
-              </span>
-            </div>
-          ))}
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Point Opportunities ({upcoming_events.length})</span>
+            </button>
 
-          {/* Integrated AICTE Activity Points Course Card (Our Feature inside Moodle!) */}
-          <div className="mt-4 pt-4 border-t border-slate-200/90">
-            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50/70 via-slate-50 to-white border border-[#8eb86e]/40 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#8eb86e]/20 text-[#5c873f] flex items-center justify-center shrink-0 mt-0.5">
-                    <GraduationCap className="w-6 h-6 text-[#5c873f]" />
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-sm text-slate-900">
-                        AICTE Activity Points & Degree Clearance Portal (2026-27)
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8eb86e]/25 text-[#426b27]">
-                        Mandatory Degree Module
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Current Score:{' '}
-                      <span className="font-bold text-slate-900 font-mono">
-                        {approvedPoints} / {targetPoints} Points
-                      </span>{' '}
-                      ({percentage}% completed) &bull; Mentor: Prof.{' '}
-                      {student.mentor_name || 'Joylin Mendonca'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Direct Action Triggers */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button
-                    onClick={onOpenSubmitModal}
-                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#7eb462] hover:bg-[#6fa454] text-white shadow-2xs flex items-center gap-1.5 transition cursor-pointer"
-                    title="Upload certificate proof"
-                  >
-                    <PlusCircle className="w-4 h-4 text-white" />
-                    <span>Upload Proof</span>
-                  </button>
-
-                  <button
-                    onClick={handleOpenCreditReport}
-                    disabled={isGeneratingReport}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-                    title="Download official PDF credit report"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{isGeneratingReport ? 'Generating...' : 'PDF Report'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => onNavigateTab('submission-history')}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-[#426b27] border border-emerald-200 transition cursor-pointer"
-                    title="View complete submissions ledger"
-                  >
-                    Ledger ➔
-                  </button>
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveHubTab('submissions')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                activeHubTab === 'submissions'
+                  ? 'bg-white text-[#436b28] shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileCheck2 className="w-3.5 h-3.5 text-[#5c873f]" />
+              <span>My Submissions ({recent_submissions.length})</span>
+            </button>
           </div>
         </div>
 
-        {/* Moodle "All courses ..." bottom link */}
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              const el = document.getElementById('my-courses-section');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
-          >
-            All courses ...
-          </button>
-        </div>
+        {/* Tab 1: Point Opportunities View (Option 1) */}
+        {activeHubTab === 'opportunities' && (
+          <div className="space-y-2.5">
+            {upcoming_events.length > 0 ? (
+              <div className="space-y-2">
+                {upcoming_events.slice(0, 3).map((evt) => (
+                  <div
+                    key={evt.id}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#8eb86e]/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-xs truncate">
+                          {evt.title}
+                        </span>
+                        <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                          +{evt.potential_points} pts
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                        <span className="text-[#5c873f] font-semibold">
+                          {evt.category_name || 'Accredited Event'}
+                        </span>
+                        <span>&bull;</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          <span>{new Date(evt.event_date).toLocaleDateString()}</span>
+                        </span>
+                        {evt.venue && (
+                          <>
+                            <span>&bull;</span>
+                            <span className="truncate max-w-[180px]">{evt.venue}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 self-end sm:self-center">
+                      {evt.registration_link ? (
+                        <a
+                          href={evt.registration_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#7eb462] hover:bg-[#6fa454] text-white transition inline-flex items-center gap-1"
+                        >
+                          <span>Register</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateTab('student-events')}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 transition cursor-pointer"
+                        >
+                          View Details
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No active point opportunities scheduled at this moment.
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => onNavigateTab('student-events')}
+                className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
+              >
+                All campus events & hackathons ...
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: My Submissions View (Option 2) */}
+        {activeHubTab === 'submissions' && (
+          <div className="space-y-2.5">
+            {recent_submissions.length > 0 ? (
+              <div className="space-y-2">
+                {recent_submissions.slice(0, 3).map((sub) => {
+                  const isApproved = sub.status === 'approved';
+                  const isPending = sub.status === 'pending';
+
+                  return (
+                    <div
+                      key={sub.id}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#8eb86e]/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 text-xs truncate">
+                            {sub.activity_title}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold border shrink-0 ${
+                              isApproved
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : isPending
+                                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                : 'bg-rose-50 text-rose-800 border-rose-200'
+                            }`}
+                          >
+                            {isApproved
+                              ? `+${sub.points_awarded || sub.base_points} pts Approved`
+                              : isPending
+                              ? 'Under Review'
+                              : 'Rejected'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                          <span className="text-slate-600 font-medium">
+                            {getCategoryPlainName(sub.category_id)}
+                          </span>
+                          <span>&bull;</span>
+                          <span>Submitted {new Date(sub.submitted_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        {sub.file_url && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSubmission(sub);
+                              setIsViewerOpen(true);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs transition flex items-center gap-1 cursor-pointer"
+                            title="Inspect certificate proof"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Proof</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No activity certificates submitted yet. Click "Upload Certificate" to claim points.
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => onNavigateTab('submission-history')}
+                className="text-xs font-semibold text-[#5c873f] hover:underline cursor-pointer"
+              >
+                All submissions & certificates ...
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Proof Preview Modal */}
