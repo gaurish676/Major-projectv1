@@ -501,24 +501,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Rightmost Toggle Button (Matching LMS screenshot orange > button) */}
-            {user?.role === 'student' ? (
-              <button
-                onClick={onToggleRightDrawer}
-                className="flex items-center justify-center w-8 h-8 rounded-md bg-[#ea580c] hover:bg-[#c2410c] text-white shadow-xs transition cursor-pointer ml-1 text-sm font-bold"
-                title="Toggle AICTE Activity Block Drawer"
-                aria-label="Toggle AICTE Activity Block Drawer"
-              >
-                {isRightDrawerOpen ? '✕' : '❯'}
-              </button>
-            ) : (
-              <button
-                onClick={onToggleSidebar}
-                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-md bg-[#8eb86e] hover:bg-[#7eb462] text-white shadow-xs transition cursor-pointer ml-1"
-                title="Toggle Sidebar"
-              >
-                <Menu className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={onToggleRightDrawer}
+              className="flex items-center justify-center w-8 h-8 rounded-md bg-[#ea580c] hover:bg-[#c2410c] text-white shadow-xs transition cursor-pointer ml-1 text-sm font-bold"
+              title="Toggle Block Drawer"
+              aria-label="Toggle Block Drawer"
+            >
+              {isRightDrawerOpen ? '✕' : '❯'}
+            </button>
           </nav>
         </div>
       </div>

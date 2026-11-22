@@ -39,7 +39,7 @@ export const StudentEvents: React.FC<StudentEventsProps> = ({
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 antialiased">
       {/* Top Header with Tab Switcher */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>

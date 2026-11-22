@@ -61,13 +61,13 @@ const CreditzPortal: React.FC = () => {
     if (!user) return;
     if (user.role === 'dean') {
       setActiveTab('dean-dashboard');
-      setIsDesktopSidebarOpen(true);
+      setIsDesktopSidebarOpen(false);
     } else if (user.role === 'hod') {
       setActiveTab('hod-dashboard');
-      setIsDesktopSidebarOpen(true);
+      setIsDesktopSidebarOpen(false);
     } else if (user.role === 'mentor') {
       setActiveTab('mentor-dashboard');
-      setIsDesktopSidebarOpen(true);
+      setIsDesktopSidebarOpen(false);
     } else {
       setActiveTab('student-dashboard');
       setIsDesktopSidebarOpen(false); // Clean Moodle layout without persistent left sidebar

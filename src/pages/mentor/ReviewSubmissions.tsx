@@ -337,7 +337,7 @@ export const ReviewSubmissions: React.FC = () => {
   const SEMESTER_LIMIT = 30; // AICTE max points per semester cap
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 antialiased">
       {/* Toast Notification */}
       {actionMessage && (
         <div

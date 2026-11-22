@@ -49,7 +49,7 @@ export const ExploreSchema: React.FC = () => {
   });
 
   return (
-    <div className="space-y-3.5">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 antialiased">
       {/* Header */}
       <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
