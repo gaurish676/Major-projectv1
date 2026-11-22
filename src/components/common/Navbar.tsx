@@ -290,30 +290,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             <NitteLogo onClick={onNavigateHome} />
           </div>
 
-          {/* Right: LMS Navigation Menu ("Home", "Dashboard", "My courses", "Links", "MATLAB") */}
+          {/* Right: LMS Navigation Menu ("Home", "Activities", "Creditz", "Links") */}
           <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium text-slate-700">
-            {/* Home link */}
+            {/* Primary Home Navigation for all entities */}
             <button
               onClick={onNavigateHome}
-              className={`px-2.5 py-1.5 rounded-md transition cursor-pointer hidden md:inline-block ${
-                activeTab === 'home'
+              className={`px-2.5 py-1.5 rounded-md transition cursor-pointer hidden sm:inline-block ${
+                activeTab === 'home' ||
+                activeTab === 'student-dashboard' ||
+                activeTab === 'mentor-dashboard' ||
+                activeTab === 'hod-dashboard' ||
+                activeTab === 'dean-dashboard' ||
+                activeTab === 'dean-overview' ||
+                activeTab === ''
                   ? 'text-[#5c873f] font-bold border-b-2 border-[#8eb86e]'
                   : 'hover:text-[#8eb86e] hover:bg-slate-50'
               }`}
             >
               Home
-            </button>
-
-            {/* Dashboard link */}
-            <button
-              onClick={onNavigateHome}
-              className={`px-2.5 py-1.5 rounded-md transition cursor-pointer hidden sm:inline-block ${
-                activeTab === 'student-dashboard'
-                  ? 'text-[#5c873f] font-bold border-b-2 border-[#8eb86e]'
-                  : 'hover:text-[#8eb86e] hover:bg-slate-50'
-              }`}
-            >
-              Dashboard
             </button>
 
             {/* Activity Center / Courses link */}

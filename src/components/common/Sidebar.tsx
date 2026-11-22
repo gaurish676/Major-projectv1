@@ -187,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         Faculty Advisory
       </div>
 
-      {/* 1. Dashboard */}
+      {/* 1. Home Overview */}
       <button
         onClick={() => onSelectTab('mentor-dashboard')}
         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <Home className="w-4 h-4" />
-          <span>Dashboard</span>
+          <span>Home Overview</span>
         </div>
         <ChevronRight className="w-3.5 h-3.5 opacity-60" />
       </button>
